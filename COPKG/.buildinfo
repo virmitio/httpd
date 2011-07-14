@@ -1,0 +1,115 @@
+/* target information */
+
+#product-info  {
+	product-name: "httpd";
+	version: "trunk";
+	original-source-location: "https://github.com/apache/httpd";
+	original-source-website: "http://httpd.apache.org/";
+	license: "Apache License";
+	packager: "Hamish C";
+}
+
+x86 {
+    compiler: vc10-x86;
+    
+    uses: x86=@"..\apr";
+    uses: x86=@"..\pcre";
+    uses: x86=@"..\openssl";
+    uses: x86=@"..\zlib";
+
+
+    targets: { 
+        "Release\httpd.exe",
+        "Release\libhttpd.dll",
+        "Release\libhttpd.exp",
+        "Release\libhttpd.lib",
+        "server\gen_test_char.exe",
+        "Support\Release\ab.exe",
+        "Support\Release\htcacheclean.exe",
+        "Support\Release\abs.exe",
+        "Support\Release\htdbm.exe",
+        "Support\Release\rotatelogs.exe",
+        "Support\Release\logresolve.exe",
+        "Support\Release\httxt2dbm.exe",
+        "Support\Release\httxt2dbm.exp",
+        "Support\Release\httxt2dbm.lib",
+        "Support\Release\htpasswd.exe",
+        "Support\Release\htdigest.exe",
+        "Support\Release\htdbm.lib",
+        "Support\Release\htdbm.exp",
+	};
+	
+    build-command:@"
+       rem best you have your visual studio installed in the default location...
+       IF EXIST ""C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat"" call ""C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat"" x86
+       IF EXIST ""C:\Program Files\Microsoft Visual Studio 10.0\VC\vcvarsall.bat"" call ""C:\Program Files\Microsoft Visual Studio 10.0\VC\vcvarsall.bat"" x86
+       msbuild /p:Platform=win32 /p:Configuration=Release Apache-apr2.sln
+	";
+    
+    clean-command:@"
+       if exist ipch rmdir /s /q ipch > nul 2> nul
+       if exist Release rmdir /s /q Release > nul 2> nul
+       if exist Debug rmdir /s /q Debug > nul 2> nul
+       for /f ""delims="" %%a in ('dir /B/S/AD Release') do rd /s /q ""%%a"" > nul 2> nul
+       for /f ""delims="" %%a in ('dir /B/S/AD Debug') do rd /s /q ""%%a"" > nul 2> nul
+       del /S /Q /A - *.sdf *.suo *.user *.exe *.pdb > NUL 2> NUL
+       del /Q BuildBin.log include\ap_config_layout.h include\ap_ldap.h include\mod_cgi.h include\mod_dav.h include\mod_include.h include\mod_proxy.h include\mod_so.h include\os.h server\test_char.h > nul 2> nul
+    ";
+};
+
+x64 {
+    compiler: vc10-x64;
+    
+    uses: x64=@"..\apr";
+    uses: x64=@"..\pcre";
+    uses: x64=@"..\openssl";
+    uses: x64=@"..\zlib";
+
+
+    targets: { 
+        "x64\Release\httpd.exe",
+        "x64\Release\libhttpd.dll",
+        "x64\Release\libhttpd.exp",
+        "x64\Release\libhttpd.lib",
+        "server\gen_test_char.exe",
+        "Support\x64\Release\ab.exe",
+        "Support\x64\Release\htcacheclean.exe",
+        "Support\x64\Release\abs.exe",
+        "Support\x64\Release\htdbm.exe",
+        "Support\x64\Release\rotatelogs.exe",
+        "Support\x64\Release\logresolve.exe",
+        "Support\x64\Release\httxt2dbm.exe",
+        "Support\x64\Release\httxt2dbm.exp",
+        "Support\x64\Release\httxt2dbm.lib",
+        "Support\x64\Release\htpasswd.exe",
+        "Support\x64\Release\htdigest.exe",
+        "Support\x64\Release\htdbm.lib",
+        "Support\x64\Release\htdbm.exp",
+	};
+	
+    build-command:@"
+       rem best you have your visual studio installed in the default location...
+       rem libhttp requires this gen_test_char.exe to be built and run to generate a required header file
+       rem In order to do this on x86, we must set the build environment to x86 build the project go back
+       rem to x64 and build the rest.  There should be a better way to do this, but it'll do for now.
+       call setenv /x86       
+       msbuild /p:Platform=win32 /p:Configuration=Release server\gen_test_char.vcxproj
+       call setenv /x64
+       IF EXIST ""C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat"" call ""C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat"" amd64
+       IF EXIST ""C:\Program Files\Microsoft Visual Studio 10.0\VC\vcvarsall.bat"" call ""C:\Program Files\Microsoft Visual Studio 10.0\VC\vcvarsall.bat"" x86_amd64
+
+       msbuild /p:Platform=x64 /p:Configuration=Release Apache-apr2.sln
+	";
+    
+    clean-command:@"
+       if exist ipch rmdir /s /q ipch > nul 2> nul
+       if exist Release rmdir /s /q Release > nul 2> nul
+       if exist Debug rmdir /s /q Debug > nul 2> nul
+       if exist x64 rmdir /s /q x64 > nul 2> nul
+       for /f ""delims="" %%a in ('dir /B/S/AD x64') do rd /s /q ""%%a"" > nul 2> nul
+       for /f ""delims="" %%a in ('dir /B/S/AD Release') do rd /s /q ""%%a"" > nul 2> nul
+       for /f ""delims="" %%a in ('dir /B/S/AD Debug') do rd /s /q ""%%a"" > nul 2> nul
+       del /S /Q /A - *.sdf *.suo *.user *.exe *.pdb > NUL 2> NUL
+       del /Q BuildBin.log include\ap_config_layout.h include\ap_ldap.h include\mod_cgi.h include\mod_dav.h include\mod_include.h include\mod_proxy.h include\mod_so.h include\os.h server\test_char.h > nul 2> nul
+    ";
+};
