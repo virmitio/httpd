@@ -10,7 +10,8 @@
 }
 
 x86 {
-    compiler: vc10-x86;
+    compiler: vc10;
+    platform: x86;
     
     uses: x86=@"..\apr";
     uses: x86=@"..\pcre";
@@ -41,8 +42,7 @@ x86 {
 	
     build-command:@"
        rem best you have your visual studio installed in the default location...
-       IF EXIST ""C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat"" call ""C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat"" x86
-       IF EXIST ""C:\Program Files\Microsoft Visual Studio 10.0\VC\vcvarsall.bat"" call ""C:\Program Files\Microsoft Visual Studio 10.0\VC\vcvarsall.bat"" x86
+       call vcvarsall.bat x86
        msbuild /p:Platform=win32 /p:Configuration=Release Apache-apr2.sln
 	";
     
@@ -58,7 +58,8 @@ x86 {
 };
 
 x64 {
-    compiler: vc10-x64;
+    compiler: vc10;
+    platform: x64;
     
     uses: x64=@"..\apr";
     uses: x64=@"..\pcre";
@@ -95,9 +96,11 @@ x64 {
        call setenv /x86       
        msbuild /p:Platform=win32 /p:Configuration=Release server\gen_test_char.vcxproj
        call setenv /x64
-       IF EXIST ""C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat"" call ""C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat"" amd64
-       IF EXIST ""C:\Program Files\Microsoft Visual Studio 10.0\VC\vcvarsall.bat"" call ""C:\Program Files\Microsoft Visual Studio 10.0\VC\vcvarsall.bat"" x86_amd64
-
+       IF %PROCESSOR_ARCHITECTURE% == AMD64 (
+       call vcvarsall.bat amd64
+       ) ELSE (
+       call vcvarsall.bat x86_amd64
+       )
        msbuild /p:Platform=x64 /p:Configuration=Release Apache-apr2.sln
 	";
     
