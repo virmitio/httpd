@@ -110,7 +110,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
       <OmitFramePointers>false</OmitFramePointers>
-      <AdditionalIncludeDirectories>./include;./../apr/include;./../pcre;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./include;./../apr/include;./../pcre5;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_WINDOWS;AP_DECLARE_EXPORT;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\Debug\</AssemblerListingLocation>
       <PrecompiledHeaderOutputFile>.\Debug\libhttpd.pch</PrecompiledHeaderOutputFile>
@@ -149,7 +149,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>.\Debug\libhttpd.dll</OutputFile>
       <ImportLibrary>.\Release\libhttpd.lib</ImportLibrary>
-      <AdditionalLibraryDirectories>../apr/Debug;./../pcre/LibR;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../apr/Debug;./../pcre5/LibR;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libapr-2.lib;pcre.lib;ws2_32.lib;mswsock.lib;Debug\buildmark.obj;pcre.lib;Release\buildmark.obj;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40"os\win32\BaseAddr.ref",libhttpd.dll /opt:ref</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
@@ -166,7 +166,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
       <OmitFramePointers>false</OmitFramePointers>
-      <AdditionalIncludeDirectories>./include;./../apr/include;./../pcre;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./include;./../apr/include;./../pcre5;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_WINDOWS;AP_DECLARE_EXPORT;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\x64\Debug\</AssemblerListingLocation>
       <PrecompiledHeaderOutputFile>.\x64\Debug\libhttpd.pch</PrecompiledHeaderOutputFile>
@@ -204,7 +204,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>.\x64\Debug\libhttpd.dll</OutputFile>
       <ImportLibrary>.\x64\Release\libhttpd.lib</ImportLibrary>
-      <AdditionalLibraryDirectories>../apr/x64/Debug;./../pcre/x64/LibR;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../apr/x64/Debug;./../pcre5/x64/LibR;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libapr-2.lib;pcre.lib;ws2_32.lib;mswsock.lib;Debug\buildmark.obj;pcre.lib;Release\buildmark.obj;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40"os\win32\BaseAddr.ref",libhttpd.dll /opt:ref</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
@@ -221,7 +221,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
       <OmitFramePointers>false</OmitFramePointers>
-      <AdditionalIncludeDirectories>./include;../apr/include;./../pcre;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./include;../apr/include;./../pcre5;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;AP_DECLARE_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\Release\</AssemblerListingLocation>
       <PrecompiledHeaderOutputFile>.\Release\libhttpd.pch</PrecompiledHeaderOutputFile>
@@ -259,7 +259,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>.\Release\libhttpd.dll</OutputFile>
       <ImportLibrary>.\Release\libhttpd.lib</ImportLibrary>
-      <AdditionalLibraryDirectories>../apr/Release;./../pcre/LibR;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../apr/Release;./../pcre5/LibR;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libapr-2.lib;pcre.lib;ws2_32.lib;mswsock.lib;Release\buildmark.obj;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40"os\win32\BaseAddr.ref",libhttpd.dll</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
@@ -276,7 +276,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
       <OmitFramePointers>false</OmitFramePointers>
-      <AdditionalIncludeDirectories>./include;../apr/include;./../pcre;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./include;../apr/include;./../pcre5;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;AP_DECLARE_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\x64\Release\</AssemblerListingLocation>
       <PrecompiledHeaderOutputFile>.\x64\Release\libhttpd.pch</PrecompiledHeaderOutputFile>
@@ -313,7 +313,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>.\x64\Release\libhttpd.dll</OutputFile>
       <ImportLibrary>.\x64\Release\libhttpd.lib</ImportLibrary>
-      <AdditionalLibraryDirectories>../apr/x64/Release;./../pcre/x64/LibR;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../apr/x64/Release;./../pcre5/x64/LibR;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libapr-2.lib;pcre.lib;ws2_32.lib;mswsock.lib;x64\Release\buildmark.obj;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40"os\win32\BaseAddr.ref",libhttpd.dll</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>

@@ -498,7 +498,7 @@ static const char *register_named_block_function_hook(const char *name,
 
         lua_settop(lvm, 0);
 
-        rv = lua_load(lvm, direct_chunkreader, &ctx, spec->file_name);
+        rv = lua_load(lvm, direct_chunkreader, &ctx, spec->file_name, NULL);
 
         if (rv != 0) {
             const char *errstr =
