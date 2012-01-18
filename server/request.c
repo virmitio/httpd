@@ -99,7 +99,7 @@ static int auth_internal_per_conf_providers = 0;
 static int decl_die(int status, const char *phase, request_rec *r)
 {
     if (status == DECLINED) {
-        ap_log_rerror(APLOG_MARK, APLOG_CRIT, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_CRIT, 0, r, APLOGNO(00025)
                       "configuration error:  couldn't %s: %s", phase, r->uri);
         return HTTP_INTERNAL_SERVER_ERROR;
     }
@@ -134,7 +134,7 @@ AP_DECLARE(int) ap_process_request_internal(request_rec *r)
         if (access_status) {
             if (access_status == HTTP_NOT_FOUND) {
                 if (! d->allow_encoded_slashes) {
-                    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r,
+                    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(00026)
                                   "found %%2f (encoded '/') in URI "
                                   "(decoded='%s'), returning 404",
                                   r->parsed_uri.path);
@@ -235,7 +235,7 @@ AP_DECLARE(int) ap_process_request_internal(request_rec *r)
                 }
                 if (r->user == NULL) {
                     /* don't let buggy authn module crash us in authz */
-                    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00027)
                                   "Buggy authn provider failed to set user for %s",
                                   r->uri);
                     access_status = HTTP_INTERNAL_SERVER_ERROR;
@@ -270,7 +270,7 @@ AP_DECLARE(int) ap_process_request_internal(request_rec *r)
                 }
                 if (r->user == NULL) {
                     /* don't let buggy authn module crash us in authz */
-                    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00028)
                                   "Buggy authn provider failed to set user for %s",
                                   r->uri);
                     access_status = HTTP_INTERNAL_SERVER_ERROR;
@@ -486,6 +486,7 @@ typedef struct core_opts_t {
         allow_options_t remove;
         overrides_t override;
         overrides_t override_opts;
+        apr_table_t *override_list;
 } core_opts_t;
 
 static void core_opts_merge(const ap_conf_vector_t *sec, core_opts_t *opts)
@@ -513,6 +514,11 @@ static void core_opts_merge(const ap_conf_vector_t *sec, core_opts_t *opts)
         opts->override = this_dir->override;
         opts->override_opts = this_dir->override_opts;
     }
+
+   if (this_dir->override_list != NULL) {
+        opts->override_list = this_dir->override_list;
+   }
+
 }
 
 
@@ -552,7 +558,7 @@ AP_DECLARE(int) ap_directory_walk(request_rec *r)
      * handler.  Leave INFO notes here for module debugging.
      */
     if (r->filename == NULL) {
-        ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(00029)
                       "Module bug?  Request filename is missing for URI %s",
                       r->uri);
        return OK;
@@ -565,7 +571,7 @@ AP_DECLARE(int) ap_directory_walk(request_rec *r)
     if ((rv = apr_filepath_merge(&entry_dir, NULL, r->filename,
                                  APR_FILEPATH_NOTRELATIVE, r->pool))
                   != APR_SUCCESS) {
-        ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(00030)
                       "Module bug?  Request filename path %s is invalid or "
                       "or not absolute for uri %s",
                       r->filename, r->uri);
@@ -677,7 +683,7 @@ AP_DECLARE(int) ap_directory_walk(request_rec *r)
                      * with a HTTP_FORBIDDEN in case we hit a race condition
                      * here.
                      */
-                    ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
+                    ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(00031)
                                   "access to %s failed; stat of '%s' failed.",
                                   r->uri, r->filename);
                     return r->status = HTTP_FORBIDDEN;
@@ -686,7 +692,7 @@ AP_DECLARE(int) ap_directory_walk(request_rec *r)
                     /* Is this a possibly acceptable symlink? */
                     if ((res = resolve_symlink(r->filename, &thisinfo,
                                                opts, r->pool)) != OK) {
-                        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00032)
                                       "Symbolic link not allowed "
                                       "or link target not accessible: %s",
                                       r->filename);
@@ -740,6 +746,7 @@ AP_DECLARE(int) ap_directory_walk(request_rec *r)
         opts.remove = this_dir->opts_remove;
         opts.override = this_dir->override;
         opts.override_opts = this_dir->override_opts;
+        opts.override_list = this_dir->override_list;
 
         /* Set aside path_info to merge back onto path_info later.
          * If r->filename is a directory, we must remerge the path_info,
@@ -755,7 +762,7 @@ AP_DECLARE(int) ap_directory_walk(request_rec *r)
                                          r->path_info,
                                          APR_FILEPATH_NOTABOVEROOT, r->pool))
                 != APR_SUCCESS) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(00033)
                               "dir_walk error, path_info %s is not relative "
                               "to the filename path %s for uri %s",
                               r->path_info, r->filename, r->uri);
@@ -822,7 +829,7 @@ AP_DECLARE(int) ap_directory_walk(request_rec *r)
 #endif
 
         if (rv != APR_SUCCESS) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(00034)
                           "dir_walk error, could not determine the root "
                           "path of filename %s%s for uri %s",
                           r->filename, r->path_info, r->uri);
@@ -946,12 +953,13 @@ AP_DECLARE(int) ap_directory_walk(request_rec *r)
                 /* No htaccess in an incomplete root path,
                  * nor if it's disabled
                  */
-                if (seg < startseg || !opts.override) {
+                if (seg < startseg || (!opts.override && opts.override_list == NULL)) {
                     break;
                 }
 
+
                 res = ap_parse_htaccess(&htaccess_conf, r, opts.override,
-                                        opts.override_opts,
+                                        opts.override_opts, opts.override_list,
                                         apr_pstrdup(r->pool, r->filename),
                                         sconf->access_name);
                 if (res) {
@@ -1025,7 +1033,7 @@ AP_DECLARE(int) ap_directory_walk(request_rec *r)
             seg_name = r->filename + filename_len;
             delim = strchr(r->path_info + (*r->path_info == '/' ? 1 : 0), '/');
             if (delim) {
-                size_t path_info_len = delim - r->path_info;
+                apr_size_t path_info_len = delim - r->path_info;
                 *delim = '\0';
                 memcpy(seg_name, r->path_info, path_info_len + 1);
                 filename_len += path_info_len;
@@ -1033,7 +1041,7 @@ AP_DECLARE(int) ap_directory_walk(request_rec *r)
                 *delim = '/';
             }
             else {
-                size_t path_info_len = strlen(r->path_info);
+                apr_size_t path_info_len = strlen(r->path_info);
                 memcpy(seg_name, r->path_info, path_info_len + 1);
                 filename_len += path_info_len;
                 r->path_info += path_info_len;
@@ -1085,7 +1093,7 @@ AP_DECLARE(int) ap_directory_walk(request_rec *r)
                 break;
             }
             else if (APR_STATUS_IS_EACCES(rv)) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(00035)
                               "access to %s denied because search "
                               "permissions are missing on a component "
                               "of the path", r->uri);
@@ -1096,7 +1104,7 @@ AP_DECLARE(int) ap_directory_walk(request_rec *r)
                 /* If we hit ENOTDIR, we must have over-optimized, deny
                  * rather than assume not found.
                  */
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(00036)
                               "access to %s failed", r->uri);
                 return r->status = HTTP_FORBIDDEN;
             }
@@ -1118,7 +1126,7 @@ AP_DECLARE(int) ap_directory_walk(request_rec *r)
                  */
                 if ((res = resolve_symlink(r->filename, &thisinfo,
                                            opts.opts, r->pool)) != OK) {
-                    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00037)
                                   "Symbolic link not allowed "
                                   "or link target not accessible: %s",
                                   r->filename);
@@ -1135,7 +1143,7 @@ AP_DECLARE(int) ap_directory_walk(request_rec *r)
                 break;
             }
             else if (thisinfo.filetype != APR_DIR) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00038)
                               "Forbidden: %s doesn't point to "
                               "a file or directory",
                               r->filename);
@@ -1467,8 +1475,8 @@ AP_DECLARE(int) ap_file_walk(request_rec *r)
     int cached;
 
     if (dconf->sec_file) {
-    	sec_ent = (ap_conf_vector_t **)dconf->sec_file->elts;
-    	num_sec = dconf->sec_file->nelts;
+        sec_ent = (ap_conf_vector_t **)dconf->sec_file->elts;
+        num_sec = dconf->sec_file->nelts;
     }
 
     /* To allow broken modules to proceed, we allow missing filenames to pass.
@@ -1632,8 +1640,8 @@ AP_DECLARE(int) ap_if_walk(request_rec *r)
     walk_walked_t *last_walk;
 
     if (dconf->sec_if) {
-    	sec_ent = (ap_conf_vector_t **)dconf->sec_if->elts;
-    	num_sec = dconf->sec_if->nelts;
+        sec_ent = (ap_conf_vector_t **)dconf->sec_if->elts;
+        num_sec = dconf->sec_if->nelts;
     }
 
     /* No tricks here, there are just no <If > to parse in this context.
@@ -1671,7 +1679,7 @@ AP_DECLARE(int) ap_if_walk(request_rec *r)
             rc = ap_expr_exec(r, entry_core->condition, &err);
             if (rc <= 0) {
                 if (rc < 0)
-                    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00039)
                                   "Failed to evaluate <If > condition: %s",
                                   err);
                 prev_result = 0;
@@ -1824,6 +1832,9 @@ static request_rec *make_sub_request(const request_rec *r,
         rnew->output_filters = r->proto_output_filters;
     }
 
+    rnew->useragent_addr = r->useragent_addr;
+    rnew->useragent_ip = r->useragent_ip;
+
     /* no input filters for a subrequest */
 
     ap_set_sub_req_protocol(rnew, r);
@@ -1837,7 +1848,7 @@ static request_rec *make_sub_request(const request_rec *r,
      * until some module interjects and changes the value.
      */
     rnew->used_path_info = AP_REQ_DEFAULT_PATH_INFO;
-    
+
     /* Pass on the kept body (if any) into the new request. */
     rnew->kept_body = r->kept_body;
 

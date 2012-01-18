@@ -22,7 +22,6 @@
 #include "http_request.h"
 #include "http_protocol.h"
 
-#define SESSION_PREFIX "mod_session: "
 #define SESSION_EXPIRY "expiry"
 #define HTTP_SESSION "HTTP_SESSION"
 
@@ -89,8 +88,7 @@ static int session_included(request_rec * r, session_dir_conf * conf)
  * @param r The request
  * @param z A pointer to where the session will be written.
  */
-/* ??? We return errors but we ignore them thru-out. ??? */
-static int ap_session_load(request_rec * r, session_rec ** z)
+static apr_status_t ap_session_load(request_rec * r, session_rec ** z)
 {
 
     session_dir_conf *dconf = ap_get_module_config(r->per_dir_config,
@@ -106,7 +104,7 @@ static int ap_session_load(request_rec * r, session_rec ** z)
 
     /* should the session be loaded at all? */
     if (!session_included(r, dconf)) {
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, SESSION_PREFIX
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01814)
                       "excluded by configuration for: %s", r->uri);
         return APR_SUCCESS;
     }
@@ -114,13 +112,13 @@ static int ap_session_load(request_rec * r, session_rec ** z)
     /* load the session from the session hook */
     rv = ap_run_session_load(r, &zz);
     if (DECLINED == rv) {
-        ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, SESSION_PREFIX
+        ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, APLOGNO(01815)
                       "session is enabled but no session modules have been configured, "
                       "session not loaded: %s", r->uri);
         return APR_EGENERAL;
     }
     else if (OK != rv) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, SESSION_PREFIX
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01816)
                       "error while loading the session, "
                       "session not loaded: %s", r->uri);
         return rv;
@@ -141,7 +139,7 @@ static int ap_session_load(request_rec * r, session_rec ** z)
     else {
         rv = ap_run_session_decode(r, zz);
         if (OK != rv) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, SESSION_PREFIX
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01817)
                           "error while decoding the session, "
                           "session not loaded: %s", r->uri);
             return rv;
@@ -169,8 +167,7 @@ static int ap_session_load(request_rec * r, session_rec ** z)
  * @param r The request
  * @param z A pointer to where the session will be written.
  */
-/* ??? We return errors but we ignore them thru-out. ??? */
-static int ap_session_save(request_rec * r, session_rec * z)
+static apr_status_t ap_session_save(request_rec * r, session_rec * z)
 {
     if (z) {
         apr_time_t now = apr_time_now();
@@ -181,13 +178,13 @@ static int ap_session_save(request_rec * r, session_rec * z)
 
         /* sanity checks, should we try save at all? */
         if (z->written) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, SESSION_PREFIX
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01818)
                           "attempt made to save the session twice, "
                           "session not saved: %s", r->uri);
             return APR_EGENERAL;
         }
         if (z->expiry && z->expiry < now) {
-            ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, SESSION_PREFIX
+            ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, APLOGNO(01819)
                           "attempt made to save a session when the session had already expired, "
                           "session not saved: %s", r->uri);
             return APR_EGENERAL;
@@ -202,7 +199,7 @@ static int ap_session_save(request_rec * r, session_rec * z)
         /* encode the session */
         rv = ap_run_session_encode(r, z);
         if (OK != rv) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, SESSION_PREFIX
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01820)
                           "error while encoding the session, "
                           "session not saved: %s", r->uri);
             return rv;
@@ -211,13 +208,13 @@ static int ap_session_save(request_rec * r, session_rec * z)
         /* try the save */
         rv = ap_run_session_save(r, z);
         if (DECLINED == rv) {
-            ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, SESSION_PREFIX
+            ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, APLOGNO(01821)
                           "session is enabled but no session modules have been configured, "
                           "session not saved: %s", r->uri);
             return APR_EGENERAL;
         }
         else if (OK != rv) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, SESSION_PREFIX
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01822)
                           "error while saving the session, "
                           "session not saved: %s", r->uri);
             return rv;
@@ -240,14 +237,21 @@ static int ap_session_save(request_rec * r, session_rec * z)
  * @param key The key to get.
  * @param value The buffer to write the value to.
  */
-static void ap_session_get(request_rec * r, session_rec * z, const char *key, const char **value)
+static apr_status_t ap_session_get(request_rec * r, session_rec * z,
+        const char *key, const char **value)
 {
     if (!z) {
-        ap_session_load(r, &z); /* errors ignored?? */
+        apr_status_t rv;
+        rv = ap_session_load(r, &z);
+        if (APR_SUCCESS != rv) {
+            return rv;
+        }
     }
     if (z && z->entries) {
         *value = apr_table_get(z->entries, key);
     }
+
+    return OK;
 }
 
 /**
@@ -262,11 +266,15 @@ static void ap_session_get(request_rec * r, session_rec * z, const char *key, co
  * @param key The key to set. The existing key value will be replaced.
  * @param value The value to set.
  */
-static void ap_session_set(request_rec * r, session_rec * z,
-                                const char *key, const char *value)
+static apr_status_t ap_session_set(request_rec * r, session_rec * z,
+        const char *key, const char *value)
 {
     if (!z) {
-        ap_session_load(r, &z); /* errors ignored?? */
+        apr_status_t rv;
+        rv = ap_session_load(r, &z);
+        if (APR_SUCCESS != rv) {
+            return rv;
+        }
     }
     if (z) {
         if (value) {
@@ -277,6 +285,7 @@ static void ap_session_set(request_rec * r, session_rec * z,
         }
         z->dirty = 1;
     }
+    return APR_SUCCESS;
 }
 
 static int identity_count(int *count, const char *key, const char *val)
@@ -315,7 +324,7 @@ static int identity_concat(char *buffer, const char *key, const char *val)
  * @param r The request pointer.
  * @param z A pointer to where the session will be written.
  */
-static int session_identity_encode(request_rec * r, session_rec * z)
+static apr_status_t session_identity_encode(request_rec * r, session_rec * z)
 {
 
     char *buffer = NULL;
@@ -351,7 +360,7 @@ static int session_identity_encode(request_rec * r, session_rec * z)
  * @param r The request pointer.
  * @param z A pointer to where the session will be written.
  */
-static int session_identity_decode(request_rec * r, session_rec * z)
+static apr_status_t session_identity_decode(request_rec * r, session_rec * z)
 {
 
     char *last = NULL;
@@ -408,7 +417,7 @@ static int session_identity_decode(request_rec * r, session_rec * z)
  * attempt to save the session will be called
  */
 static apr_status_t session_output_filter(ap_filter_t * f,
-                                                    apr_bucket_brigade * in)
+        apr_bucket_brigade * in)
 {
 
     /* save all the sessions in all the requests */
@@ -422,7 +431,8 @@ static apr_status_t session_output_filter(ap_filter_t * f,
                                                       &session_module);
 
         /* load the session, or create one if necessary */
-        ap_session_load(r, &z); /* errors ignored?? */
+        /* when unset or on error, z will be NULL */
+        ap_session_load(r, &z);
         if (!z || z->written) {
             r = r->next;
             continue;
@@ -441,7 +451,8 @@ static apr_status_t session_output_filter(ap_filter_t * f,
         }
 
         /* save away the session, and we're done */
-        ap_session_save(r, z); /* errors ignored?? */
+        /* when unset or on error, we've complained to the log */
+        ap_session_save(r, z);
 
         r = r->next;
     }
@@ -479,9 +490,14 @@ static int session_fixups(request_rec * r)
                                                   &session_module);
 
     session_rec *z = NULL;
-    ap_session_load(r, &z); /* errors ignored?? */
 
-    if (conf->env) {
+    /* if an error occurs or no session has been configured, we ignore
+     * the broken session and allow it to be recreated from scratch on save
+     * if necessary.
+     */
+    ap_session_load(r, &z);
+
+    if (z && conf->env) {
         session_identity_encode(r, z);
         if (z->encoded) {
             apr_table_set(r->subprocess_env, HTTP_SESSION, z->encoded);

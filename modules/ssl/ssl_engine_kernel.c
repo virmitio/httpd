@@ -29,6 +29,7 @@
                                   time I was too famous.''
                                             -- Unknown                */
 #include "ssl_private.h"
+#include "util_md5.h"
 
 static void ssl_configure_env(request_rec *r, SSLConnRec *sslconn);
 #ifndef OPENSSL_NO_TLSEXT
@@ -48,7 +49,7 @@ static apr_status_t upgrade_connection(request_rec *r)
     apr_status_t rv;
     SSL *ssl;
 
-    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, 
+    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(02028)
                   "upgrading connection to TLS");
 
     bb = apr_brigade_create(r->pool, conn->bucket_alloc);
@@ -62,25 +63,25 @@ static apr_status_t upgrade_connection(request_rec *r)
     }
 
     if (rv) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02029)
                       "failed to send 101 interim response for connection "
                       "upgrade");
         return rv;
     }
 
     ssl_init_ssl_connection(conn, r);
-    
+
     sslconn = myConnConfig(conn);
     ssl = sslconn->ssl;
-    
+
     /* Perform initial SSL handshake. */
     SSL_set_accept_state(ssl);
     SSL_do_handshake(ssl);
 
     if (SSL_get_state(ssl) != SSL_ST_OK) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02030)
                       "TLS upgrade handshake failed: not accepted by client!?");
-        
+
         return APR_ECONNABORTED;
     }
 
@@ -90,23 +91,23 @@ static apr_status_t upgrade_connection(request_rec *r)
 /* Perform a speculative (and non-blocking) read from the connection
  * filters for the given request, to determine whether there is any
  * pending data to read.  Return non-zero if there is, else zero. */
-static int has_buffered_data(request_rec *r) 
+static int has_buffered_data(request_rec *r)
 {
     apr_bucket_brigade *bb;
     apr_off_t len;
     apr_status_t rv;
     int result;
-    
+
     bb = apr_brigade_create(r->pool, r->connection->bucket_alloc);
-    
+
     rv = ap_get_brigade(r->connection->input_filters, bb, AP_MODE_SPECULATIVE,
-                        APR_NONBLOCK_READ, 1); 
+                        APR_NONBLOCK_READ, 1);
     result = rv == APR_SUCCESS
         && apr_brigade_length(bb, 1, &len) == APR_SUCCESS
         && len > 0;
-    
+
     apr_brigade_destroy(bb);
-    
+
     return result;
 }
 
@@ -122,7 +123,7 @@ int ssl_hook_ReadReq(request_rec *r)
     const char *servername;
 #endif
     SSL *ssl;
-    
+
     /* Perform TLS upgrade here if "SSLEngine optional" is configured,
      * SSL is not already set up for this connection, and the client
      * has sent a suitable Upgrade header. */
@@ -193,7 +194,7 @@ int ssl_hook_ReadReq(request_rec *r)
          * with either no hostname or a different hostname.
          */
         if (!r->hostname) {
-            ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, APLOGNO(02031)
                         "Hostname %s provided via SNI, but no hostname"
                         " provided in HTTP request", servername);
             return HTTP_BAD_REQUEST;
@@ -203,7 +204,7 @@ int ssl_hook_ReadReq(request_rec *r)
             return HTTP_BAD_REQUEST;
         }
         if (strcasecmp(host, servername)) {
-            ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, APLOGNO(02032)
                         "Hostname %s provided via SNI and hostname %s provided"
                         " via HTTP are different", servername, host);
             return HTTP_BAD_REQUEST;
@@ -220,7 +221,7 @@ int ssl_hook_ReadReq(request_rec *r)
          * server config we used for handshaking or in our current server.
          * This should avoid insecure configuration by accident.
          */
-        ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, APLOGNO(02033)
                      "No hostname was provided via SNI for a name based"
                      " virtual host");
         return HTTP_FORBIDDEN;
@@ -232,7 +233,7 @@ int ssl_hook_ReadReq(request_rec *r)
      * Log information about incoming HTTPS requests
      */
     if (APLOGrinfo(r) && ap_is_initial_req(r)) {
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(02034)
                      "%s HTTPS request received for child %ld (server %s)",
                      (r->connection->keepalives <= 0 ?
                      "Initial (No.1)" :
@@ -330,7 +331,7 @@ int ssl_hook_Access(request_rec *r)
             return HTTP_UPGRADE_REQUIRED;
         }
 
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02219)
                       "access to %s failed, reason: %s",
                       r->filename, "SSL connection required");
 
@@ -407,10 +408,10 @@ int ssl_hook_Access(request_rec *r)
 
         /* configure new state */
         if ((dc->szCipherSuite || sc->server->auth.cipher_suite) &&
-            !modssl_set_cipher_list(ssl, dc->szCipherSuite ?
-                                         dc->szCipherSuite :
-                                         sc->server->auth.cipher_suite)) {
-            ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r,
+            !SSL_set_cipher_list(ssl, dc->szCipherSuite ?
+                                      dc->szCipherSuite :
+                                      sc->server->auth.cipher_suite)) {
+            ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, APLOGNO(02253)
                           "Unable to reconfigure (per-directory) "
                           "permitted SSL ciphers");
             ssl_log_ssl_error(SSLLOG_MARK, APLOG_ERR, r->server);
@@ -482,7 +483,7 @@ int ssl_hook_Access(request_rec *r)
             }
 #endif
             /* tracing */
-            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(02220)
                          "Reconfigured cipher suite will force renegotiation");
         }
     }
@@ -507,7 +508,7 @@ int ssl_hook_Access(request_rec *r)
                             dc->nVerifyDepth : sc->server->auth.verify_depth;
     if (sslconn->verify_depth < n) {
         renegotiate = TRUE;
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(02254)
                      "Reduced client verification depth will force "
                      "renegotiation");
     }
@@ -546,7 +547,7 @@ int ssl_hook_Access(request_rec *r)
             verify |= SSL_VERIFY_PEER;
         }
 
-        modssl_set_verify(ssl, verify, ssl_callback_SSLVerify);
+        SSL_set_verify(ssl, verify, ssl_callback_SSLVerify);
         SSL_set_verify_result(ssl, X509_V_OK);
 
         /* determine whether we've to force a renegotiation */
@@ -571,7 +572,7 @@ int ssl_hook_Access(request_rec *r)
                     X509_free(peercert);
                 }
 
-                ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(02255)
                               "Changed client verification type will force "
                               "%srenegotiation",
                               renegotiate_quick ? "quick " : "");
@@ -601,12 +602,12 @@ int ssl_hook_Access(request_rec *r)
             if (MODSSL_CFG_CA_NE(ca_cert_file, sc, hssc) ||
                 MODSSL_CFG_CA_NE(ca_cert_path, sc, hssc)) {
                 if (verify & SSL_VERIFY_FAIL_IF_NO_PEER_CERT) {
-                    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r,
+                    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(02256)
                          "Non-default virtual host with SSLVerify set to "
                          "'require' and VirtualHost-specific CA certificate "
                          "list is only available to clients with TLS server "
                          "name indication (SNI) support");
-                    modssl_set_verify(ssl, verify_old, NULL);
+                    SSL_set_verify(ssl, verify_old, NULL);
                     return HTTP_FORBIDDEN;
                 } else
                     /* let it pass, possibly with an "incorrect" peer cert,
@@ -651,7 +652,7 @@ int ssl_hook_Access(request_rec *r)
         }
 
         if (rv) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02257)
                           "could not buffer message body to allow "
                           "SSL renegotiation to proceed");
             return rv;
@@ -673,14 +674,14 @@ int ssl_hook_Access(request_rec *r)
          * here because it resets too much of the connection.  So we set the
          * state explicitly and continue the handshake manually.
          */
-        ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(02221)
                       "Requesting connection re-negotiation");
 
         if (renegotiate_quick) {
             STACK_OF(X509) *cert_stack;
 
             /* perform just a manual re-verification of the peer */
-            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(02258)
                          "Performing quick renegotiation: "
                          "just re-verifying the peer");
 
@@ -695,11 +696,11 @@ int ssl_hook_Access(request_rec *r)
                  * we put it back here for the purpose of quick_renegotiation.
                  */
                 cert_stack = sk_X509_new_null();
-                sk_X509_push(cert_stack, MODSSL_PCHAR_CAST cert);
+                sk_X509_push(cert_stack, cert);
             }
 
             if (!cert_stack || (sk_X509_num(cert_stack) == 0)) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02222)
                               "Cannot find peer certificate chain");
 
                 return HTTP_FORBIDDEN;
@@ -708,7 +709,7 @@ int ssl_hook_Access(request_rec *r)
             if (!(cert_store ||
                   (cert_store = SSL_CTX_get_cert_store(ctx))))
             {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02223)
                               "Cannot find certificate storage");
 
                 return HTTP_FORBIDDEN;
@@ -729,8 +730,8 @@ int ssl_hook_Access(request_rec *r)
                                        SSL_get_ex_data_X509_STORE_CTX_idx(),
                                        (char *)ssl);
 
-            if (!modssl_X509_verify_cert(&cert_store_ctx)) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+            if (!X509_verify_cert(&cert_store_ctx)) {
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02224)
                               "Re-negotiation verification step failed");
                 ssl_log_ssl_error(SSLLOG_MARK, APLOG_ERR, r->server);
             }
@@ -744,6 +745,7 @@ int ssl_hook_Access(request_rec *r)
             }
         }
         else {
+            const char *reneg_support;
             request_rec *id = r->main ? r->main : r;
 
             /* Additional mitigation for CVE-2009-3555: At this point,
@@ -756,24 +758,24 @@ int ssl_hook_Access(request_rec *r)
              * discarded.  Legimately pipelined HTTP requests will be
              * retried anyway with this approach. */
             if (has_buffered_data(r)) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02259)
                               "insecure SSL re-negotiation required, but "
                               "a pipelined request is present; keepalive "
                               "disabled");
                 r->connection->keepalive = AP_CONN_CLOSE;
             }
 
+#if defined(SSL_get_secure_renegotiation_support)
+            reneg_support = SSL_get_secure_renegotiation_support(ssl) ?
+                            "client does" : "client does not";
+#else
+            reneg_support = "server does not";
+#endif
             /* Perform a full renegotiation. */
-            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(02260)
                           "Performing full renegotiation: complete handshake "
                           "protocol (%s support secure renegotiation)",
-#if defined(SSL_get_secure_renegotiation_support)
-                          SSL_get_secure_renegotiation_support(ssl) ? 
-                          "client does" : "client does not"
-#else
-                          "server does not"
-#endif
-                );
+                          reneg_support);
 
             SSL_set_session_id_context(ssl,
                                        (unsigned char *)&id,
@@ -782,12 +784,12 @@ int ssl_hook_Access(request_rec *r)
             /* Toggle the renegotiation state to allow the new
              * handshake to proceed. */
             sslconn->reneg_state = RENEG_ALLOW;
-            
+
             SSL_renegotiate(ssl);
             SSL_do_handshake(ssl);
 
             if (SSL_get_state(ssl) != SSL_ST_OK) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02225)
                               "Re-negotiation request failed");
                 ssl_log_ssl_error(SSLLOG_MARK, APLOG_ERR, r->server);
 
@@ -795,20 +797,24 @@ int ssl_hook_Access(request_rec *r)
                 return HTTP_FORBIDDEN;
             }
 
-            ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(02226)
                           "Awaiting re-negotiation handshake");
 
-            /* XXX: Should replace SSL_set_state with SSL_renegotiate(ssl);
+            /* XXX: Should replace setting state with SSL_renegotiate(ssl);
              * However, this causes failures in perl-framework currently,
              * perhaps pre-test if we have already negotiated?
              */
+#ifdef OPENSSL_NO_SSL_INTERN
             SSL_set_state(ssl, SSL_ST_ACCEPT);
+#else
+            ssl->state = SSL_ST_ACCEPT;
+#endif
             SSL_do_handshake(ssl);
 
             sslconn->reneg_state = RENEG_REJECT;
 
             if (SSL_get_state(ssl) != SSL_ST_OK) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02261)
                               "Re-negotiation handshake failed: "
                               "Not accepted by client!?");
 
@@ -837,7 +843,7 @@ int ssl_hook_Access(request_rec *r)
                               (sc->server->auth.verify_mode == SSL_CVERIFY_REQUIRE));
 
             if (do_verify && (SSL_get_verify_result(ssl) != X509_V_OK)) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02262)
                               "Re-negotiation handshake failed: "
                               "Client verification failed");
 
@@ -846,7 +852,7 @@ int ssl_hook_Access(request_rec *r)
 
             if (do_verify) {
                 if ((peercert = SSL_get_peer_certificate(ssl)) == NULL) {
-                    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02263)
                                   "Re-negotiation handshake failed: "
                                   "Client certificate missing");
 
@@ -863,7 +869,7 @@ int ssl_hook_Access(request_rec *r)
         if (cipher_list) {
             cipher = SSL_get_current_cipher(ssl);
             if (sk_SSL_CIPHER_find(cipher_list, cipher) < 0) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02264)
                              "SSL cipher suite not renegotiated: "
                              "access to %s denied using cipher %s",
                               r->filename,
@@ -886,7 +892,7 @@ int ssl_hook_Access(request_rec *r)
         if (val && val[0])
             r->user = val;
         else
-            ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, APLOGNO(02227)
                           "Failed to set r->user to '%s'", dc->szUserName);
     }
 
@@ -902,7 +908,7 @@ int ssl_hook_Access(request_rec *r)
         ok = ap_expr_exec(r, req->mpExpr, &errstring);
 
         if (ok < 0) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02265)
                           "access to %s failed, reason: Failed to execute "
                           "SSL requirement expression: %s",
                           r->filename, errstring);
@@ -914,15 +920,15 @@ int ssl_hook_Access(request_rec *r)
         }
 
         if (ok != 1) {
-            ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(02266)
                           "Access to %s denied for %s "
                           "(requirement expression not fulfilled)",
-                          r->filename, r->connection->remote_ip);
+                          r->filename, r->useragent_ip);
 
-            ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(02228)
                           "Failed expression: %s", req->cpExpr);
 
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02229)
                           "access to %s failed, reason: %s",
                           r->filename,
                           "SSL requirement expression not fulfilled");
@@ -996,7 +1002,7 @@ int ssl_hook_UserCheck(request_rec *r)
             password = auth_line;
 
             if ((username[0] == '/') && strEQ(password, "password")) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02035)
                     "Encountered FakeBasicAuth spoof: %s", username);
                 return HTTP_FORBIDDEN;
             }
@@ -1021,7 +1027,7 @@ int ssl_hook_UserCheck(request_rec *r)
         X509_NAME *name = X509_get_subject_name(sslconn->client_cert);
         char *cp = X509_NAME_oneline(name, NULL, 0);
         sslconn->client_dn = apr_pstrdup(r->connection->pool, cp);
-        modssl_free(cp);
+        OPENSSL_free(cp);
     }
 
     clientdn = (char *)sslconn->client_dn;
@@ -1044,7 +1050,7 @@ int ssl_hook_UserCheck(request_rec *r)
                             NULL);
     apr_table_setn(r->headers_in, "Authorization", auth_line);
 
-    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r,
+    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(02036)
                   "Faking HTTP Basic Auth header: \"Authorization: %s\"",
                   auth_line);
 
@@ -1190,7 +1196,7 @@ int ssl_hook_Fixup(request_rec *r)
 
 
 #ifdef SSL_get_secure_renegotiation_support
-    apr_table_setn(r->notes, "ssl-secure-reneg", 
+    apr_table_setn(r->notes, "ssl-secure-reneg",
                    SSL_get_secure_renegotiation_support(ssl) ? "1" : "0");
 #endif
 
@@ -1391,12 +1397,12 @@ EC_KEY *ssl_callback_TmpECDH(SSL *ssl, int export, int keylen)
         ecdh = EC_KEY_new();
         if (ecdh != NULL) {
             /* ecdh->group = EC_GROUP_new_by_nid(NID_secp160r2); */
-            EC_KEY_set_group(ecdh, 
+            EC_KEY_set_group(ecdh,
               EC_GROUP_new_by_curve_name(NID_X9_62_prime256v1));
         }
         init = 1;
     }
-    
+
     return ecdh;
 }
 #endif
@@ -1428,9 +1434,12 @@ int ssl_callback_SSLVerify(int ok, X509_STORE_CTX *ctx)
      * Log verification information
      */
     ssl_log_cxerror(SSLLOG_MARK, APLOG_DEBUG, 0, conn,
-                    X509_STORE_CTX_get_current_cert(ctx),
-                    "Certificate Verification, depth %d",
-                    errdepth);
+                    X509_STORE_CTX_get_current_cert(ctx), APLOGNO(02275)
+                    "Certificate Verification, depth %d, "
+                    "CRL checking mode: %s", errdepth,
+                    mctx->crl_check_mode == SSL_CRLCHECK_CHAIN ?
+                    "chain" : (mctx->crl_check_mode == SSL_CRLCHECK_LEAF ?
+                               "leaf" : "none"));
 
     /*
      * Check for optionally acceptable non-verifiable issuer situation
@@ -1454,7 +1463,7 @@ int ssl_callback_SSLVerify(int ok, X509_STORE_CTX *ctx)
     if (ssl_verify_error_is_optional(errnum) &&
         (verify == SSL_CVERIFY_OPTIONAL_NO_CA))
     {
-        ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, conn,
+        ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, conn, APLOGNO(02037)
                       "Certificate Verification: Verifiable Issuer is "
                       "configured as optional, therefore we're accepting "
                       "the certificate");
@@ -1464,72 +1473,59 @@ int ssl_callback_SSLVerify(int ok, X509_STORE_CTX *ctx)
     }
 
     /*
-     * Perform OCSP/CRL-based revocation checks
+     * Expired certificates vs. "expired" CRLs: by default, OpenSSL
+     * turns X509_V_ERR_CRL_HAS_EXPIRED into a "certificate_expired(45)"
+     * SSL alert, but that's not really the message we should convey to the
+     * peer (at the very least, it's confusing, and in many cases, it's also
+     * inaccurate, as the certificate itself may very well not have expired
+     * yet). We set the X509_STORE_CTX error to something which OpenSSL's
+     * s3_both.c:ssl_verify_alarm_type() maps to SSL_AD_CERTIFICATE_UNKNOWN,
+     * i.e. the peer will receive a "certificate_unknown(46)" alert.
+     * We do not touch errnum, though, so that later on we will still log
+     * the "real" error, as returned by OpenSSL.
      */
-    if (ok) {
-        if (!(ok = ssl_callback_SSLVerify_CRL(ok, ctx, conn))) {
-            errnum = X509_STORE_CTX_get_error(ctx);
-        }
-        
-#ifdef HAVE_OCSP
+    if (!ok && errnum == X509_V_ERR_CRL_HAS_EXPIRED) {
+        X509_STORE_CTX_set_error(ctx, -1);
+    }
+
+#ifndef OPENSSL_NO_OCSP
+    /*
+     * Perform OCSP-based revocation checks
+     */
+    if (ok && sc->server->ocsp_enabled) {
         /* If there was an optional verification error, it's not
          * possible to perform OCSP validation since the issuer may be
          * missing/untrusted.  Fail in that case. */
-        if (ok && ssl_verify_error_is_optional(errnum)
-            && sc->server->ocsp_enabled) {
+        if (ssl_verify_error_is_optional(errnum)) {
             X509_STORE_CTX_set_error(ctx, X509_V_ERR_APPLICATION_VERIFICATION);
             errnum = X509_V_ERR_APPLICATION_VERIFICATION;
-            ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, conn,
+            ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, conn, APLOGNO(02038)
                           "cannot perform OCSP validation for cert "
                           "if issuer has not been verified "
                           "(optional_no_ca configured)");
             ok = FALSE;
-        }
-
-        if (ok && sc->server->ocsp_enabled) {
+        } else {
             ok = modssl_verify_ocsp(ctx, sc, s, conn, conn->pool);
             if (!ok) {
                 errnum = X509_STORE_CTX_get_error(ctx);
             }
         }
-#endif
     }
+#endif
 
     /*
      * If we already know it's not ok, log the real reason
      */
     if (!ok) {
-        ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, conn,
-                      "Certificate Verification: Error (%d): %s",
-                      errnum, X509_verify_cert_error_string(errnum));
         if (APLOGcinfo(conn)) {
-            X509 *cert = X509_STORE_CTX_get_current_cert(ctx);
-            BIO *bio = BIO_new(BIO_s_mem());
-            char buff[512]; /* should be plenty */
-            int n;
-
-            if (bio) {
-                BIO_puts(bio, "Failed certificate: subject: '");
-                X509_NAME_print_ex(bio, X509_get_subject_name(cert), 0,
-                                   XN_FLAG_ONELINE);
-
-                BIO_puts(bio, "', issuer: '");
-                X509_NAME_print_ex(bio, X509_get_issuer_name(cert), 0,
-                                XN_FLAG_ONELINE);
-
-                BIO_puts(bio, "', notbefore: ");
-                ASN1_UTCTIME_print(bio, X509_get_notBefore(cert));
-
-                BIO_puts(bio, ", notafter: ");
-                ASN1_UTCTIME_print(bio, X509_get_notAfter(cert));
-
-                n = BIO_read(bio, buff, sizeof(buff) - 1);
-                BIO_free(bio);
-                if (n > 0) {
-                    buff[n] = '\0';
-                    ap_log_cerror(APLOG_MARK, APLOG_INFO, 0, conn, "%s", buff);
-                }
-            }
+            ssl_log_cxerror(SSLLOG_MARK, APLOG_INFO, 0, conn,
+                            X509_STORE_CTX_get_current_cert(ctx), APLOGNO(02276)
+                            "Certificate Verification: Error (%d): %s",
+                            errnum, X509_verify_cert_error_string(errnum));
+        } else {
+            ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, conn, APLOGNO(02039)
+                          "Certificate Verification: Error (%d): %s",
+                          errnum, X509_verify_cert_error_string(errnum));
         }
 
         if (sslconn->client_cert) {
@@ -1551,7 +1547,7 @@ int ssl_callback_SSLVerify(int ok, X509_STORE_CTX *ctx)
     }
 
     if (errdepth > depth) {
-        ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, conn,
+        ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, conn, APLOGNO(02040)
                       "Certificate Verification: Certificate Chain too long "
                       "(chain has %d certificates, but maximum allowed are "
                       "only %d)",
@@ -1569,220 +1565,16 @@ int ssl_callback_SSLVerify(int ok, X509_STORE_CTX *ctx)
     return ok;
 }
 
-int ssl_callback_SSLVerify_CRL(int ok, X509_STORE_CTX *ctx, conn_rec *c)
-{
-    SSL *ssl = X509_STORE_CTX_get_ex_data(ctx,
-                                          SSL_get_ex_data_X509_STORE_CTX_idx());
-    request_rec *r      = (request_rec *)SSL_get_app_data2(ssl);
-    server_rec *s       = r ? r->server : mySrvFromConn(c);
-    SSLSrvConfigRec *sc = mySrvConfig(s);
-    SSLConnRec *sslconn = myConnConfig(c);
-    modssl_ctx_t *mctx  = myCtxConfig(sslconn, sc);
-    X509_OBJECT obj;
-    X509_NAME *subject, *issuer;
-    X509 *cert;
-    X509_CRL *crl;
-    EVP_PKEY *pubkey;
-    int i, n, rc;
-
-    /*
-     * Unless a revocation store for CRLs was created we
-     * cannot do any CRL-based verification, of course.
-     */
-    if (!mctx->crl) {
-        return ok;
-    }
-
-    /*
-     * Determine certificate ingredients in advance
-     */
-    cert    = X509_STORE_CTX_get_current_cert(ctx);
-    subject = X509_get_subject_name(cert);
-    issuer  = X509_get_issuer_name(cert);
-
-    /*
-     * OpenSSL provides the general mechanism to deal with CRLs but does not
-     * use them automatically when verifying certificates, so we do it
-     * explicitly here. We will check the CRL for the currently checked
-     * certificate, if there is such a CRL in the store.
-     *
-     * We come through this procedure for each certificate in the certificate
-     * chain, starting with the root-CA's certificate. At each step we've to
-     * both verify the signature on the CRL (to make sure it's a valid CRL)
-     * and its revocation list (to make sure the current certificate isn't
-     * revoked).  But because to check the signature on the CRL we need the
-     * public key of the issuing CA certificate (which was already processed
-     * one round before), we've a little problem. But we can both solve it and
-     * at the same time optimize the processing by using the following
-     * verification scheme (idea and code snippets borrowed from the GLOBUS
-     * project):
-     *
-     * 1. We'll check the signature of a CRL in each step when we find a CRL
-     *    through the _subject_ name of the current certificate. This CRL
-     *    itself will be needed the first time in the next round, of course.
-     *    But we do the signature processing one round before this where the
-     *    public key of the CA is available.
-     *
-     * 2. We'll check the revocation list of a CRL in each step when
-     *    we find a CRL through the _issuer_ name of the current certificate.
-     *    This CRLs signature was then already verified one round before.
-     *
-     * This verification scheme allows a CA to revoke its own certificate as
-     * well, of course.
-     */
-
-    /*
-     * Try to retrieve a CRL corresponding to the _subject_ of
-     * the current certificate in order to verify its integrity.
-     */
-    memset((char *)&obj, 0, sizeof(obj));
-    rc = SSL_X509_STORE_lookup(mctx->crl,
-                               X509_LU_CRL, subject, &obj);
-    crl = obj.data.crl;
-
-    if ((rc > 0) && crl) {
-        /*
-         * Log information about CRL
-         * (A little bit complicated because of ASN.1 and BIOs...)
-         */
-        if (APLOGtrace1(s)) {
-            char buff[512]; /* should be plenty */
-            BIO *bio = BIO_new(BIO_s_mem());
-
-            BIO_printf(bio, "CA CRL: Issuer: ");
-            X509_NAME_print(bio, issuer, 0);
-
-            BIO_printf(bio, ", lastUpdate: ");
-            ASN1_UTCTIME_print(bio, X509_CRL_get_lastUpdate(crl));
-
-            BIO_printf(bio, ", nextUpdate: ");
-            ASN1_UTCTIME_print(bio, X509_CRL_get_nextUpdate(crl));
-
-            n = BIO_read(bio, buff, sizeof(buff) - 1);
-            buff[n] = '\0';
-
-            BIO_free(bio);
-
-            ap_log_error(APLOG_MARK, APLOG_TRACE1, 0, s, "%s", buff);
-        }
-
-        /*
-         * Verify the signature on this CRL
-         */
-        pubkey = X509_get_pubkey(cert);
-        rc = X509_CRL_verify(crl, pubkey);
-#ifdef OPENSSL_VERSION_NUMBER
-        /* Only refcounted in OpenSSL */
-        if (pubkey)
-            EVP_PKEY_free(pubkey);
-#endif
-        if (rc <= 0) {
-            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
-                         "Invalid signature on CRL");
-
-            X509_STORE_CTX_set_error(ctx, X509_V_ERR_CRL_SIGNATURE_FAILURE);
-            X509_OBJECT_free_contents(&obj);
-            return FALSE;
-        }
-
-        /*
-         * Check date of CRL to make sure it's not expired
-         */
-        i = X509_cmp_current_time(X509_CRL_get_nextUpdate(crl));
-
-        if (i == 0) {
-            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
-                         "Found CRL has invalid nextUpdate field");
-
-            X509_STORE_CTX_set_error(ctx,
-                                     X509_V_ERR_ERROR_IN_CRL_NEXT_UPDATE_FIELD);
-            X509_OBJECT_free_contents(&obj);
-
-            return FALSE;
-        }
-
-        if (i < 0) {
-            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
-                         "Found CRL is expired - "
-                         "revoking all certificates until you get updated CRL");
-
-            X509_STORE_CTX_set_error(ctx, X509_V_ERR_CRL_HAS_EXPIRED);
-            X509_OBJECT_free_contents(&obj);
-
-            return FALSE;
-        }
-
-        X509_OBJECT_free_contents(&obj);
-    }
-
-    /*
-     * Try to retrieve a CRL corresponding to the _issuer_ of
-     * the current certificate in order to check for revocation.
-     */
-    memset((char *)&obj, 0, sizeof(obj));
-    rc = SSL_X509_STORE_lookup(mctx->crl,
-                               X509_LU_CRL, issuer, &obj);
-
-    crl = obj.data.crl;
-    if ((rc > 0) && crl) {
-        /*
-         * Check if the current certificate is revoked by this CRL
-         */
-        n = sk_X509_REVOKED_num(X509_CRL_get_REVOKED(crl));
-
-        for (i = 0; i < n; i++) {
-            X509_REVOKED *revoked =
-                sk_X509_REVOKED_value(X509_CRL_get_REVOKED(crl), i);
-
-            ASN1_INTEGER *sn = X509_REVOKED_get_serialNumber(revoked);
-
-            if (!ASN1_INTEGER_cmp(sn, X509_get_serialNumber(cert))) {
-                if (APLOGdebug(s)) {
-                    char *cp = X509_NAME_oneline(issuer, NULL, 0);
-                    long serial = ASN1_INTEGER_get(sn);
-
-                    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s,
-                                 "Certificate with serial %ld (0x%lX) "
-                                 "revoked per CRL from issuer %s",
-                                 serial, serial, cp);
-                    modssl_free(cp);
-                }
-
-                X509_STORE_CTX_set_error(ctx, X509_V_ERR_CERT_REVOKED);
-                X509_OBJECT_free_contents(&obj);
-
-                return FALSE;
-            }
-        }
-
-        X509_OBJECT_free_contents(&obj);
-    }
-
-    return ok;
-}
-
 #define SSLPROXY_CERT_CB_LOG_FMT \
    "Proxy client certificate callback: (%s) "
 
-static void modssl_proxy_info_log(server_rec *s,
+static void modssl_proxy_info_log(conn_rec *c,
                                   X509_INFO *info,
                                   const char *msg)
 {
-    SSLSrvConfigRec *sc = mySrvConfig(s);
-    char name_buf[256];
-    X509_NAME *name;
-    char *dn;
-
-    if (!APLOGdebug(s)) {
-        return;
-    }
-
-    name = X509_get_subject_name(info->x509);
-    dn = X509_NAME_oneline(name, name_buf, sizeof(name_buf));
-
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s,
-                 SSLPROXY_CERT_CB_LOG_FMT "%s, sending %s",
-                 sc->vhost_id, msg, dn ? dn : "-uknown-");
+    ssl_log_cxerror(SSLLOG_MARK, APLOG_DEBUG, 0, c, info->x509, APLOGNO(02277)
+                    SSLPROXY_CERT_CB_LOG_FMT "%s, sending",
+                    (mySrvConfigFromConn(c))->vhost_id, msg);
 }
 
 /*
@@ -1792,27 +1584,30 @@ static void modssl_proxy_info_log(server_rec *s,
  */
 #define modssl_set_cert_info(info, cert, pkey) \
     *cert = info->x509; \
-    X509_reference_inc(*cert); \
+    CRYPTO_add(&(*cert)->references, +1, CRYPTO_LOCK_X509); \
     *pkey = info->x_pkey->dec_pkey; \
-    EVP_PKEY_reference_inc(*pkey)
+    CRYPTO_add(&(*pkey)->references, +1, CRYPTO_LOCK_X509_PKEY)
 
-int ssl_callback_proxy_cert(SSL *ssl, MODSSL_CLIENT_CERT_CB_ARG_TYPE **x509, EVP_PKEY **pkey)
+int ssl_callback_proxy_cert(SSL *ssl, X509 **x509, EVP_PKEY **pkey)
 {
     conn_rec *c = (conn_rec *)SSL_get_app_data(ssl);
     server_rec *s = mySrvFromConn(c);
     SSLSrvConfigRec *sc = mySrvConfig(s);
-    X509_NAME *ca_name, *issuer;
+    X509_NAME *ca_name, *issuer, *ca_issuer;
     X509_INFO *info;
+    X509 *ca_cert;
     STACK_OF(X509_NAME) *ca_list;
     STACK_OF(X509_INFO) *certs = sc->proxy->pkp->certs;
-    int i, j;
+    STACK_OF(X509) *ca_certs;
+    STACK_OF(X509) **ca_cert_chains;
+    int i, j, k;
 
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s,
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s, APLOGNO(02267)
                  SSLPROXY_CERT_CB_LOG_FMT "entered",
                  sc->vhost_id);
 
     if (!certs || (sk_X509_INFO_num(certs) <= 0)) {
-        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, APLOGNO(02268)
                      SSLPROXY_CERT_CB_LOG_FMT
                      "downstream server wanted client certificate "
                      "but none are configured", sc->vhost_id);
@@ -1828,13 +1623,14 @@ int ssl_callback_proxy_cert(SSL *ssl, MODSSL_CLIENT_CERT_CB_ARG_TYPE **x509, EVP
          */
         info = sk_X509_INFO_value(certs, 0);
 
-        modssl_proxy_info_log(s, info, "no acceptable CA list");
+        modssl_proxy_info_log(c, info, APLOGNO(02278) "no acceptable CA list");
 
         modssl_set_cert_info(info, x509, pkey);
 
         return TRUE;
     }
 
+    ca_cert_chains = sc->proxy->pkp->ca_certs;
     for (i = 0; i < sk_X509_NAME_num(ca_list); i++) {
         ca_name = sk_X509_NAME_value(ca_list, i);
 
@@ -1842,17 +1638,40 @@ int ssl_callback_proxy_cert(SSL *ssl, MODSSL_CLIENT_CERT_CB_ARG_TYPE **x509, EVP
             info = sk_X509_INFO_value(certs, j);
             issuer = X509_get_issuer_name(info->x509);
 
+            /* Search certs (by issuer name) one by one*/
             if (X509_NAME_cmp(issuer, ca_name) == 0) {
-                modssl_proxy_info_log(s, info, "found acceptable cert");
+                modssl_proxy_info_log(c, info, APLOGNO(02279)
+                                      "found acceptable cert");
 
                 modssl_set_cert_info(info, x509, pkey);
 
                 return TRUE;
             }
-        }
+
+            if (ca_cert_chains) {
+                /*
+                 * Failed to find direct issuer - search intermediates
+                 * (by issuer name), if provided.
+                 */
+                ca_certs = ca_cert_chains[j];
+                for (k = 0; k < sk_X509_num(ca_certs); k++) {
+                    ca_cert = sk_X509_value(ca_certs, k);
+                    ca_issuer = X509_get_issuer_name(ca_cert);
+
+                    if(X509_NAME_cmp(ca_issuer, ca_name) == 0 ) {
+                        modssl_proxy_info_log(c, info, APLOGNO(02280)
+                                              "found acceptable cert by intermediate CA");
+
+                        modssl_set_cert_info(info, x509, pkey);
+
+                        return TRUE;
+                    }
+                } /* end loop through chained certs */
+            }
+        } /* end loop through available certs */
     }
 
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s,
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s, APLOGNO(02269)
                  SSLPROXY_CERT_CB_LOG_FMT
                  "no client certificate found!?", sc->vhost_id);
 
@@ -1914,11 +1733,15 @@ int ssl_callback_NewSessionCacheEntry(SSL *ssl, SSL_SESSION *session)
      * Store the SSL_SESSION in the inter-process cache with the
      * same expire time, so it expires automatically there, too.
      */
-    id = SSL_SESSION_get_session_id(session);
-    idlen = SSL_SESSION_get_session_id_length(session);
+#ifdef OPENSSL_NO_SSL_INTERN
+    id = (unsigned char *)SSL_SESSION_get_id(session, &idlen);
+#else
+    id = session->session_id;
+    idlen = session->session_id_length;
+#endif
 
     rc = ssl_scache_store(s, id, idlen,
-                          apr_time_from_sec(modssl_session_get_time(session)
+                          apr_time_from_sec(SSL_SESSION_get_time(session)
                                           + timeout),
                           session, conn->pool);
 
@@ -1995,8 +1818,12 @@ void ssl_callback_DelSessionCacheEntry(SSL_CTX *ctx,
     /*
      * Remove the SSL_SESSION from the inter-process cache
      */
-    id = SSL_SESSION_get_session_id(session);
-    idlen = SSL_SESSION_get_session_id_length(session);
+#ifdef OPENSSL_NO_SSL_INTERN
+    id = (unsigned char *)SSL_SESSION_get_id(session, &idlen);
+#else
+    id = session->session_id;
+    idlen = session->session_id_length;
+#endif
 
     /* TODO: Do we need a temp pool here, or are we always shutting down? */
     ssl_scache_remove(s, id, idlen, sc->mc->pPool);
@@ -2008,7 +1835,7 @@ void ssl_callback_DelSessionCacheEntry(SSL_CTX *ctx,
 }
 
 /* Dump debugginfo trace to the log file. */
-static void log_tracing_state(MODSSL_INFO_CB_ARG_TYPE ssl, conn_rec *c, 
+static void log_tracing_state(const SSL *ssl, conn_rec *c,
                               server_rec *s, int where, int rc)
 {
     /*
@@ -2064,10 +1891,8 @@ static void log_tracing_state(MODSSL_INFO_CB_ARG_TYPE ssl, conn_rec *c,
      * right after a finished handshake.
      */
     if (where & SSL_CB_HANDSHAKE_DONE) {
-        ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, c,
-                      "Connection: Client IP: %s, Protocol: %s, "
-                      "Cipher: %s (%s/%s bits)",
-                      ssl_var_lookup(NULL, s, c, NULL, "REMOTE_ADDR"),
+        ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, c, APLOGNO(02041)
+                      "Protocol: %s, Cipher: %s (%s/%s bits)",
                       ssl_var_lookup(NULL, s, c, NULL, "SSL_PROTOCOL"),
                       ssl_var_lookup(NULL, s, c, NULL, "SSL_CIPHER"),
                       ssl_var_lookup(NULL, s, c, NULL, "SSL_CIPHER_USEKEYSIZE"),
@@ -2081,7 +1906,7 @@ static void log_tracing_state(MODSSL_INFO_CB_ARG_TYPE ssl, conn_rec *c,
  * client-initiated renegotiations, and for dumping everything to the
  * log.
  */
-void ssl_callback_Info(MODSSL_INFO_CB_ARG_TYPE ssl, int where, int rc)
+void ssl_callback_Info(const SSL *ssl, int where, int rc)
 {
     conn_rec *c;
     server_rec *s;
@@ -2101,11 +1926,11 @@ void ssl_callback_Info(MODSSL_INFO_CB_ARG_TYPE ssl, int where, int rc)
      * read. */
     if ((where & SSL_CB_ACCEPT_LOOP) && scr->reneg_state == RENEG_REJECT) {
         int state = SSL_get_state((SSL *)ssl);
-        
-        if (state == SSL3_ST_SR_CLNT_HELLO_A 
+
+        if (state == SSL3_ST_SR_CLNT_HELLO_A
             || state == SSL23_ST_SR_CLNT_HELLO_A) {
             scr->reneg_state = RENEG_ABORT;
-            ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, c,
+            ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, c, APLOGNO(02042)
                           "rejecting client initiated renegotiation");
         }
     }
@@ -2136,13 +1961,13 @@ int ssl_callback_ServerNameIndication(SSL *ssl, int *al, modssl_ctx_t *mctx)
         if (c) {
             if (ap_vhost_iterate_given_conn(c, ssl_find_vhost,
                                             (void *)servername)) {
-                ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, c,
+                ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, c, APLOGNO(02043)
                               "SSL virtual host for servername %s found",
                               servername);
                 return SSL_TLSEXT_ERR_OK;
             }
             else {
-                ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, c,
+                ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, c, APLOGNO(02044)
                               "No matching SSL virtual host for servername "
                               "%s found (using default/first virtual host)",
                               servername);
@@ -2159,7 +1984,7 @@ int ssl_callback_ServerNameIndication(SSL *ssl, int *al, modssl_ctx_t *mctx)
  * or one of the ServerAliases matches the supplied name (to be used
  * with ap_vhost_iterate_given_conn())
  */
-static int ssl_find_vhost(void *servername, conn_rec *c, server_rec *s) 
+static int ssl_find_vhost(void *servername, conn_rec *c, server_rec *s)
 {
     SSLSrvConfigRec *sc;
     SSL *ssl;
@@ -2173,7 +1998,7 @@ static int ssl_find_vhost(void *servername, conn_rec *c, server_rec *s)
         found = TRUE;
     }
 
-    /* 
+    /*
      * if not matched yet, check ServerAlias entries
      * (adapted from vhost.c:matches_aliases())
      */
@@ -2212,13 +2037,14 @@ static int ssl_find_vhost(void *servername, conn_rec *c, server_rec *s)
     sslcon = myConnConfig(c);
     if (found && (ssl = sslcon->ssl) &&
         (sc = mySrvConfig(s))) {
+        SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
         SSL_set_SSL_CTX(ssl, sc->server->ssl_ctx);
         /*
          * SSL_set_SSL_CTX() only deals with the server cert,
          * so we need to duplicate a few additional settings
          * from the ctx by hand
          */
-        SSL_set_options(ssl, SSL_CTX_get_options(ssl->ctx));
+        SSL_set_options(ssl, SSL_CTX_get_options(ctx));
         if ((SSL_get_verify_mode(ssl) == SSL_VERIFY_NONE) ||
             (SSL_num_renegotiations(ssl) == 0)) {
            /*
@@ -2228,8 +2054,25 @@ static int ssl_find_vhost(void *servername, conn_rec *c, server_rec *s)
             * Otherwise, we would possibly reset a per-directory
             * configuration which was put into effect by ssl_hook_Access.
             */
-            SSL_set_verify(ssl, SSL_CTX_get_verify_mode(ssl->ctx),
-                           SSL_CTX_get_verify_callback(ssl->ctx));
+            SSL_set_verify(ssl, SSL_CTX_get_verify_mode(ctx),
+                           SSL_CTX_get_verify_callback(ctx));
+        }
+
+        /*
+         * Adjust the session id context. ssl_init_ssl_connection()
+         * always picks the configuration of the first vhost when
+         * calling SSL_new(), but we want to tie the session to the
+         * vhost we have just switched to. Again, we have to make sure
+         * that we're not overwriting a session id context which was
+         * possibly set in ssl_hook_Access(), before triggering
+         * a renegotation.
+         */
+        if (SSL_num_renegotiations(ssl) == 0) {
+            unsigned char *sid_ctx =
+                (unsigned char *)ap_md5_binary(c->pool,
+                                               (unsigned char *)sc->vhost_id,
+                                               sc->vhost_id_len);
+            SSL_set_session_id_context(ssl, sid_ctx, APR_MD5_DIGESTSIZE*2);
         }
 
         /*
@@ -2254,5 +2097,75 @@ static int ssl_find_vhost(void *servername, conn_rec *c, server_rec *s)
     }
 
     return 0;
+}
+#endif
+
+#ifdef HAVE_TLS_SESSION_TICKETS
+/*
+ * This callback function is executed when OpenSSL needs a key for encrypting/
+ * decrypting a TLS session ticket (RFC 5077) and a ticket key file has been
+ * configured through SSLSessionTicketKeyFile.
+ */
+int ssl_callback_SessionTicket(SSL *ssl,
+                               unsigned char *keyname,
+                               unsigned char *iv,
+                               EVP_CIPHER_CTX *cipher_ctx,
+                               HMAC_CTX *hctx,
+                               int mode)
+{
+    conn_rec *c = (conn_rec *)SSL_get_app_data(ssl);
+    server_rec *s = mySrvFromConn(c);
+    SSLSrvConfigRec *sc = mySrvConfig(s);
+    SSLConnRec *sslconn = myConnConfig(c);
+    modssl_ctx_t *mctx = myCtxConfig(sslconn, sc);
+    modssl_ticket_key_t *ticket_key = mctx->ticket_key;
+
+    if (mode == 1) {
+        /* 
+         * OpenSSL is asking for a key for encrypting a ticket,
+         * see s3_srvr.c:ssl3_send_newsession_ticket()
+         */
+
+        if (ticket_key == NULL) {
+            /* should never happen, but better safe than sorry */
+            return -1;
+        }
+
+        memcpy(keyname, ticket_key->key_name, 16);
+        RAND_pseudo_bytes(iv, EVP_MAX_IV_LENGTH);
+        EVP_EncryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL,
+                           ticket_key->aes_key, iv);
+        HMAC_Init_ex(hctx, ticket_key->hmac_secret, 16, tlsext_tick_md(), NULL);
+
+        ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, c, APLOGNO(02289)
+                      "TLS session ticket key for %s successfully set, "
+                      "creating new session ticket", sc->vhost_id);
+
+        return 0;
+    }
+    else if (mode == 0) {
+        /* 
+         * OpenSSL is asking for the decryption key,
+         * see t1_lib.c:tls_decrypt_ticket()
+         */
+
+        /* check key name */
+        if (ticket_key == NULL || memcmp(keyname, ticket_key->key_name, 16)) {
+            return 0;
+        }
+
+        EVP_DecryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL,
+                           ticket_key->aes_key, iv);
+        HMAC_Init_ex(hctx, ticket_key->hmac_secret, 16, tlsext_tick_md(), NULL);
+
+        ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, c, APLOGNO(02290)
+                      "TLS session ticket key for %s successfully set, "
+                      "decrypting existing session ticket", sc->vhost_id);
+
+        return 1;
+    }
+
+    /* OpenSSL is not expected to call us with modes other than 1 or 0 */
+    return -1;
 }
 #endif

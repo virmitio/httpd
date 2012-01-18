@@ -44,13 +44,13 @@ static int proxy_fdpass_canon(request_rec *r, char *url)
     else {
         return DECLINED;
     }
-    
+
     path = ap_server_root_relative(r->pool, url);
 
     r->filename = apr_pstrcat(r->pool, "proxy:fd://", path, NULL);
 
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
-                  "proxy: FD: set r->filename to %s", r->filename);
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01151)
+                  "set r->filename to %s", r->filename);
     return OK;
 }
 
@@ -89,7 +89,7 @@ static apr_status_t socket_connect_un(apr_socket_t *sock,
             return rv;
         }
     }
-    
+
     if (rv == -1 && errno != EISCONN) {
         return errno;
     }
@@ -137,7 +137,7 @@ static apr_status_t send_socket(apr_pool_t *p,
     struct cmsghdr *cmsg;
     struct iovec iov;
     char b = '\0';
-    
+
     rv = apr_os_sock_get(&rawsock, outbound);
     if (rv != APR_SUCCESS) {
         return rv;
@@ -147,7 +147,7 @@ static apr_status_t send_socket(apr_pool_t *p,
     if (rv != APR_SUCCESS) {
         return rv;
     }
-    
+
     memset(&msg, 0, sizeof(msg));
 
     msg.msg_iov = &iov;
@@ -172,7 +172,7 @@ static apr_status_t send_socket(apr_pool_t *p,
         return errno;
     }
 
-    
+
     return APR_SUCCESS;
 }
 
@@ -195,9 +195,8 @@ static int proxy_fdpass_handler(request_rec *r, proxy_worker *worker,
     rv = get_socket_from_path(r->pool, url, &sock);
 
     if (rv != APR_SUCCESS) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
-                      "proxy: FD: Failed to connect to '%s'",
-                      url);
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01152)
+                      "Failed to connect to '%s'", url);
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -209,9 +208,9 @@ static int proxy_fdpass_handler(request_rec *r, proxy_worker *worker,
                                                        flush_method, "0");
 
         if (!flush) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
-                          "proxy: FD: Unable to find configured flush "
-                          "provider '%s'", flush_method);
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01153)
+                          "Unable to find configured flush provider '%s'",
+                          flush_method);
             return HTTP_INTERNAL_SERVER_ERROR;
         }
 
@@ -225,28 +224,27 @@ static int proxy_fdpass_handler(request_rec *r, proxy_worker *worker,
 
     rv = send_socket(r->pool, sock, clientsock);
     if (rv != APR_SUCCESS) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
-                      "proxy: FD: send_socket failed:");
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01154) "send_socket failed:");
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 
     {
         apr_socket_t *dummy;
-        /* Create a dummy unconnected socket, and set it as the one we were 
-         * connected to, so that when the core closes it, it doesn't close 
+        /* Create a dummy unconnected socket, and set it as the one we were
+         * connected to, so that when the core closes it, it doesn't close
          * the tcp connection to the client.
          */
         rv = apr_socket_create(&dummy, APR_INET, SOCK_STREAM, APR_PROTO_TCP,
                                r->connection->pool);
         if (rv != APR_SUCCESS) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
-                          "proxy: FD: failed to create dummy socket");
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01155)
+                          "failed to create dummy socket");
             return HTTP_INTERNAL_SERVER_ERROR;
         }
         ap_set_core_module_config(r->connection->conn_config, dummy);
     }
-    
-    
+
+
     return OK;
 }
 
@@ -260,14 +258,14 @@ static int standard_flush(request_rec *r)
 
     bb = apr_brigade_create(r->pool, r->connection->bucket_alloc);
     e = apr_bucket_flush_create(r->connection->bucket_alloc);
-    
+
     APR_BRIGADE_INSERT_TAIL(bb, e);
 
     status = ap_pass_brigade(r->output_filters, bb);
 
     if (status != OK) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, status, r,
-                      "proxy: FD: ap_pass_brigade failed:");
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, status, r, APLOGNO(01156)
+                      "ap_pass_brigade failed:");
         return status;
     }
 

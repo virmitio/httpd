@@ -31,14 +31,16 @@ APLOG_USE_MODULE(mpm_simple);
 
 static void simple_io_timeout_cb(simple_core_t * sc, void *baton)
 {
+/* Code disabled because it does nothing yet but causes a compiler warning */
+#if 0
     simple_conn_t *scon = (simple_conn_t *) baton;
     /* pqXXXXX: handle timeouts. */
     conn_rec *c = scon->c;
-    conn_state_t *cs = c->cs;
 
     cs = NULL;
+#endif
 
-    ap_log_error(APLOG_MARK, APLOG_WARNING, 0, ap_server_conf,
+    ap_log_error(APLOG_MARK, APLOG_WARNING, 0, ap_server_conf, APLOGNO(00247)
                  "io timeout hit (?)");
 }
 
@@ -47,7 +49,6 @@ static apr_status_t simple_io_process(simple_conn_t * scon)
     apr_status_t rv;
     simple_core_t *sc;
     conn_rec *c;
-    conn_state_t *cs;
 
     if (scon->c->clogging_input_filters && !scon->c->aborted) {
         /* Since we have an input filter which 'cloggs' the input stream,
@@ -55,28 +56,27 @@ static apr_status_t simple_io_process(simple_conn_t * scon)
          * like the Worker MPM does.
          */
         ap_run_process_connection(scon->c);
-        if (scon->c->cs->state != CONN_STATE_SUSPENDED) {
-            scon->c->cs->state = CONN_STATE_LINGER;
+        if (scon->cs.state != CONN_STATE_SUSPENDED) {
+            scon->cs.state = CONN_STATE_LINGER;
         }
     }
 
     sc = scon->sc;
     c = scon->c;
-    cs = c->cs;
 
     while (!c->aborted) {
 
-        if (cs->pfd.reqevents != 0) {
-            rv = apr_pollcb_remove(sc->pollcb, &cs->pfd);
+        if (scon->pfd.reqevents != 0) {
+            rv = apr_pollcb_remove(sc->pollcb, &scon->pfd);
             if (rv) {
-                ap_log_error(APLOG_MARK, APLOG_ERR, rv, ap_server_conf,
+                ap_log_error(APLOG_MARK, APLOG_ERR, rv, ap_server_conf, APLOGNO(00248)
                              "simple_io_process: apr_pollcb_remove failure");
                 /*AP_DEBUG_ASSERT(rv == APR_SUCCESS);*/
             }
-            cs->pfd.reqevents = 0;
+            scon->pfd.reqevents = 0;
         }
 
-        if (cs->state == CONN_STATE_READ_REQUEST_LINE) {
+        if (scon->cs.state == CONN_STATE_READ_REQUEST_LINE) {
             if (!c->aborted) {
                 ap_run_process_connection(c);
                 /* state will be updated upon return
@@ -85,11 +85,11 @@ static apr_status_t simple_io_process(simple_conn_t * scon)
                  */
             }
             else {
-                cs->state = CONN_STATE_LINGER;
+                scon->cs.state = CONN_STATE_LINGER;
             }
         }
 
-        if (cs->state == CONN_STATE_WRITE_COMPLETION) {
+        if (scon->cs.state == CONN_STATE_WRITE_COMPLETION) {
             ap_filter_t *output_filter = c->output_filters;
             while (output_filter->next != NULL) {
                 output_filter = output_filter->next;
@@ -99,9 +99,9 @@ static apr_status_t simple_io_process(simple_conn_t * scon)
                                                            NULL);
 
             if (rv != APR_SUCCESS) {
-                ap_log_error(APLOG_MARK, APLOG_WARNING, rv, ap_server_conf,
+                ap_log_error(APLOG_MARK, APLOG_WARNING, rv, ap_server_conf, APLOGNO(00249)
                              "network write failure in core output filter");
-                cs->state = CONN_STATE_LINGER;
+                scon->cs.state = CONN_STATE_LINGER;
             }
             else if (c->data_in_output_filters) {
                 /* Still in WRITE_COMPLETION_STATE:
@@ -117,36 +117,36 @@ static apr_status_t simple_io_process(simple_conn_t * scon)
                                       timeout : ap_server_conf->timeout,
                                       scon->pool);
 
-                cs->pfd.reqevents = APR_POLLOUT | APR_POLLHUP | APR_POLLERR;
+                scon->pfd.reqevents = APR_POLLOUT | APR_POLLHUP | APR_POLLERR;
 
-                rv = apr_pollcb_add(sc->pollcb, &cs->pfd);
+                rv = apr_pollcb_add(sc->pollcb, &scon->pfd);
 
                 if (rv != APR_SUCCESS) {
                     ap_log_error(APLOG_MARK, APLOG_WARNING, rv,
-                                 ap_server_conf,
+                                 ap_server_conf, APLOGNO(00250)
                                  "apr_pollcb_add: failed in write completion");
                     AP_DEBUG_ASSERT(rv == APR_SUCCESS);
                 }
                 return APR_SUCCESS;
             }
             else if (c->keepalive != AP_CONN_KEEPALIVE || c->aborted) {
-                c->cs->state = CONN_STATE_LINGER;
+                scon->cs.state = CONN_STATE_LINGER;
             }
             else if (c->data_in_input_filters) {
-                cs->state = CONN_STATE_READ_REQUEST_LINE;
+                scon->cs.state = CONN_STATE_READ_REQUEST_LINE;
             }
             else {
-                cs->state = CONN_STATE_CHECK_REQUEST_LINE_READABLE;
+                scon->cs.state = CONN_STATE_CHECK_REQUEST_LINE_READABLE;
             }
         }
 
-        if (cs->state == CONN_STATE_LINGER) {
+        if (scon->cs.state == CONN_STATE_LINGER) {
             ap_lingering_close(c);
             apr_pool_destroy(scon->pool);
             return APR_SUCCESS;
         }
 
-        if (cs->state == CONN_STATE_CHECK_REQUEST_LINE_READABLE) {
+        if (scon->cs.state == CONN_STATE_CHECK_REQUEST_LINE_READABLE) {
             simple_register_timer(scon->sc,
                                   simple_io_timeout_cb,
                                   scon,
@@ -155,12 +155,12 @@ static apr_status_t simple_io_process(simple_conn_t * scon)
                                   timeout : ap_server_conf->timeout,
                                   scon->pool);
 
-            cs->pfd.reqevents = APR_POLLIN;
+            scon->pfd.reqevents = APR_POLLIN;
 
-            rv = apr_pollcb_add(sc->pollcb, &cs->pfd);
+            rv = apr_pollcb_add(sc->pollcb, &scon->pfd);
 
             if (rv) {
-                ap_log_error(APLOG_MARK, APLOG_ERR, rv, ap_server_conf,
+                ap_log_error(APLOG_MARK, APLOG_ERR, rv, ap_server_conf, APLOGNO(00251)
                              "process_socket: apr_pollcb_add failure in read request line");
                 AP_DEBUG_ASSERT(rv == APR_SUCCESS);
             }
@@ -185,7 +185,7 @@ static void *simple_io_invoke(apr_thread_t * thread, void *baton)
     rv = simple_io_process(scon);
 
     if (rv) {
-        ap_log_error(APLOG_MARK, APLOG_DEBUG, rv, ap_server_conf,
+        ap_log_error(APLOG_MARK, APLOG_DEBUG, rv, ap_server_conf, APLOGNO(00252)
                      "simple_io_invoke: simple_io_process failed (?)");
     }
 
@@ -196,7 +196,6 @@ static void *simple_io_setup_conn(apr_thread_t * thread, void *baton)
 {
     apr_status_t rv;
     ap_sb_handle_t *sbh;
-    conn_state_t *cs;
     long conn_id = 0;
     simple_sb_t *sb;
     simple_conn_t *scon = (simple_conn_t *) baton;
@@ -208,37 +207,37 @@ static void *simple_io_setup_conn(apr_thread_t * thread, void *baton)
 
     scon->c = ap_run_create_connection(scon->pool, ap_server_conf, scon->sock,
                                        conn_id, sbh, scon->ba);
+    /* XXX: handle failure */
 
-    scon->c->cs = apr_pcalloc(scon->pool, sizeof(conn_state_t));
-    cs = scon->c->cs;
+    scon->c->cs = &scon->cs;
     sb = apr_pcalloc(scon->pool, sizeof(simple_sb_t));
 
     scon->c->current_thread = thread;
 
-    cs->pfd.p = scon->pool;
-    cs->pfd.desc_type = APR_POLL_SOCKET;
-    cs->pfd.desc.s = scon->sock;
-    cs->pfd.reqevents = APR_POLLIN;
+    scon->pfd.p = scon->pool;
+    scon->pfd.desc_type = APR_POLL_SOCKET;
+    scon->pfd.desc.s = scon->sock;
+    scon->pfd.reqevents = APR_POLLIN;
 
     sb->type = SIMPLE_PT_CORE_IO;
     sb->baton = scon;
-    cs->pfd.client_data = sb;
+    scon->pfd.client_data = sb;
 
     ap_update_vhost_given_ip(scon->c);
 
     rv = ap_run_pre_connection(scon->c, scon->sock);
     if (rv != OK && rv != DONE) {
-        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, ap_server_conf,
+        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, ap_server_conf, APLOGNO(00253)
                      "simple_io_setup_conn: connection aborted");
         scon->c->aborted = 1;
     }
 
-    scon->c->cs->state = CONN_STATE_READ_REQUEST_LINE;
+    scon->cs.state = CONN_STATE_READ_REQUEST_LINE;
 
     rv = simple_io_process(scon);
 
     if (rv) {
-        ap_log_error(APLOG_MARK, APLOG_DEBUG, rv, ap_server_conf,
+        ap_log_error(APLOG_MARK, APLOG_DEBUG, rv, ap_server_conf, APLOGNO(00254)
                      "simple_io_setup_conn: simple_io_process failed (?)");
     }
 
@@ -260,13 +259,13 @@ apr_status_t simple_io_accept(simple_core_t * sc, simple_sb_t * sb)
     rv = apr_socket_accept(&socket, lr->sd, ptrans);
     if (rv) {
         /* pqXXXXXX: unixd.c has _tons_ of custom handling on return values
-         * from accept, but it seems really crazy, it either worked, or didn't, 
-         * but taking this approach of swallowing the error it is possible we have a 
-         * fatal error on our listening socket, but we don't notice.  
-         * 
+         * from accept, but it seems really crazy, it either worked, or didn't,
+         * but taking this approach of swallowing the error it is possible we have a
+         * fatal error on our listening socket, but we don't notice.
+         *
          * Need to discuss this on dev@
          */
-        ap_log_error(APLOG_MARK, APLOG_CRIT, rv, NULL,
+        ap_log_error(APLOG_MARK, APLOG_CRIT, rv, NULL, APLOGNO(00255)
                      "simple_io_accept: apr_socket_accept failed");
         return APR_SUCCESS;
     }

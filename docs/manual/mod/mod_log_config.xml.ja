@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.ja.xsl"?>
-<!-- English Revision: 579425:1095948 (outdated) -->
+<!-- English Revision: 579425:1208753 (outdated) -->
 
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
@@ -316,25 +316,6 @@
 
     <note>このディレクティブは実験的なものですので、
     使用する際は注意してください。</note>
-</usage>
-</directivesynopsis>
-
-<directivesynopsis>
-<name>CookieLog</name>
-<description>クッキングのロギングのためのファイル名を設定する</description>
-<syntax>CookieLog <var>filename</var></syntax>
-<contextlist><context>server config</context><context>virtual host</context>
-</contextlist>
-<compatibility>このディレクティブは非推奨</compatibility>
-
-<usage>
-    <p><directive>CookieLog</directive>
-    ディレクティブはクッキーのロギングのためのファイル名を
-    設定します。filename は <directive
-    module="core">ServerRoot</directive>
-    からの相対パスです。このディレクティブは <code
-    >mod_cookies</code> との互換性のためだけに
-    存在し、使用は推奨されていません。</p>
 </usage>
 </directivesynopsis>
 

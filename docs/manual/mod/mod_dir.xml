@@ -43,7 +43,7 @@
     </ul>
     <p>The two functions are separated so that you can completely
     remove (or replace) automatic index generation should you want
-    to.</p> 
+    to.</p>
 
     <p>A "trailing slash" redirect is issued when the server
     receives a request for a URL
@@ -80,8 +80,8 @@ a directory</description>
       DirectoryIndex index.html
     </example>
 
-    <p>then a request for <code>http://myserver/docs/</code> would
-    return <code>http://myserver/docs/index.html</code> if it
+    <p>then a request for <code>http://example.com/docs/</code> would
+    return <code>http://example.com/docs/index.html</code> if it
     exists, or would list the directory if it did not.</p>
 
     <p>Note that the documents do not need to be relative to the
@@ -95,13 +95,45 @@ a directory</description>
     executed if neither <code>index.html</code> or <code>index.txt</code>
     existed in a directory.</p>
 
-    <p>A single argument of "disabled" prevents <module>mod_dir</module> from 
+    <p>A single argument of "disabled" prevents <module>mod_dir</module> from
     searching for an index.  An argument of "disabled" will be interpeted
     literally if it has any arguments before or after it, even if they are "disabled"
     as well.</p>
 
 </usage>
 </directivesynopsis>
+
+<directivesynopsis>
+<name>DirectoryIndexRedirect</name>
+<description>Configures an external redirect for directory indexes.
+</description>
+<syntax>DirectoryIndexRedirect on | off | permanent | temp | seeother |
+<var>3xx-code</var>
+</syntax>
+<default>DirectoryIndexRedirect off</default>
+<contextlist><context>server config</context><context>virtual host</context>
+<context>directory</context><context>.htaccess</context></contextlist>
+<override>Indexes</override>
+<compatibility>Available in version 2.3.14 and later</compatibility>
+
+<usage>
+    <p>By default, the <directive>DirectoryIndex</directive> is selected
+    and returned transparently to the client.  <directive
+    >DirectoryIndexRedirect</directive> causes an external redirect
+    to instead be issued.</p>
+
+    <example><title>Example</title>
+      DirectoryIndexRedirect on
+    </example>
+
+    <p>A request for <code>http://example.com/docs/</code> would
+    return a temporary redirect to <code
+    >http://example.com/docs/index.html</code>
+    if it exists.</p>
+
+</usage>
+</directivesynopsis>
+
 
 <directivesynopsis>
 <name>DirectorySlash</name>

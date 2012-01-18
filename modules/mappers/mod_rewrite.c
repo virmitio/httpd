@@ -189,6 +189,7 @@ static const char* really_last_key = "rewrite_really_last";
 #define OPTION_NONE                 1<<0
 #define OPTION_INHERIT              1<<1
 #define OPTION_INHERIT_BEFORE       1<<2
+#define OPTION_NOSLASH              1<<3
 
 #ifndef RAND_MAX
 #define RAND_MAX 32767
@@ -398,9 +399,6 @@ static cache *cachep;
 /* whether proxy module is available or not */
 static int proxy_available;
 
-/* whether random seed can be reaped */
-static int rewrite_rand_init_done = 0;
-
 /* Locks/Mutexes */
 static apr_global_mutex_t *rewrite_mapr_lock_acquire = NULL;
 const char *rewritemap_mutex_type = "rewrite-map";
@@ -483,6 +481,8 @@ static void do_rewritelog(request_rec *r, int level, char *perdir,
 /* return number of chars of the scheme (incl. '://')
  * if the URI is absolute (includes a scheme etc.)
  * otherwise 0.
+ * If supportqs is not NULL, we return a whether or not
+ * the scheme supports a query string or not.
  *
  * NOTE: If you add new schemes here, please have a
  *       look at escape_absolute_uri and splitout_queryargs.
@@ -493,8 +493,12 @@ static void do_rewritelog(request_rec *r, int level, char *perdir,
  *      appropriate escape callbacks to allow other modules
  *      to extend mod_rewrite at runtime.
  */
-static unsigned is_absolute_uri(char *uri)
+static unsigned is_absolute_uri(char *uri, int *supportsqs)
 {
+    int dummy, *sqs;
+
+    sqs = (supportsqs ? supportsqs : &dummy);
+    *sqs = 0;
     /* fast exit */
     if (*uri == '/' || strlen(uri) <= 5) {
         return 0;
@@ -504,6 +508,7 @@ static unsigned is_absolute_uri(char *uri)
     case 'a':
     case 'A':
         if (!strncasecmp(uri, "jp://", 5)) {        /* ajp://    */
+          *sqs = 1;
           return 6;
         }
         break;
@@ -511,6 +516,7 @@ static unsigned is_absolute_uri(char *uri)
     case 'b':
     case 'B':
         if (!strncasecmp(uri, "alancer://", 10)) {   /* balancer:// */
+          *sqs = 1;
           return 11;
         }
         break;
@@ -521,6 +527,7 @@ static unsigned is_absolute_uri(char *uri)
             return 6;
         }
         if (!strncasecmp(uri, "cgi://", 6)) {       /* fcgi://   */
+            *sqs = 1;
             return 7;
         }
         break;
@@ -535,9 +542,11 @@ static unsigned is_absolute_uri(char *uri)
     case 'h':
     case 'H':
         if (!strncasecmp(uri, "ttp://", 6)) {       /* http://   */
+            *sqs = 1;
             return 7;
         }
         else if (!strncasecmp(uri, "ttps://", 7)) { /* https://  */
+            /* *sqs = 1; */
             return 8;
         }
         break;
@@ -552,6 +561,7 @@ static unsigned is_absolute_uri(char *uri)
     case 'm':
     case 'M':
         if (!strncasecmp(uri, "ailto:", 6)) {       /* mailto:   */
+            *sqs = 1;
             return 7;
         }
         break;
@@ -569,6 +579,7 @@ static unsigned is_absolute_uri(char *uri)
     case 's':
     case 'S':
         if (!strncasecmp(uri, "cgi://", 6)) {       /* scgi://   */
+            *sqs = 1;
             return 7;
         }
         break;
@@ -694,15 +705,13 @@ static char *escape_absolute_uri(apr_pool_t *p, char *uri, unsigned scheme)
 static void splitout_queryargs(request_rec *r, int qsappend, int qsdiscard)
 {
     char *q;
+    int split;
 
-    /* don't touch, unless it's an http or mailto URL.
+    /* don't touch, unless it's a scheme for which a query string makes sense.
      * See RFC 1738 and RFC 2368.
      */
-    if (is_absolute_uri(r->filename)
-        && strncasecmp(r->filename, "ajp", 3)
-        && strncasecmp(r->filename, "balancer", 8)
-        && strncasecmp(r->filename, "http", 4)
-        && strncasecmp(r->filename, "mailto", 6)) {
+    if (is_absolute_uri(r->filename, &split)
+        && !split) {
         r->args = NULL; /* forget the query that's still flying around */
         return;
     }
@@ -812,7 +821,7 @@ static void fully_qualify_uri(request_rec *r)
     if (r->method_number == M_CONNECT) {
         return;
     }
-    else if (!is_absolute_uri(r->filename)) {
+    else if (!is_absolute_uri(r->filename, NULL)) {
         const char *thisserver;
         char *thisport;
         int port;
@@ -1087,18 +1096,7 @@ static char *select_random_value_part(request_rec *r, char *value)
     }
 
     if (n > 1) {
-        /* initialize random generator
-         *
-         * XXX: Probably this should be wrapped into a thread mutex,
-         * shouldn't it? Is it worth the effort?
-         */
-        if (!rewrite_rand_init_done) {
-            srand((unsigned)(getpid()));
-            rewrite_rand_init_done = 1;
-        }
-
-        /* select a random subvalue */
-        n = (int)(((double)(rand() % RAND_MAX) / RAND_MAX) * n + 1);
+        n = ap_random_pick(1, n);
 
         /* extract it from the whole string */
         while (--n && (value = ap_strchr(value, '|')) != NULL) {
@@ -1120,7 +1118,7 @@ static char *select_random_value_part(request_rec *r, char *value)
 static void rewrite_child_errfn(apr_pool_t *p, apr_status_t err,
                                 const char *desc)
 {
-    ap_log_error(APLOG_MARK, APLOG_ERR, err, NULL, "%s", desc);
+    ap_log_error(APLOG_MARK, APLOG_ERR, err, NULL, APLOGNO(00653) "%s", desc);
 }
 
 static apr_status_t rewritemap_program_child(apr_pool_t *p,
@@ -1196,7 +1194,7 @@ static apr_status_t run_rewritemap_programs(server_rec *s, apr_pool_t *p)
         rc = rewritemap_program_child(p, map->argv[0], map->argv,
                                       &fpout, &fpin);
         if (rc != APR_SUCCESS || fpin == NULL || fpout == NULL) {
-            ap_log_error(APLOG_MARK, APLOG_ERR, rc, s,
+            ap_log_error(APLOG_MARK, APLOG_ERR, rc, s, APLOGNO(00654)
                          "mod_rewrite: could not start RewriteMap "
                          "program %s", map->checkfile);
             return rc;
@@ -1227,7 +1225,7 @@ static char *lookup_map_txtfile(request_rec *r, const char *file, char *key)
     if ((rv = apr_file_open(&fp, file, APR_READ|APR_BUFFERED, APR_OS_DEFAULT,
                             r->pool)) != APR_SUCCESS)
     {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(00655)
                       "mod_rewrite: can't open text RewriteMap file %s", file);
         return NULL;
     }
@@ -1289,7 +1287,7 @@ static char *lookup_map_dbmfile(request_rec *r, const char *file,
     if ((rv = apr_dbm_open_ex(&dbmfp, dbmtype, file, APR_DBM_READONLY,
                               APR_OS_DEFAULT, r->pool)) != APR_SUCCESS)
     {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(00656)
                       "mod_rewrite: can't open DBM RewriteMap %s", file);
         return NULL;
     }
@@ -1325,7 +1323,7 @@ static char *lookup_map_dbd(request_rec *r, char *key, const char *label)
                           stmt, 0, key, NULL);
     if (rv != 0) {
         errmsg = apr_dbd_error(db->driver, db->handle, rv);
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00657)
                       "rewritemap: error %s querying for %s", errmsg, key);
         return NULL;
     }
@@ -1343,7 +1341,7 @@ static char *lookup_map_dbd(request_rec *r, char *key, const char *label)
     }
     if (rv != -1) {
         errmsg = apr_dbd_error(db->driver, db->handle, rv);
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00658)
                       "rewritemap: error %s looking up %s", errmsg, key);
     }
     switch (n) {
@@ -1393,7 +1391,7 @@ static char *lookup_map_program(request_rec *r, apr_file_t *fpin,
     if (rewrite_mapr_lock_acquire) {
         rv = apr_global_mutex_lock(rewrite_mapr_lock_acquire);
         if (rv != APR_SUCCESS) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(00659)
                           "apr_global_mutex_lock(rewrite_mapr_lock_acquire) "
                           "failed");
             return NULL; /* Maybe this should be fatal? */
@@ -1505,7 +1503,7 @@ static char *lookup_map_program(request_rec *r, apr_file_t *fpin,
     if (rewrite_mapr_lock_acquire) {
         rv = apr_global_mutex_unlock(rewrite_mapr_lock_acquire);
         if (rv != APR_SUCCESS) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(00660)
                           "apr_global_mutex_unlock(rewrite_mapr_lock_acquire) "
                           "failed");
             return NULL; /* Maybe this should be fatal? */
@@ -1548,7 +1546,7 @@ static char *lookup_map(request_rec *r, char *name, char *key)
     case MAPTYPE_TXT:
         rv = apr_stat(&st, s->checkfile, APR_FINFO_MIN, r->pool);
         if (rv != APR_SUCCESS) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(00661)
                           "mod_rewrite: can't access text RewriteMap file %s",
                           s->checkfile);
             return NULL;
@@ -1589,7 +1587,7 @@ static char *lookup_map(request_rec *r, char *name, char *key)
     case MAPTYPE_DBM:
         rv = apr_stat(&st, s->checkfile, APR_FINFO_MIN, r->pool);
         if (rv != APR_SUCCESS) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(00662)
                           "mod_rewrite: can't access DBM RewriteMap file %s",
                           s->checkfile);
         }
@@ -1598,7 +1596,7 @@ static char *lookup_map(request_rec *r, char *name, char *key)
 
             rv = apr_stat(&st2, s->checkfile2, APR_FINFO_MIN, r->pool);
             if (rv != APR_SUCCESS) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(00663)
                               "mod_rewrite: can't access DBM RewriteMap "
                               "file %s", s->checkfile2);
             }
@@ -1677,7 +1675,7 @@ static char *lookup_map(request_rec *r, char *name, char *key)
         rewritelog((r, 5, NULL, "cache lookup OK: map=%s[SQL] key=%s, val=%s",
                     name, key, value));
         return *value ? value : NULL;
-        
+
     /*
      * Program file map
      */
@@ -1863,7 +1861,7 @@ static char *lookup_variable(char *var, rewrite_ctx *ctx)
             else if (!strcmp(var, "IPV6")) {
                 int flag = FALSE;
 #if APR_HAVE_IPV6
-                apr_sockaddr_t *addr = r->connection->remote_addr;
+                apr_sockaddr_t *addr = r->useragent_addr;
                 flag = (addr->family == AF_INET6 &&
                         !IN6_IS_ADDR_V4MAPPED((struct in6_addr *)addr->ipaddr_ptr));
                 rewritelog((r, 1, ctx->perdir, "IPV6='%s'", flag ? "on" : "off"));
@@ -1963,13 +1961,13 @@ static char *lookup_variable(char *var, rewrite_ctx *ctx)
             switch (var[8]) {
             case 'A':
                 if (!strcmp(var, "SERVER_NAME")) {
-                    result = ap_get_server_name(r);
+                    result = ap_get_server_name_for_url(r);
                 }
                 break;
 
             case 'D':
                 if (*var == 'R' && !strcmp(var, "REMOTE_ADDR")) {
-                    result = r->connection->remote_ip;
+                    result = r->useragent_ip;
                 }
                 else if (!strcmp(var, "SERVER_ADDR")) {
                     result = r->connection->local_ip;
@@ -2008,7 +2006,7 @@ static char *lookup_variable(char *var, rewrite_ctx *ctx)
                                                 REMOTE_NAME, NULL);
                 }
                 else if (!strcmp(var, "REMOTE_PORT")) {
-                    return apr_itoa(r->pool, r->connection->remote_addr->port);
+                    return apr_itoa(r->pool, r->useragent_addr->port);
                 }
                 break;
 
@@ -2350,7 +2348,7 @@ static char *do_expand(char *input, rewrite_ctx *ctx, rewriterule_entry *entry)
                     current->len = span;
                     current->string = bri->source + bri->regmatch[n].rm_so;
                 }
-                
+
                 outlen += span;
             }
 
@@ -2765,7 +2763,7 @@ static void *config_server_merge(apr_pool_t *p, void *basev, void *overridesv)
                                               overrides->rewritemaps);
         a->rewriteconds    = apr_array_append(p, base->rewriteconds,
                                               overrides->rewriteconds);
-        a->rewriterules    = apr_array_append(p, base->rewriterules, 
+        a->rewriterules    = apr_array_append(p, base->rewriterules,
                                               overrides->rewriterules);
     }
     else {
@@ -2885,8 +2883,11 @@ static const char *cmd_rewriteoptions(cmd_parms *cmd,
         else if (!strcasecmp(w, "inheritbefore")) {
             options |= OPTION_INHERIT_BEFORE;
         }
+        else if (!strcasecmp(w, "allownoslash")) {
+            options |= OPTION_NOSLASH;
+        }
         else if (!strncasecmp(w, "MaxRedirects=", 13)) {
-            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, cmd->server,
+            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, cmd->server, APLOGNO(00664)
                          "RewriteOptions: MaxRedirects option has been "
                          "removed in favor of the global "
                          "LimitInternalRecursion directive and will be "
@@ -3043,7 +3044,7 @@ static const char *cmd_rewritemap(cmd_parms *cmd, void *dconf, const char *a1,
         newmap->cachename = NULL;
         newmap->func      = (char *(*)(request_rec *,char *))
                             apr_hash_get(mapfunc_hash, a2+4, strlen(a2+4));
-        if ((sconf->state == ENGINE_ENABLED) && (newmap->func == NULL)) {
+        if (newmap->func == NULL) {
             return apr_pstrcat(cmd->pool, "RewriteMap: internal map not found:",
                                a2+4, NULL);
         }
@@ -3064,7 +3065,7 @@ static const char *cmd_rewritemap(cmd_parms *cmd, void *dconf, const char *a1,
     newmap->fpin  = NULL;
     newmap->fpout = NULL;
 
-    if (newmap->checkfile && (sconf->state == ENGINE_ENABLED)
+    if (newmap->checkfile
         && (apr_stat(&st, newmap->checkfile, APR_FINFO_MIN,
                      cmd->pool) != APR_SUCCESS)) {
         return apr_pstrcat(cmd->pool,
@@ -3301,10 +3302,10 @@ static const char *cmd_rewritecond(cmd_parms *cmd, void *in_dconf,
     if ((newcond->ptype != CONDPAT_REGEX) &&
         (newcond->ptype < CONDPAT_STR_LT || newcond->ptype > CONDPAT_STR_GE) &&
         (newcond->flags & CONDFLAG_NOCASE)) {
-        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, cmd->server,
+        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, cmd->server, APLOGNO(00665)
                      "RewriteCond: NoCase option for non-regex pattern '%s' "
                      "is not supported and will be ignored. (%s:%d)", a2,
-		     cmd->directive->filename, cmd->directive->line_num);
+                     cmd->directive->filename, cmd->directive->line_num);
         newcond->flags &= ~CONDFLAG_NOCASE;
     }
 
@@ -3345,7 +3346,7 @@ static const char *cmd_rewriterule_setflag(apr_pool_t *p, void *_cfg,
     case 'B':
         if (!*key || !strcasecmp(key, "ackrefescaping")) {
             cfg->flags |= RULEFLAG_ESCAPEBACKREF;
-        } 
+        }
         else {
             ++error;
         }
@@ -3379,9 +3380,9 @@ static const char *cmd_rewriterule_setflag(apr_pool_t *p, void *_cfg,
         break;
     case 'd':
     case 'D':
-        if (!*key || !strcasecmp(key, "PI") || !strcasecmp(key,"iscardpath")) {       
+        if (!*key || !strcasecmp(key, "PI") || !strcasecmp(key,"iscardpath")) {
             cfg->flags |= (RULEFLAG_DISCARDPATHINFO);
-        } 
+        }
         break;
     case 'e':
     case 'E':
@@ -4045,7 +4046,7 @@ static int apply_rewrite_rule(rewriterule_entry *p, rewrite_ctx *ctx)
     r->filename = newuri;
 
     if (ctx->perdir && (p->flags & RULEFLAG_DISCARDPATHINFO)) {
-        r->path_info = NULL; 
+        r->path_info = NULL;
     }
 
     splitout_queryargs(r, p->flags & RULEFLAG_QSAPPEND, p->flags & RULEFLAG_QSDISCARD);
@@ -4055,7 +4056,7 @@ static int apply_rewrite_rule(rewriterule_entry *p, rewrite_ctx *ctx)
      * (2) it's a full qualified URL
      */
     if (   ctx->perdir && !is_proxyreq && *r->filename != '/'
-        && !is_absolute_uri(r->filename)) {
+        && !is_absolute_uri(r->filename, NULL)) {
         rewritelog((r, 3, ctx->perdir, "add per-dir prefix: %s -> %s%s",
                     r->filename, ctx->perdir, r->filename));
 
@@ -4078,12 +4079,12 @@ static int apply_rewrite_rule(rewriterule_entry *p, rewrite_ctx *ctx)
          * instead.  See PR 39746, 46428, and other headaches. */
         if (ctx->perdir && (p->flags & RULEFLAG_NOESCAPE) == 0) {
             char *old_filename = r->filename;
-            
+
             r->filename = ap_escape_uri(r->pool, r->filename);
             rewritelog((r, 2, ctx->perdir, "escaped URI in per-dir context "
                         "for proxy, %s -> %s", old_filename, r->filename));
         }
-        
+
         fully_qualify_uri(r);
 
         rewritelog((r, 2, ctx->perdir, "forcing proxy-throughput with %s",
@@ -4122,7 +4123,7 @@ static int apply_rewrite_rule(rewriterule_entry *p, rewrite_ctx *ctx)
      * redirection (`RewriteRule .. <scheme>://...') then
      * directly force an external HTTP redirect.
      */
-    if (is_absolute_uri(r->filename)) {
+    if (is_absolute_uri(r->filename, NULL)) {
         rewritelog((r, 2, ctx->perdir, "implicitly forcing redirect (rc=%d) "
                     "with %s", p->forced_responsecode, r->filename));
 
@@ -4223,7 +4224,7 @@ static int apply_rewrite_list(request_rec *r, apr_array_header_t *rewriterules,
                 break;
             }
 
-            if (p->flags & RULEFLAG_END) { 
+            if (p->flags & RULEFLAG_END) {
                 rewritelog((r, 8, perdir, "Rule has END flag, no further rewriting for this request"));
                 apr_pool_userdata_set("1", really_last_key, apr_pool_cleanup_null, r->pool);
                 break;
@@ -4344,7 +4345,7 @@ static void init_child(apr_pool_t *p, server_rec *s)
         rv = apr_global_mutex_child_init(&rewrite_mapr_lock_acquire,
                  apr_global_mutex_lockfile(rewrite_mapr_lock_acquire), p);
         if (rv != APR_SUCCESS) {
-            ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s,
+            ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s, APLOGNO(00666)
                          "mod_rewrite: could not init rewrite_mapr_lock_acquire"
                          " in child");
         }
@@ -4352,7 +4353,7 @@ static void init_child(apr_pool_t *p, server_rec *s)
 
     /* create the lookup cache */
     if (!init_cache(p)) {
-        ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s,
+        ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s, APLOGNO(00667)
                      "mod_rewrite: could not init map cache in child");
     }
 }
@@ -4411,13 +4412,25 @@ static int hook_uri2file(request_rec *r)
         return DECLINED;
     }
 
-    /* END flag was used as a RewriteRule flag on this request */ 
+    /* END flag was used as a RewriteRule flag on this request */
     apr_pool_userdata_get(&skipdata, really_last_key, r->pool);
-    if (skipdata != NULL) { 
+    if (skipdata != NULL) {
         rewritelog((r, 8, NULL, "Declining, no further rewriting due to END flag"));
         return DECLINED;
     }
 
+    if (strcmp(r->unparsed_uri, "*") == 0) {
+        /* Don't apply rewrite rules to "*". */
+        return DECLINED;
+    }
+
+    /* Check that the URI is valid. */
+    if (!r->uri || r->uri[0] != '/') {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00668)
+                     "Invalid URI in request %s", r->the_request);
+        return HTTP_BAD_REQUEST;
+    }
+    
     /*
      *  add the SCRIPT_URL variable to the env. this is a bit complicated
      *  due to the fact that apache uses subrequests and internal redirects
@@ -4504,7 +4517,7 @@ static int hook_uri2file(request_rec *r)
              * we can actually use it!
              */
             if (!proxy_available) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00669)
                               "attempt to make remote request from mod_rewrite "
                               "without proxy enabled: %s", r->filename);
                 return HTTP_FORBIDDEN;
@@ -4539,7 +4552,7 @@ static int hook_uri2file(request_rec *r)
                         r->filename));
             return OK;
         }
-        else if ((skip = is_absolute_uri(r->filename)) > 0) {
+        else if ((skip = is_absolute_uri(r->filename, NULL)) > 0) {
             int n;
 
             /* it was finally rewritten to a remote URL */
@@ -4701,9 +4714,10 @@ static int hook_fixup(request_rec *r)
     /*
      *  .htaccess file is called before really entering the directory, i.e.:
      *  URL: http://localhost/foo  and .htaccess is located in foo directory
-     *  Ignore such attempts, since they may lead to undefined behaviour.
+     *  Ignore such attempts, allowing mod_dir to direct the client to the
+     *  canonical URL. This can be controlled with the AllowNoSlash option.
      */
-    if (!is_proxyreq) {
+    if (!is_proxyreq && !(dconf->options & OPTION_NOSLASH)) {
         l = strlen(dconf->directory) - 1;
         if (r->filename && strlen(r->filename) == l &&
             (dconf->directory)[l] == '/' &&
@@ -4712,9 +4726,9 @@ static int hook_fixup(request_rec *r)
         }
     }
 
-    /* END flag was used as a RewriteRule flag on this request */ 
+    /* END flag was used as a RewriteRule flag on this request */
     apr_pool_userdata_get(&skipdata, really_last_key, r->pool);
-    if (skipdata != NULL) { 
+    if (skipdata != NULL) {
         rewritelog((r, 8, dconf->directory, "Declining, no further rewriting due to END flag"));
         return DECLINED;
     }
@@ -4725,7 +4739,7 @@ static int hook_fixup(request_rec *r)
      */
     if (!(ap_allow_options(r) & (OPT_SYM_LINKS | OPT_SYM_OWNER))) {
         /* FollowSymLinks is mandatory! */
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00670)
                      "Options FollowSymLinks and SymLinksIfOwnerMatch are both off, "
                      "so the RewriteRule directive is also forbidden "
                      "due to its similar ability to circumvent directory restrictions : "
@@ -4773,6 +4787,7 @@ static int hook_fixup(request_rec *r)
              * rewriting engine because of the per-dir context!)
              */
             if (r->args != NULL) {
+                /* see proxy_http:proxy_http_canon() */
                 r->filename = apr_pstrcat(r->pool, r->filename,
                                           "?", r->args, NULL);
             }
@@ -4787,7 +4802,7 @@ static int hook_fixup(request_rec *r)
                         "%s [OK]", r->filename));
             return OK;
         }
-        else if ((skip = is_absolute_uri(r->filename)) > 0) {
+        else if ((skip = is_absolute_uri(r->filename, NULL)) > 0) {
             /* it was finally rewritten to a remote URL */
 
             /* because we are in a per-dir context
@@ -4847,18 +4862,18 @@ static int hook_fixup(request_rec *r)
             /* append the QUERY_STRING part */
             if (r->args) {
                 char *escaped_args = NULL;
-                int noescape = (rulestatus == ACTION_NOESCAPE || 
+                int noescape = (rulestatus == ACTION_NOESCAPE ||
                                 (oargs && !strcmp(r->args, oargs)));
-                             
+
                 r->filename = apr_pstrcat(r->pool, r->filename, "?",
-                                          noescape 
+                                          noescape
                                             ? r->args
                                             : (escaped_args = ap_escape_uri(r->pool, r->args)),
                                           NULL);
 
                 rewritelog((r, 1, dconf->directory, "%s %s to query string for redirect %s",
-                            noescape ? "copying" : "escaping",  
-                            r->args , 
+                            noescape ? "copying" : "escaping",
+                            r->args ,
                             noescape ? "" : escaped_args));
             }
 

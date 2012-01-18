@@ -3,7 +3,7 @@
 <?xml-stylesheet type="text/xsl" href="./style/manual.fr.xsl"?>
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
-<!-- English Revision: 1137744 -->
+<!-- English Revision : 1204356 -->
 
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
@@ -63,7 +63,7 @@ fonctionnalit&eacute;s du serveur HTTP Apache 2.4</a></seealso>
      est enregistr&eacute;e dans le fichier <code>build/config.nice</code>
      situ&eacute; dans le r&eacute;pertoire de compilation du serveur). Voici certains
      changements intervenus dans la configuration par d&eacute;faut :</p>
-    
+
     <ul>
       <li>Les modules suivants ont &eacute;t&eacute; supprim&eacute;s : mod_authn_default,
       mod_authz_default et mod_mem_cache. Si vous utilisiez
@@ -83,7 +83,14 @@ fonctionnalit&eacute;s du serveur HTTP Apache 2.4</a></seealso>
       <li>configure: les modules dynamiques (DSO) sont compil&eacute;s par
       d&eacute;faut</li>
 
+      <li>configure: par d&eacute;faut, seul un jeu de modules de base est
+      charg&eacute;. Les autres directives <directive>LoadModule</directive>
+      sont mises en commentaires.</li>
+
       <li>configure: le jeu de modules "most" est compil&eacute; par d&eacute;faut</li>
+
+      <li>configure: le jeu de modules "reallyall" ajoute les modules de
+      d&eacute;veloppeur au jeu "all".</li>
     </ul>
 
   </section>
@@ -200,6 +207,10 @@ n&eacute;cessiter une mise &agrave; jour des fichiers de configuration de la ver
 	<li>La valeur par d&eacute;faut de la directive <directive
 	module="core">EnableSendfile</directive> est maintenant Off.</li>
 
+	<li>La valeur par d&eacute;faut de la directive <directive
+	module="core">FileETag</directive> est maintenant "MTime Size"
+	(sans INode).</li>
+
         <li><module>mod_log_config</module>: <a
         href="modules/mod_log_config.html#formats">${cookie}C</a>
         correspond au nom du cookie dans son ensemble, alors qu'avant,
@@ -276,7 +287,20 @@ n&eacute;cessiter une mise &agrave; jour des fichiers de configuration de la ver
 	configuration de la directive <directive
 	module="core">LogLevel</directive> au niveau r&eacute;pertoire.
         </li>
-    
+
+	<li><module>mod_ssl</module>: le contr&ocirc;le de r&eacute;vocation des
+	certificats bas&eacute; sur les CRL doit &ecirc;tre maintenant explicitement
+	configur&eacute; via la directive <directive
+        module="mod_ssl">SSLCARevocationCheck</directive>.
+        </li>
+
+        <li><module>mod_substitute</module>: la taille maximale d'une
+	ligne est maintenant 1Mo.
+        </li>
+
+        <li><module>mod_reqtimeout</module>: si ce module est charg&eacute;, il
+	d&eacute;finit maintenant certains temps d'attente par d&eacute;faut.</li>
+
     </ul>
     </section>
   </section>
@@ -293,10 +317,31 @@ n&eacute;cessiter une mise &agrave; jour des fichiers de configuration de la ver
       <code>*_DN</code> a chang&eacute;. Il est cependant encore possible
       d'utiliser l'ancien format via la nouvelle option
       <code>LegacyDNStringFormat</code> de la directive <directive
-      module="mod_ssl">SSLOptions</directive>.</li>
+      module="mod_ssl">SSLOptions</directive>. Le protocole SSLv2 n'est
+      plus support&eacute;.</li>
 
       <li><program>htpasswd</program> utilise maintenant par d&eacute;faut les
       condens&eacute;s MD5 sur toutes les plates-formes.</li>
+
+      <li>La directive <directive
+      module="core">NameVirtualHost</directive> n'a plus aucun effet, si
+      ce n'est l'&eacute;mission d'un avertissement. Toute combinaison
+      adresse/port apparaissant dans plusieurs serveurs virtuels est
+      trait&eacute;e implicitement comme un serveur virtuel bas&eacute; sur le nom.
+      </li>
+
+      <li><module>mod_deflate</module> n'effectue plus de compression
+      s'il s'aper&ccedil;oit que la quantit&eacute; de donn&eacute;es ajout&eacute;e par la
+      compression est sup&eacute;rieure &agrave; la quantit&eacute; de donn&eacute;es &agrave; compresser.
+      </li>
+
+      <li>Les pages d'erreur multilingues de la version 2.2.x ne
+      fonctionneront qu'apr&egrave;s avoir &eacute;t&eacute; corrig&eacute;es pour
+      respecter la nouvelle syntaxe de l'&eacute;l&eacute;ment <code>#if expr=</code>
+      du module <module>mod_include</module>, ou si la directive
+      <directive module="mod_include">SSILegacyExprParser</directive> a
+      &eacute;t&eacute; activ&eacute;e pour le r&eacute;pertoire contenant les pages d'erreur.
+      </li>
     </ul>
 
     </section>

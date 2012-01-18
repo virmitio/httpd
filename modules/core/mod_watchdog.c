@@ -18,22 +18,15 @@
  */
 
 #include "apr.h"
-#if APR_HAVE_UNISTD_H
-#include <unistd.h>         /* for getpid() */
-#endif
-#if APR_HAVE_PROCESS_H
-#include <process.h>        /* for getpid() on Win32 */
-#endif
-
 #include "mod_watchdog.h"
 #include "ap_provider.h"
 #include "ap_mpm.h"
 #include "http_core.h"
 #include "util_mutex.h"
 
-#define AP_WATCHODG_PGROUP    "watchdog"
-#define AP_WATCHODG_PVERSION  "parent"
-#define AP_WATCHODG_CVERSION  "child"
+#define AP_WATCHDOG_PGROUP    "watchdog"
+#define AP_WATCHDOG_PVERSION  "parent"
+#define AP_WATCHDOG_CVERSION  "child"
 
 typedef struct watchdog_list_t watchdog_list_t;
 
@@ -162,9 +155,8 @@ static void* APR_THREAD_FUNC wd_worker(apr_thread_t *thread, void *data)
     if (w->is_running) {
         watchdog_list_t *wl = w->callbacks;
         ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, wd_server_conf->s,
-                     "%sWatchdog (%s) running (%" APR_PID_T_FMT ")",
-                     w->singleton ? "Singleton" : "",
-                     w->name, getpid());
+                     "%sWatchdog (%s) running",
+                     w->singleton ? "Singleton" : "", w->name);
         apr_time_clock_hires(w->pool);
         if (wl) {
             apr_pool_t *ctx = NULL;
@@ -259,9 +251,8 @@ static void* APR_THREAD_FUNC wd_worker(apr_thread_t *thread, void *data)
         }
     }
     ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, wd_server_conf->s,
-                 "%sWatchdog (%s) stopping (%" APR_PID_T_FMT ")",
-                 w->singleton ? "Singleton" : "",
-                 w->name, getpid());
+                 "%sWatchdog (%s) stopping",
+                 w->singleton ? "Singleton" : "", w->name);
 
     if (locked)
         apr_proc_mutex_unlock(w->mutex);
@@ -313,7 +304,7 @@ static apr_status_t ap_watchdog_get_instance(ap_watchdog_t **watchdog,
                                              apr_pool_t *p)
 {
     ap_watchdog_t *w;
-    const char *pver = parent ? AP_WATCHODG_PVERSION : AP_WATCHODG_CVERSION;
+    const char *pver = parent ? AP_WATCHDOG_PVERSION : AP_WATCHDOG_CVERSION;
 
     if (parent && mpm_is_forked != AP_MPMQ_NOT_SUPPORTED) {
         /* Parent threads are not supported for
@@ -322,7 +313,7 @@ static apr_status_t ap_watchdog_get_instance(ap_watchdog_t **watchdog,
         *watchdog = NULL;
         return APR_ENOTIMPL;
     }
-    w = ap_lookup_provider(AP_WATCHODG_PGROUP, name, pver);
+    w = ap_lookup_provider(AP_WATCHDOG_PGROUP, name, pver);
     if (w) {
         *watchdog = w;
         return APR_SUCCESS;
@@ -332,7 +323,7 @@ static apr_status_t ap_watchdog_get_instance(ap_watchdog_t **watchdog,
     w->pool      = p;
     w->singleton = parent ? 0 : singleton;
     *watchdog    = w;
-    return ap_register_provider(p, AP_WATCHODG_PGROUP, name,
+    return ap_register_provider(p, AP_WATCHDOG_PGROUP, name,
                                 pver, *watchdog);
 }
 
@@ -452,19 +443,6 @@ static int wd_post_config_hook(apr_pool_t *pconf, apr_pool_t *plog,
         /* First time config phase -- skip. */
         return OK;
 
-#if defined(WIN32)
-    {
-        const char *ppid = getenv("AP_PARENT_PID");
-        if (ppid && *ppid) {
-            ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s,
-                "[%" APR_PID_T_FMT " - %s] "
-                "child second stage post config hook",
-                getpid(), ppid);
-            return OK;
-        }
-    }
-#endif
-
     apr_pool_userdata_get((void *)&wd_server_conf, pk, pproc);
     if (!wd_server_conf) {
         if (!(wd_server_conf = apr_pcalloc(pproc, sizeof(wd_server_conf_t))))
@@ -473,16 +451,16 @@ static int wd_post_config_hook(apr_pool_t *pconf, apr_pool_t *plog,
         apr_pool_userdata_set(wd_server_conf, pk, apr_pool_cleanup_null, pproc);
     }
     wd_server_conf->s = s;
-    if ((wl = ap_list_provider_names(pconf, AP_WATCHODG_PGROUP,
-                                            AP_WATCHODG_PVERSION))) {
+    if ((wl = ap_list_provider_names(pconf, AP_WATCHDOG_PGROUP,
+                                            AP_WATCHDOG_PVERSION))) {
         const ap_list_provider_names_t *wn;
         int i;
 
         wn = (ap_list_provider_names_t *)wl->elts;
         for (i = 0; i < wl->nelts; i++) {
-            ap_watchdog_t *w = ap_lookup_provider(AP_WATCHODG_PGROUP,
+            ap_watchdog_t *w = ap_lookup_provider(AP_WATCHDOG_PGROUP,
                                                   wn[i].provider_name,
-                                                  AP_WATCHODG_PVERSION);
+                                                  AP_WATCHDOG_PVERSION);
             if (w) {
                 if (!w->active) {
                     int status = ap_run_watchdog_need(s, w->name, 1,
@@ -499,7 +477,7 @@ static int wd_post_config_hook(apr_pool_t *pconf, apr_pool_t *plog,
                      * Create the watchdog thread
                      */
                     if ((rv = wd_startup(w, wd_server_conf->pool)) != APR_SUCCESS) {
-                        ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s,
+                        ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s, APLOGNO(01571)
                                 "Watchdog: Failed to create parent worker thread.");
                         return rv;
                     }
@@ -509,20 +487,20 @@ static int wd_post_config_hook(apr_pool_t *pconf, apr_pool_t *plog,
         }
     }
     if (wd_server_conf->parent_workers) {
-        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s, APLOGNO(01572)
                      "Spawned %d parent worker threads.",
                      wd_server_conf->parent_workers);
     }
-    if ((wl = ap_list_provider_names(pconf, AP_WATCHODG_PGROUP,
-                                            AP_WATCHODG_CVERSION))) {
+    if ((wl = ap_list_provider_names(pconf, AP_WATCHDOG_PGROUP,
+                                            AP_WATCHDOG_CVERSION))) {
         const ap_list_provider_names_t *wn;
         int i;
 
         wn = (ap_list_provider_names_t *)wl->elts;
         for (i = 0; i < wl->nelts; i++) {
-            ap_watchdog_t *w = ap_lookup_provider(AP_WATCHODG_PGROUP,
+            ap_watchdog_t *w = ap_lookup_provider(AP_WATCHDOG_PGROUP,
                                                   wn[i].provider_name,
-                                                  AP_WATCHODG_CVERSION);
+                                                  AP_WATCHDOG_CVERSION);
             if (w) {
                 if (!w->active) {
                     int status = ap_run_watchdog_need(s, w->name, 0,
@@ -570,21 +548,21 @@ static void wd_child_init_hook(apr_pool_t *p, server_rec *s)
          */
         return;
     }
-    if ((wl = ap_list_provider_names(p, AP_WATCHODG_PGROUP,
-                                        AP_WATCHODG_CVERSION))) {
+    if ((wl = ap_list_provider_names(p, AP_WATCHDOG_PGROUP,
+                                        AP_WATCHDOG_CVERSION))) {
         const ap_list_provider_names_t *wn;
         int i;
         wn = (ap_list_provider_names_t *)wl->elts;
         for (i = 0; i < wl->nelts; i++) {
-            ap_watchdog_t *w = ap_lookup_provider(AP_WATCHODG_PGROUP,
+            ap_watchdog_t *w = ap_lookup_provider(AP_WATCHDOG_PGROUP,
                                                   wn[i].provider_name,
-                                                  AP_WATCHODG_CVERSION);
+                                                  AP_WATCHDOG_CVERSION);
             if (w && w->active) {
                 /* We have some callbacks registered.
                  * Kick of the watchdog
                  */
                 if ((rv = wd_startup(w, wd_server_conf->pool)) != APR_SUCCESS) {
-                    ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s,
+                    ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s, APLOGNO(01573)
                                  "Watchdog: Failed to create worker thread.");
                     /* No point to continue */
                     return;

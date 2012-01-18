@@ -327,10 +327,11 @@ NoDecode option available in 2.3.12 and later.</compatibility>
     <directive type="section" module="core">Files</directive> sections.
     </note>
 
-    <p>When this directive is set to <code>None</code>, then
-    <a href="#accessfilename">.htaccess</a> files are completely ignored.
-    In this case, the server will not even attempt to read
-    <code>.htaccess</code> files in the filesystem.</p>
+    <p>When this directive is set to <code>None</code> and <directive
+    module="core">AllowOverrideList</directive> is set to
+    <code>None</code> <a href="#accessfilename">.htaccess</a> files are
+    completely ignored. In this case, the server will not even attempt
+    to read <code>.htaccess</code> files in the filesystem.</p>
 
     <p>When this directive is set to <code>All</code>, then any
     directive which has the .htaccess <a
@@ -420,7 +421,17 @@ NoDecode option available in 2.3.12 and later.</compatibility>
       <directive module="mod_include">XBitHack</directive>).
       An equal sign may be given followed by a comma (but no spaces)
       separated lists of options that may be set using the <directive
-      module="core">Options</directive> command.</dd>
+      module="core">Options</directive> command.
+
+      <note><title>Implicit disabling of Options</title>
+      <p>Even though the list of options that may be used in .htaccess files
+         can be limited with this directive, as long as any <directive
+         module="core">Options</directive> directive is allowed any
+         other inherited option can be disabled by using the non-relative
+         syntax.  In other words, this mechanism cannot force a specific option
+         to remain <em>set</em> while allowing any others to be set.
+      </p></note>
+      </dd>
     </dl>
 
     <p>Example:</p>
@@ -441,8 +452,69 @@ NoDecode option available in 2.3.12 and later.</compatibility>
     <code>.htaccess</code> file.</p>
     </note>
 </usage>
+<seealso><directive module="core">AccessFileName</directive></seealso>
+<seealso><directive module="core">AllowOverrideList</directive></seealso>
+<seealso><a href="../configuring.html">Configuration Files</a></seealso>
+<seealso><a href="../howto/htaccess.html">.htaccess Files</a></seealso>
+</directivesynopsis>
+
+<directivesynopsis>
+<name>AllowOverrideList</name>
+<description>Individual directives that are allowed in
+<code>.htaccess</code> files</description>
+<syntax>AllowOverrideList None|<var>directive</var>
+[<var>directive-type</var>] ...</syntax>
+<default>AllowOverrideList None</default>
+<contextlist><context>directory</context></contextlist>
+
+<usage>
+    <p>When the server finds an <code>.htaccess</code> file (as
+    specified by <directive module="core">AccessFileName</directive>)
+    it needs to know which directives declared in that file can override
+    earlier configuration directives.</p>
+
+    <note><title>Only available in &lt;Directory&gt; sections</title>
+    <directive>AllowOverrideList</directive> is valid only in
+    <directive type="section" module="core">Directory</directive>
+    sections specified without regular expressions, not in <directive
+    type="section" module="core">Location</directive>, <directive
+    module="core" type="section">DirectoryMatch</directive> or
+    <directive type="section" module="core">Files</directive> sections.
+    </note>
+
+    <p>When this directive is set to <code>None</code> and <directive
+    module="core">AllowOverride</directive> is set to <code>None</code>,
+    then <a href="#accessfilename">.htaccess</a> files are completely
+    ignored.  In this case, the server will not even attempt to read
+    <code>.htaccess</code> files in the filesystem.</p>
+
+    <p>Example:</p>
+
+    <example>
+      AllowOverride None<br />
+      AllowOverrideList Redirect RedirectMatch
+    </example>
+
+    <p>In the example above only the <code>Redirect</code> and
+    <code>RedirectMatch</code> directives are allowed. All others will
+    cause an internal server error.</p>
+
+    <p>Example:</p>
+
+    <example>
+      AllowOverride AuthConfig<br />
+      AllowOverrideList CookieTracking CookieName
+    </example>
+
+    <p>In the example above <directive module="core">AllowOverride
+    </directive> grants permission to the <code>AuthConfig</code>
+    directive grouping and <directive>AllowOverrideList</directive> grants
+    permission to only two directves from the <code>FileInfo</code> directive
+    grouping. All others will cause an internal server error.</p>
+</usage>
 
 <seealso><directive module="core">AccessFileName</directive></seealso>
+<seealso><directive module="core">AllowOverride</directive></seealso>
 <seealso><a href="../configuring.html">Configuration Files</a></seealso>
 <seealso><a href="../howto/htaccess.html">.htaccess Files</a></seealso>
 </directivesynopsis>
@@ -1092,7 +1164,8 @@ in case of an error</description>
       ErrorDocument 500 http://foo.example.com/cgi-bin/tester<br />
       ErrorDocument 404 /cgi-bin/bad_urls.pl<br />
       ErrorDocument 401 /subscription_info.html<br />
-      ErrorDocument 403 "Sorry can't allow you access today"
+      ErrorDocument 403 "Sorry can't allow you access today"<br />
+      ErrorDocument 403 Forbidden!
     </example>
 
     <p>Additionally, the special value <code>default</code> can be used
@@ -1215,7 +1288,7 @@ in case of an error</description>
 <directivesynopsis>
 <name>ErrorLogFormat</name>
 <description>Format specification for error log entries</description>
-<syntax> ErrorLog [connection|request] <var>format</var></syntax>
+<syntax> ErrorLogFormat [connection|request] <var>format</var></syntax>
 <contextlist><context>server config</context><context>virtual host</context>
 </contextlist>
 <compatibility>Available in Apache httpd 2.3.9 and later</compatibility>
@@ -1232,7 +1305,7 @@ in case of an error</description>
     <p>Specifying <code>connection</code> or <code>request</code> as first
     parameter allows to specify additional formats, causing additional
     information to be logged when the first message is logged for a specific
-    connection or request, respectivly. This additional information is only
+    connection or request, respectively. This additional information is only
     logged once per connection/request. If a connection or request is processed
     without causing any log message, the additional information is not logged
     either.</p>
@@ -1241,7 +1314,7 @@ in case of an error</description>
     example, the Referer header is only present if the log message is
     associated to a request and the log message happens at a time when the
     Referer header has already been read from the client.  If no output is
-    produced, the default behaviour is to delete everything from the preceeding
+    produced, the default behavior is to delete everything from the preceeding
     space character to the next space character.  This means the log line is
     implicitly divided into fields on non-whitespace to whitespace transitions.
     If a format string item does not produce output, the whole field is
@@ -1252,7 +1325,7 @@ in case of an error</description>
     (percent space) is a zero-witdh field delimiter that does not produce any
     output.</p>
 
-    <p>The above behaviour can be changed by adding modifiers to the format
+    <p>The above behavior can be changed by adding modifiers to the format
     string item. A <code>-</code> (minus) modifier causes a minus to be logged if the
     respective item does not produce any output. In once-per-connection/request
     formats, it is also possible to use the <code>+</code> (plus) modifier. If an
@@ -1264,6 +1337,33 @@ in case of an error</description>
     message is not higher than the specified log severity level. The number can
     range from 1 (alert) over 4 (warn) and 7 (debug) to 15 (trace8).</p>
 
+    <p>For example, here's what would happen if you added modifiers to
+    the <code>%{Referer}i</code> token, which logs the
+    <code>Referer</code> request header.</p>
+
+    <table border="1" style="zebra">
+    <columnspec><column width=".3"/><column width=".7"/></columnspec>
+
+    <tr><th>Modified Token</th><th>Meaning</th></tr>
+
+    <tr>
+    <td><code>%-{Referer}i</code></td>
+    <td>Logs a <code>-</code> if <code>Referer</code> is not set.</td>
+    </tr>
+
+    <tr>
+    <td><code>%+{Referer}i</code></td>
+    <td>Omits the entire line if <code>Referer</code> is not set.</td>
+    </tr>
+
+    <tr>
+    <td><code>%4{Referer}i</code></td>
+    <td>Logs the <code>Referer</code> only if the log message severity
+    is higher than 4.</td>
+    </tr>
+
+    </table>
+
     <p>Some format string items accept additional parameters in braces.</p>
 
     <table border="1" style="zebra">
@@ -1274,73 +1374,77 @@ in case of an error</description>
     <tr><td><code>%%</code></td>
         <td>The percent sign</td></tr>
 
-    <tr><td><code>%...a</code></td>
-        <td>Remote IP-address and port</td></tr>
+    <tr><td><code>%a</code></td>
+        <td>Client IP address and port of the request</td></tr>
 
-    <tr><td><code>%...A</code></td>
+    <tr><td><code>%{c}a</code></td>
+        <td>Underlying peer IP address and port of the connection (see the
+            <module>mod_remoteip</module> module)</td></tr>
+
+    <tr><td><code>%A</code></td>
         <td>Local IP-address and port</td></tr>
 
-    <tr><td><code>%...{name}e</code></td>
-        <td>Request environment variable <code>name</code></td></tr>
+    <tr><td><code>%{<em>name</em>}e</code></td>
+        <td>Request environment variable <em>name</em></td></tr>
 
-    <tr><td><code>%...E</code></td>
+    <tr><td><code>%E</code></td>
         <td>APR/OS error status code and string</td></tr>
 
-    <tr><td><code>%...F</code></td>
+    <tr><td><code>%F</code></td>
         <td>Source file name and line number of the log call</td></tr>
 
-    <tr><td><code>%...{name}i</code></td>
-        <td>Request header <code>name</code></td></tr>
+    <tr><td><code>%{<em>name</em>}i</code></td>
+        <td>Request header <em>name</em></td></tr>
 
-    <tr><td><code>%...k</code></td>
+    <tr><td><code>%k</code></td>
         <td>Number of keep-alive requests on this connection</td></tr>
 
-    <tr><td><code>%...l</code></td>
+    <tr><td><code>%l</code></td>
         <td>Loglevel of the message</td></tr>
 
-    <tr><td><code>%...L</code></td>
+    <tr><td><code>%L</code></td>
         <td>Log ID of the request</td></tr>
 
-    <tr><td><code>%...{c}L</code></td>
+    <tr><td><code>%{c}L</code></td>
         <td>Log ID of the connection</td></tr>
 
-    <tr><td><code>%...{C}L</code></td>
+    <tr><td><code>%{C}L</code></td>
         <td>Log ID of the connection if used in connection scope, empty otherwise</td></tr>
 
-    <tr><td><code>%...m</code></td>
+    <tr><td><code>%m</code></td>
         <td>Name of the module logging the message</td></tr>
 
     <tr><td><code>%M</code></td>
         <td>The actual log message</td></tr>
 
-    <tr><td><code>%...{name}n</code></td>
-        <td>Request note <code>name</code></td></tr>
+    <tr><td><code>%{<em>name</em>}n</code></td>
+        <td>Request note <em>name</em></td></tr>
 
-    <tr><td><code>%...P</code></td>
+    <tr><td><code>%P</code></td>
         <td>Process ID of current process</td></tr>
 
-    <tr><td><code>%...T</code></td>
+    <tr><td><code>%T</code></td>
         <td>Thread ID of current thread</td></tr>
 
-    <tr><td><code>%...{g}T</code></td>
+    <tr><td><code>%{g}T</code></td>
         <td>System unique thread ID of current thread (the same ID as
             displayed by e.g. <code>top</code>; currently Linux only)</td></tr>
 
-    <tr><td><code>%...t</code></td>
+    <tr><td><code>%t</code></td>
         <td>The current time</td></tr>
 
-    <tr><td><code>%...{u}t</code></td>
+    <tr><td><code>%{u}t</code></td>
         <td>The current time including micro-seconds</td></tr>
 
-    <tr><td><code>%...{cu}t</code></td>
+    <tr><td><code>%{cu}t</code></td>
         <td>The current time in compact ISO 8601 format, including
             micro-seconds</td></tr>
 
-    <tr><td><code>%...v</code></td>
+    <tr><td><code>%v</code></td>
         <td>The canonical <directive module="core">ServerName</directive>
             of the current server.</td></tr>
 
-    <tr><td><code>%...V</code></td>
+    <tr><td><code>%V</code></td>
         <td>The server name of the server serving the request according to the
             <directive module="core" >UseCanonicalName</directive>
             setting.</td></tr>
@@ -1360,10 +1464,19 @@ in case of an error</description>
     with error log lines. If <module>mod_unique_id</module> is loaded, its
     unique id will be used as log ID for requests.</p>
 
-    <example><title>Example (somewhat similar to default format)</title>
-        ErrorLogFormat "[%{u}t] [%-m:%l] [pid %P] %7F: %E: [client\ %a]
+    <example><title>Example (default format)</title>
+        ErrorLogFormat "[%{u}t] [%-m:%l] [pid %P:tid %T] %7F: %E: [client\ %a]
         %M%&nbsp;,\&nbsp;referer\&nbsp;%{Referer}i"
     </example>
+
+    <p>This would result in error messages such as:</p>
+
+    <example>
+    [Thu May 12 08:28:57.652118 2011] [core:error] [pid 8777:tid 4326490112] [client ::1:58619] File does not exist: /usr/local/apache2/htdocs/favicon.ico
+    </example>
+
+    <p>Notice that, as discussed above, some fields are ommitted
+    entirely because they are not defined.</p>
 
     <example><title>Example (similar to the 2.2.x format)</title>
         ErrorLogFormat "[%t] [%l] %7F: %E: [client\ %a]
@@ -1423,11 +1536,13 @@ request</description>
 <description>File attributes used to create the ETag
 HTTP response header for static files</description>
 <syntax>FileETag <var>component</var> ...</syntax>
-<default>FileETag INode MTime Size</default>
+<default>FileETag MTime Size</default>
 <contextlist><context>server config</context><context>virtual host</context>
 <context>directory</context><context>.htaccess</context>
 </contextlist>
 <override>FileInfo</override>
+<compatibility>The default used to be "INode&nbsp;MTime&nbsp;Size" in 2.3.14 and
+earlier.</compatibility>
 
 <usage>
     <p>
@@ -1470,7 +1585,7 @@ HTTP response header for static files</description>
     <note type="warning"><title>Warning</title>
     Do not change the default for directories or locations that have WebDAV
     enabled and use <module>mod_dav_fs</module> as a storage provider.
-    <module>mod_dav_fs</module> uses <code>INode&nbsp;MTime&nbsp;Size</code>
+    <module>mod_dav_fs</module> uses <code>MTime&nbsp;Size</code>
     as a fixed format for <code>ETag</code> comparisons on conditional requests.
     These conditional requests will break if the <code>ETag</code> format is
     changed via <directive>FileETag</directive>.
@@ -1683,6 +1798,11 @@ media type in the HTTP Content-Type header field</description>
     default to the <code>bin</code> subdirectory of your installation
     directory, can be used to look up host names from logged IP addresses
     offline.</p>
+
+    <p>Finally, if you have <a
+    href="mod_authz_host.html#reqhost">hostname-based Require
+    directives</a>, a hostname lookup will be performed regardless of
+    the setting of <code>HostnameLookups</code>.</p>
 </usage>
 </directivesynopsis>
 
@@ -1714,7 +1834,7 @@ satisfied by a request at runtime</description>
     It is also possible to use regular expressions, </p>
 
     <example>
-        &lt;If "%{QUERY_STRING =~ /(delete|commit)=.*?elem/"&gt;
+        &lt;If "%{QUERY_STRING} =~ /(delete|commit)=.*?elem/"&gt;
     </example>
 
     <p>shell-like pattern matches and many other operations. These operations
@@ -1902,7 +2022,7 @@ wildcard matching available in 2.3.6 and later</compatibility>
     <strong>fail with an error</strong> saying the directory cannot be found.
     </p>
 
-    <p>For further control over the behaviour of the server when no files or
+    <p>For further control over the behavior of the server when no files or
     directories match, prefix the path with the modifiers <var>optional</var>
     or <var>strict</var>. If <var>optional</var> is specified, any wildcard
     file or directory that does not match will be silently ignored. If
@@ -2293,7 +2413,7 @@ client</description>
     that will be allowed in an HTTP request header.</p>
 
     <p>The <directive>LimitRequestFieldSize</directive> directive
-    allows the server administrator to reduce or increase the limit
+    allows the server administrator to set the limit
     on the allowed size of an HTTP request header field. A server
     needs this value to be large enough to hold any one header field
     from a normal client request. The size of a normal request header
@@ -2313,11 +2433,12 @@ client</description>
     </example>
 
     <note>Under normal conditions, the value should not be changed from
-    the default.</note>
+    the default. Also, you can't set this higher than 8190 without
+    modifying the source code and rebuilding.</note>
 
     <note type="warning"><title>Warning</title>
     <p> When name-based virtual hosting is used, the value for this
-    directive is taken from the default (first-listed) virtual host best 
+    directive is taken from the default (first-listed) virtual host best
     matching the current IP address and port combination.</p>
     </note>
 </usage>
@@ -2336,7 +2457,7 @@ from the client</description>
     allowed on the HTTP request-line.</p>
 
     <p>The <directive>LimitRequestLine</directive> directive allows
-    the server administrator to reduce or increase the limit on the allowed size
+    the server administrator to set the limit on the allowed size
     of a client's HTTP request-line. Since the request-line consists of the
     HTTP method, URI, and protocol version, the
     <directive>LimitRequestLine</directive> directive places a
@@ -2356,11 +2477,12 @@ from the client</description>
     </example>
 
     <note>Under normal conditions, the value should not be changed from
-    the default.</note>
+    the default. Also, you can't set this higher than 8190 without
+    modifying the source and rebuilding.</note>
 
     <note type="warning"><title>Warning</title>
     <p> When name-based virtual hosting is used, the value for this
-    directive is taken from the default (first-listed) virtual host best 
+    directive is taken from the default (first-listed) virtual host best
     matching the current IP address and port combination.</p>
     </note>
 
@@ -2795,6 +2917,111 @@ connection</description>
 </directivesynopsis>
 
 <directivesynopsis>
+<name>MaxRanges</name>
+<description>Number of ranges allowed before returning the complete
+resource </description>
+<syntax>MaxRanges default | unlimited | none | <var>number-of-ranges</var></syntax>
+<default>MaxRanges 200</default>
+<contextlist><context>server config</context><context>virtual host</context>
+<context>directory</context>
+</contextlist>
+<compatibility>Available in Apache HTTP Server 2.3.15 and later</compatibility>
+
+<usage>
+    <p>The <directive>MaxRanges</directive> directive
+    limits the number of HTTP ranges the server is willing to
+    return to the client.  If more ranges then permitted are requested,
+    the complete resource is returned instead.</p>
+
+    <dl>
+      <dt><strong>default</strong></dt>
+      <dd>Limits the number of ranges to a compile-time default of 200.</dd>
+
+      <dt><strong>none</strong></dt>
+      <dd>Range headers are ignored.</dd>
+
+      <dt><strong>unlimited</strong></dt>
+      <dd>The server does not limit the number of ranges it is
+          willing to satisfy.</dd>
+
+      <dt><var>number-of-ranges</var></dt>
+      <dd>A positive number representing the maximum number of ranges the
+      server is willing to satisfy.</dd>
+    </dl>
+</usage>
+</directivesynopsis>
+
+<directivesynopsis>
+    <name>MaxRangeOverlaps</name>
+    <description>Number of overlapping ranges (eg: <code>100-200,150-300</code>) allowed before returning the complete
+        resource </description>
+    <syntax>MaxRangeOverlaps default | unlimited | none | <var>number-of-ranges</var></syntax>
+    <default>MaxRangeOverlaps 20</default>
+    <contextlist><context>server config</context><context>virtual host</context>
+        <context>directory</context>
+    </contextlist>
+    <compatibility>Available in Apache HTTP Server 2.3.15 and later</compatibility>
+
+    <usage>
+        <p>The <directive>MaxRangeOverlaps</directive> directive
+            limits the number of overlapping HTTP ranges the server is willing to
+            return to the client.  If more overlapping ranges then permitted are requested,
+            the complete resource is returned instead.</p>
+
+        <dl>
+            <dt><strong>default</strong></dt>
+            <dd>Limits the number of overlapping ranges to a compile-time default of 20.</dd>
+
+            <dt><strong>none</strong></dt>
+            <dd>No overlapping Range headers are allowed.</dd>
+
+            <dt><strong>unlimited</strong></dt>
+            <dd>The server does not limit the number of overlapping ranges it is
+                willing to satisfy.</dd>
+
+            <dt><var>number-of-ranges</var></dt>
+            <dd>A positive number representing the maximum number of overlapping ranges the
+                server is willing to satisfy.</dd>
+        </dl>
+    </usage>
+</directivesynopsis>
+
+<directivesynopsis>
+    <name>MaxRangeReversals</name>
+    <description>Number of range reversals (eg: <code>100-200,50-70</code>) allowed before returning the complete
+        resource </description>
+    <syntax>MaxRangeReversals default | unlimited | none | <var>number-of-ranges</var></syntax>
+    <default>MaxRangeReversals 20</default>
+    <contextlist><context>server config</context><context>virtual host</context>
+        <context>directory</context>
+    </contextlist>
+    <compatibility>Available in Apache HTTP Server 2.3.15 and later</compatibility>
+
+    <usage>
+        <p>The <directive>MaxRangeReversals</directive> directive
+            limits the number of HTTP Range reversals the server is willing to
+            return to the client.  If more ranges reversals then permitted are requested,
+            the complete resource is returned instead.</p>
+
+        <dl>
+            <dt><strong>default</strong></dt>
+            <dd>Limits the number of range reversals to a compile-time default of 20.</dd>
+
+            <dt><strong>none</strong></dt>
+            <dd>No Range reversals headers are allowed.</dd>
+
+            <dt><strong>unlimited</strong></dt>
+            <dd>The server does not limit the number of range reversals it is
+                willing to satisfy.</dd>
+
+            <dt><var>number-of-ranges</var></dt>
+            <dd>A positive number representing the maximum number of range reversals the
+                server is willing to satisfy.</dd>
+        </dl>
+    </usage>
+</directivesynopsis>
+
+<directivesynopsis>
 <name>Mutex</name>
 <description>Configures mutex mechanism and lock file directory for all
 or specified mutexes</description>
@@ -3009,15 +3236,15 @@ or specified mutexes</description>
     will be changed from the compiled-in default to <code>sysvsem</code>.</p>
 
     <example>
-    Mutex default sysvsem<br />
-    Mutex mpm-accept fcntl:/var/httpd/locks
+    Mutex sysvsem default<br />
+    Mutex fcntl:/var/httpd/locks mpm-accept
     </example>
 </usage>
 </directivesynopsis>
 
 <directivesynopsis>
 <name>NameVirtualHost</name>
-<description>Designates an IP address for name-virtual
+<description>DEPRECATED: Designates an IP address for name-virtual
 hosting</description>
 <syntax>NameVirtualHost <var>addr</var>[:<var>port</var>]</syntax>
 <contextlist><context>server config</context></contextlist>
@@ -3625,6 +3852,12 @@ is accessed by an incompatible browser</description>
       ServerRoot /home/httpd
     </example>
 
+    <p>The default location of <directive>ServerRoot</directive> may be
+    modified by using the <code>--prefix</code> argument to
+    <a href="../programs/configure.html"><code>configure</code></a>, and
+    most third-party distributions of the server have a different
+    default location from the one listed above.</p>
+
 </usage>
 <seealso><a href="../invoking.html">the <code>-d</code>
     option to <code>httpd</code></a></seealso>
@@ -3779,7 +4012,7 @@ handler</description>
 
     <note><title>Note</title>
     <p>Because <directive>SetHandler</directive> overrides default handlers,
-    normal behaviour such as handling of URLs ending in a slash (/) as
+    normal behavior such as handling of URLs ending in a slash (/) as
     directories or index files is suppressed.</p></note>
 </usage>
 
@@ -3854,7 +4087,7 @@ server</description>
 <description>Amount of time the server will wait for
 certain events before failing a request</description>
 <syntax>TimeOut <var>seconds</var></syntax>
-<default>TimeOut 300</default>
+<default>TimeOut 60</default>
 <contextlist><context>server config</context><context>virtual host</context></contextlist>
 
 <usage>
@@ -3886,7 +4119,7 @@ certain events before failing a request</description>
 
 <directivesynopsis>
 <name>TraceEnable</name>
-<description>Determines the behaviour on <code>TRACE</code> requests</description>
+<description>Determines the behavior on <code>TRACE</code> requests</description>
 <syntax>TraceEnable <var>[on|off|extended]</var></syntax>
 <default>TraceEnable on</default>
 <contextlist><context>server config</context><context>virtual host</context></contextlist>
@@ -4067,9 +4300,9 @@ hostname or IP address</description>
       <li>A fully qualified domain name for the IP address of the
       virtual host (not recommended);</li>
 
-      <li>The character <code>*</code>, which acts as a wildcard and matches 
+      <li>The character <code>*</code>, which acts as a wildcard and matches
       any IP address.</li>
-  
+
       <li>The string <code>_default_</code>, which is an alias for <code>*</code></li>
 
     </ul>
@@ -4124,18 +4357,18 @@ hostname or IP address</description>
     <directive module="core">ServerName</directive> from the "main"
     server configuration will be inherited.</p>
 
-    <p>When a request is received, the server first maps it to the best matching 
-    <directive type="section">VirtualHost</directive> based on the local 
-    IP address and port combination only.  Non-wildcards have a higher 
-    precedence. If no match based on IP and port occurs at all, the 
+    <p>When a request is received, the server first maps it to the best matching
+    <directive type="section">VirtualHost</directive> based on the local
+    IP address and port combination only.  Non-wildcards have a higher
+    precedence. If no match based on IP and port occurs at all, the
     "main" server configuration is used.</p>
-    
+
     <p>If multiple virtual hosts contain the best matching IP address and port,
-    the server selects from these virtual hosts the best match based on the 
-    requested hostname.  If no matching name-based virtual host is found, 
-    then the first listed virtual host that matched the IP address will be 
+    the server selects from these virtual hosts the best match based on the
+    requested hostname.  If no matching name-based virtual host is found,
+    then the first listed virtual host that matched the IP address will be
     used.  As a consequence, the first listed virtual host for a given IP address
-    and port combination is default virtual host for that IP and port 
+    and port combination is default virtual host for that IP and port
     combination.</p>
 
     <note type="warning"><title>Security</title>

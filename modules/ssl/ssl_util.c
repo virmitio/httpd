@@ -125,6 +125,8 @@ BOOL ssl_util_path_check(ssl_pathcheck_t pcm, const char *path, apr_pool_t *p)
     if (pcm & SSL_PCM_EXISTS && apr_stat(&finfo, path,
                                 APR_FINFO_TYPE|APR_FINFO_SIZE, p) != 0)
         return FALSE;
+    AP_DEBUG_ASSERT((pcm & SSL_PCM_EXISTS) ||
+                    !(pcm & (SSL_PCM_ISREG|SSL_PCM_ISDIR|SSL_PCM_ISNONZERO)));
     if (pcm & SSL_PCM_ISREG && finfo.filetype != APR_REG)
         return FALSE;
     if (pcm & SSL_PCM_ISDIR && finfo.filetype != APR_DIR)
@@ -143,7 +145,7 @@ ssl_algo_t ssl_util_algotypeof(X509 *pCert, EVP_PKEY *pKey)
     if (pCert != NULL)
         pFreeKey = pKey = X509_get_pubkey(pCert);
     if (pKey != NULL) {
-        switch (EVP_PKEY_key_type(pKey)) {
+        switch (EVP_PKEY_type(pKey->type)) {
             case EVP_PKEY_RSA:
                 t = SSL_ALGO_RSA;
                 break;
@@ -154,16 +156,13 @@ ssl_algo_t ssl_util_algotypeof(X509 *pCert, EVP_PKEY *pKey)
             case EVP_PKEY_EC:
                 t = SSL_ALGO_ECC;
                 break;
-#endif 
+#endif
             default:
                 break;
         }
     }
-#ifdef OPENSSL_VERSION_NUMBER
-    /* Only refcounted in OpenSSL */
     if (pFreeKey != NULL)
         EVP_PKEY_free(pFreeKey);
-#endif
     return t;
 }
 
@@ -216,14 +215,14 @@ unsigned char *ssl_asn1_table_set(apr_hash_t *table,
         }
     }
     else {
-        asn1 = malloc(sizeof(*asn1));
+        asn1 = ap_malloc(sizeof(*asn1));
         asn1->source_mtime = 0; /* used as a note for encrypted private keys */
         asn1->cpData = NULL;
     }
 
     asn1->nData = length;
     if (!asn1->cpData) {
-        asn1->cpData = malloc(length);
+        asn1->cpData = ap_malloc(length);
     }
 
     apr_hash_set(table, key, klen, asn1);
@@ -287,13 +286,13 @@ STACK_OF(X509) *ssl_read_pkcs7(server_rec *s, const char *pkcs7)
 
     f = fopen(pkcs7, "r");
     if (!f) {
-        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, "Can't open %s", pkcs7);
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(02212) "Can't open %s", pkcs7);
         ssl_die();
     }
 
     p7 = PEM_read_PKCS7(f, NULL, NULL, NULL);
     if (!p7) {
-        ap_log_error(APLOG_MARK, APLOG_ERR|APLOG_NOERRNO, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, s, APLOGNO(02274)
                      "Can't read PKCS7 object %s", pkcs7);
         ssl_log_ssl_error(SSLLOG_MARK, APLOG_CRIT, s);
         exit(1);
@@ -313,13 +312,13 @@ STACK_OF(X509) *ssl_read_pkcs7(server_rec *s, const char *pkcs7)
         break;
 
     default:
-        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(02213)
                      "Don't understand PKCS7 file %s", pkcs7);
         ssl_die();
     }
 
     if (!certs) {
-        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(02214)
                      "No certificates in %s", pkcs7);
         ssl_die();
     }
@@ -338,18 +337,8 @@ STACK_OF(X509) *ssl_read_pkcs7(server_rec *s, const char *pkcs7)
 static apr_thread_mutex_t **lock_cs;
 static int                  lock_num_locks;
 
-#ifdef HAVE_SSLC
-#if SSLC_VERSION_NUMBER >= 0x2000
-static int ssl_util_thr_lock(int mode, int type,
-                             char *file, int line)
-#else
-static void ssl_util_thr_lock(int mode, int type,
-                              char *file, int line)
-#endif
-#else
 static void ssl_util_thr_lock(int mode, int type,
                               const char *file, int line)
-#endif
 {
     if (type < lock_num_locks) {
         if (mode & CRYPTO_LOCK) {
@@ -358,21 +347,13 @@ static void ssl_util_thr_lock(int mode, int type,
         else {
             apr_thread_mutex_unlock(lock_cs[type]);
         }
-#ifdef HAVE_SSLC
-#if SSLC_VERSION_NUMBER >= 0x2000
-        return 1;
-    }
-    else {
-        return -1;
-#endif
-#endif
     }
 }
 
 /* Dynamic lock structure */
 struct CRYPTO_dynlock_value {
     apr_pool_t *pool;
-    const char* file; 
+    const char* file;
     int line;
     apr_thread_mutex_t *mutex;
 };
@@ -383,45 +364,45 @@ apr_pool_t *dynlockpool = NULL;
 /*
  * Dynamic lock creation callback
  */
-static struct CRYPTO_dynlock_value *ssl_dyn_create_function(const char *file, 
+static struct CRYPTO_dynlock_value *ssl_dyn_create_function(const char *file,
                                                      int line)
 {
     struct CRYPTO_dynlock_value *value;
     apr_pool_t *p;
     apr_status_t rv;
 
-    /* 
+    /*
      * We need a pool to allocate our mutex.  Since we can't clear
      * allocated memory from a pool, create a subpool that we can blow
-     * away in the destruction callback. 
+     * away in the destruction callback.
      */
     rv = apr_pool_create(&p, dynlockpool);
     if (rv != APR_SUCCESS) {
         ap_log_perror(file, line, APLOG_MODULE_INDEX, APLOG_ERR, rv, dynlockpool,
-                       "Failed to create subpool for dynamic lock");
+                      APLOGNO(02183) "Failed to create subpool for dynamic lock");
         return NULL;
     }
 
-    ap_log_perror(file, line, APLOG_MODULE_INDEX, APLOG_DEBUG, 0, p,
+    ap_log_perror(file, line, APLOG_MODULE_INDEX, APLOG_TRACE1, 0, p,
                   "Creating dynamic lock");
-    
-    value = (struct CRYPTO_dynlock_value *)apr_palloc(p, 
+
+    value = (struct CRYPTO_dynlock_value *)apr_palloc(p,
                                                       sizeof(struct CRYPTO_dynlock_value));
     if (!value) {
         ap_log_perror(file, line, APLOG_MODULE_INDEX, APLOG_ERR, 0, p,
-                      "Failed to allocate dynamic lock structure");
+                      APLOGNO(02185) "Failed to allocate dynamic lock structure");
         return NULL;
     }
-    
+
     value->pool = p;
     /* Keep our own copy of the place from which we were created,
        using our own pool. */
     value->file = apr_pstrdup(p, file);
     value->line = line;
-    rv = apr_thread_mutex_create(&(value->mutex), APR_THREAD_MUTEX_DEFAULT, 
+    rv = apr_thread_mutex_create(&(value->mutex), APR_THREAD_MUTEX_DEFAULT,
                                 p);
     if (rv != APR_SUCCESS) {
-        ap_log_perror(file, line, APLOG_MODULE_INDEX, APLOG_ERR, rv, p,
+        ap_log_perror(file, line, APLOG_MODULE_INDEX, APLOG_ERR, rv, p, APLOGNO(02186)
                       "Failed to create thread mutex for dynamic lock");
         apr_pool_destroy(p);
         return NULL;
@@ -439,17 +420,17 @@ static void ssl_dyn_lock_function(int mode, struct CRYPTO_dynlock_value *l,
     apr_status_t rv;
 
     if (mode & CRYPTO_LOCK) {
-        ap_log_perror(file, line, APLOG_MODULE_INDEX, APLOG_DEBUG, 0, l->pool,
+        ap_log_perror(file, line, APLOG_MODULE_INDEX, APLOG_TRACE3, 0, l->pool,
                       "Acquiring mutex %s:%d", l->file, l->line);
         rv = apr_thread_mutex_lock(l->mutex);
-        ap_log_perror(file, line, APLOG_MODULE_INDEX, APLOG_DEBUG, rv, l->pool,
+        ap_log_perror(file, line, APLOG_MODULE_INDEX, APLOG_TRACE3, rv, l->pool,
                       "Mutex %s:%d acquired!", l->file, l->line);
     }
     else {
-        ap_log_perror(file, line, APLOG_MODULE_INDEX, APLOG_DEBUG, 0, l->pool,
+        ap_log_perror(file, line, APLOG_MODULE_INDEX, APLOG_TRACE3, 0, l->pool,
                       "Releasing mutex %s:%d", l->file, l->line);
         rv = apr_thread_mutex_unlock(l->mutex);
-        ap_log_perror(file, line, APLOG_MODULE_INDEX, APLOG_DEBUG, rv, l->pool,
+        ap_log_perror(file, line, APLOG_MODULE_INDEX, APLOG_TRACE3, rv, l->pool,
                       "Mutex %s:%d released!", l->file, l->line);
     }
 }
@@ -457,18 +438,18 @@ static void ssl_dyn_lock_function(int mode, struct CRYPTO_dynlock_value *l,
 /*
  * Dynamic lock destruction callback
  */
-static void ssl_dyn_destroy_function(struct CRYPTO_dynlock_value *l, 
+static void ssl_dyn_destroy_function(struct CRYPTO_dynlock_value *l,
                           const char *file, int line)
 {
     apr_status_t rv;
 
-    ap_log_perror(file, line, APLOG_MODULE_INDEX, APLOG_DEBUG, 0, l->pool,
+    ap_log_perror(file, line, APLOG_MODULE_INDEX, APLOG_TRACE1, 0, l->pool,
                   "Destroying dynamic lock %s:%d", l->file, l->line);
     rv = apr_thread_mutex_destroy(l->mutex);
     if (rv != APR_SUCCESS) {
         ap_log_perror(file, line, APLOG_MODULE_INDEX, APLOG_ERR, rv, l->pool,
-                      "Failed to destroy mutex for dynamic lock %s:%d", 
-                      l->file, l->line);
+                      APLOGNO(02192) "Failed to destroy mutex for dynamic "
+                      "lock %s:%d", l->file, l->line);
     }
 
     /* Trust that whomever owned the CRYPTO_dynlock_value we were
@@ -499,11 +480,11 @@ static apr_status_t ssl_util_thread_cleanup(void *data)
 {
     CRYPTO_set_locking_callback(NULL);
     CRYPTO_set_id_callback(NULL);
-    
+
     CRYPTO_set_dynlock_create_callback(NULL);
     CRYPTO_set_dynlock_lock_callback(NULL);
     CRYPTO_set_dynlock_destroy_callback(NULL);
-    
+
     dynlockpool = NULL;
 
     /* Let the registered mutex cleanups do their own thing
@@ -525,9 +506,9 @@ void ssl_util_thread_setup(apr_pool_t *p)
     CRYPTO_set_id_callback(ssl_util_thr_id);
 
     CRYPTO_set_locking_callback(ssl_util_thr_lock);
-    
+
     /* Set up dynamic locking scaffolding for OpenSSL to use at its
-     * convenience. 
+     * convenience.
      */
     dynlockpool = p;
     CRYPTO_set_dynlock_create_callback(ssl_dyn_create_function);

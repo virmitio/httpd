@@ -10,13 +10,20 @@ AC_INIT(ABOUT_APACHE)
 AC_CONFIG_HEADER(include/ap_config_auto.h)
 AC_CONFIG_AUX_DIR(build)
 
+dnl Absolute source/build directory
+abs_srcdir=`(cd $srcdir && pwd)`
+abs_builddir=`pwd`
+
+dnl Ensure that the httpd version is included
+HTTPD_VERSION=`$abs_srcdir/build/get-version.sh all $abs_srcdir/include/ap_release.h AP_SERVER`
+AC_SUBST(HTTPD_VERSION)
+
 dnl #
 dnl # Include our own M4 macros along with those for APR and libtool
 dnl #
 sinclude(build/apr_common.m4)
 sinclude(build/find_apr.m4)
 sinclude(build/find_apu.m4)
-sinclude(build/find_ldap.m4)
 sinclude(acinclude.m4)
 
 dnl Later versions of autoconf (>= 2.62) by default cause the produced
@@ -60,6 +67,10 @@ nl='
 dnl Check that mkdir -p works
 APR_MKDIR_P_CHECK($top_srcdir/build/mkdir.sh)
 
+dnl get an EGREP to use in the Makefiles
+AC_PROG_EGREP
+APACHE_SUBST(EGREP)
+
 dnl ## Run configure for packages Apache uses
 
 dnl shared library support for these packages doesn't currently
@@ -85,6 +96,9 @@ if test "$apr_found" = "no"; then
 fi
 
 if test "$apr_found" = "reconfig"; then
+  if test ! -d srclib/apr; then
+    AC_MSG_ERROR([Bundled APR requested but not found at srclib/apr. Download and unpack the corresponding httpd-${HTTPD_VERSION}-deps package over this one.])
+  fi
   APR_SUBDIR_CONFIG(srclib/apr,
                     [$apache_apr_flags --prefix=$prefix --exec-prefix=$exec_prefix --libdir=$libdir --includedir=$includedir --bindir=$bindir --datadir=$datadir --with-installbuilddir=$installbuilddir],
                     [--enable-layout=*|\'--enable-layout=*])
@@ -146,6 +160,9 @@ yes.reconfig)
 esac  
 
 if test "$apu_found" = "reconfig"; then
+  if test ! -d srclib/apr-util; then
+    AC_MSG_ERROR([Bundled APR-Util requested but not found at srclib/apr-util. Download and unpack the corresponding httpd-${HTTPD_VERSION}-deps package over this one.])
+  fi
   APR_SUBDIR_CONFIG(srclib/apr-util,
                     [--with-apr=../apr --prefix=$prefix --exec-prefix=$exec_prefix --libdir=$libdir --includedir=$includedir --bindir=$bindir],
                     [--enable-layout=*|\'--enable-layout=*])
@@ -181,10 +198,6 @@ if test "x${cache_file}" = "x/dev/null"; then
   # configure script iff caching is disabled (the autoconf 2.5x default).
   export CC; export CPP
 fi
-
-dnl Absolute source/build directory
-abs_srcdir=`(cd $srcdir && pwd)`
-abs_builddir=`pwd`
 
 AC_ARG_WITH(pcre,
 APACHE_HELP_STRING(--with-pcre=PATH,Use external PCRE library))
@@ -457,9 +470,6 @@ if test "$ac_cv_gettid" = "yes"; then
     AC_DEFINE(HAVE_GETTID, 1, [Define if you have gettid()])
 fi
 
-dnl check for LDAP support, needed by modules/aaa and modules/ldap
-AP_FIND_LDAP
-
 dnl ## Check for the tm_gmtoff field in struct tm to get the timezone diffs
 AC_CACHE_CHECK([for tm_gmtoff in struct tm], ac_cv_struct_tm_gmtoff,
 [AC_TRY_COMPILE([#include <sys/types.h>
@@ -540,23 +550,31 @@ AC_ARG_ENABLE(exception-hook,APACHE_HELP_STRING(--enable-exception-hook,Enable f
               [Allow modules to run hook after a fatal exception])
 ])dnl
 
-AC_ARG_ENABLE(maintainer-mode,APACHE_HELP_STRING(--enable-maintainer-mode,Turn on debugging and compile time warnings),
+AC_ARG_ENABLE(load-all-modules,APACHE_HELP_STRING(--enable-load-all-modules,Load all modules),
+[
+  LOAD_ALL_MODULES=$enableval
+  AC_MSG_NOTICE([Setting "LOAD_ALL_MODULES" to $LOAD_ALL_MODULES])
+],
+[
+  LOAD_ALL_MODULES="no"
+])
+
+AC_ARG_ENABLE(maintainer-mode,APACHE_HELP_STRING(--enable-maintainer-mode,Turn on debugging and compile time warnings and load all compiled modules),
 [
   APR_ADDTO(CPPFLAGS, -DAP_DEBUG)
   if test "$GCC" = "yes"; then
     APR_ADDTO(CFLAGS,[-Wall -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -Wpointer-arith])
-    AC_CACHE_CHECK([whether gcc accepts -Wdeclaration-after-statement], [ap_cv_cc_Wdas], [
-      save_CFLAGS=$CFLAGS
-      CFLAGS="$CFLAGS -Wdeclaration-after-statement"
-      AC_COMPILE_IFELSE([AC_LANG_SOURCE([int foo() { return 0; }])],
-        [ap_cv_cc_Wdas=yes], [ap_cv_cc_Wdas=no])
-      CFLAGS=$save_CFLAGS
-    ])
-    if test "$ap_cv_cc_Wdas" = "yes"; then
-      APR_ADDTO(CFLAGS,[-Wdeclaration-after-statement])
-    fi
+    APACHE_ADD_GCC_CFLAG([-Wdeclaration-after-statement])
+    APACHE_ADD_GCC_CFLAG([-Werror=declaration-after-statement])
+    APACHE_ADD_GCC_CFLAG([-Wformat])
+    APACHE_ADD_GCC_CFLAG([-Wformat-security])
+    APACHE_ADD_GCC_CFLAG([-Werror=format-security])
   elif test "$AIX_XLC" = "yes"; then
     APR_ADDTO(CFLAGS,-qfullpath -qinitauto=FE -qcheck=all -qinfo=pro)
+  fi
+  if test "x$enable_load_all_modules" = "x"; then
+    LOAD_ALL_MODULES=yes
+    AC_MSG_NOTICE([Maintainer mode setting "LOAD_ALL_MODULES" to $LOAD_ALL_MODULES])
   fi
 ])dnl
 
@@ -565,16 +583,11 @@ AC_ARG_ENABLE(debugger-mode,APACHE_HELP_STRING(--enable-debugger-mode,Turn on de
   APR_ADDTO(CPPFLAGS, -DAP_DEBUG)
   if test "$GCC" = "yes"; then
     APR_ADDTO(CFLAGS,[-Wall -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -Wpointer-arith -O0])
-    AC_CACHE_CHECK([whether gcc accepts -Wdeclaration-after-statement], [ap_cv_cc_Wdas], [
-      save_CFLAGS=$CFLAGS
-      CFLAGS="$CFLAGS -Wdeclaration-after-statement"
-      AC_COMPILE_IFELSE([AC_LANG_SOURCE([int foo() { return 0; }])],
-        [ap_cv_cc_Wdas=yes], [ap_cv_cc_Wdas=no])
-      CFLAGS=$save_CFLAGS
-    ])
-    if test "$ap_cv_cc_Wdas" = "yes"; then
-      APR_ADDTO(CFLAGS,[-Wdeclaration-after-statement])
-    fi
+    APACHE_ADD_GCC_CFLAG([-Wdeclaration-after-statement])
+    APACHE_ADD_GCC_CFLAG([-Werror=declaration-after-statement])
+    APACHE_ADD_GCC_CFLAG([-Wformat])
+    APACHE_ADD_GCC_CFLAG([-Wformat-security])
+    APACHE_ADD_GCC_CFLAG([-Werror=format-security])
   elif test "$AIX_XLC" = "yes"; then
     APR_ADDTO(CFLAGS,-qfullpath -qinitauto=FE -qcheck=all -qinfo=pro)
   fi
@@ -803,10 +816,6 @@ AC_SUBST(ap_make_delimiter)
 dnl Ensure that docs/conf is created.
 test -d docs/conf||$mkdir_p docs/conf
 
-dnl Ensure that the httpd version is included
-HTTPD_VERSION=`$abs_srcdir/build/get-version.sh all $abs_srcdir/include/ap_release.h AP_SERVER`
-AC_SUBST(HTTPD_VERSION)
-
-AC_OUTPUT($APACHE_OUTPUT_FILES docs/conf/httpd.conf docs/conf/extra/httpd-autoindex.conf docs/conf/extra/httpd-dav.conf docs/conf/extra/httpd-default.conf docs/conf/extra/httpd-info.conf docs/conf/extra/httpd-languages.conf docs/conf/extra/httpd-manual.conf docs/conf/extra/httpd-mpm.conf docs/conf/extra/httpd-multilang-errordoc.conf docs/conf/extra/httpd-ssl.conf docs/conf/extra/httpd-userdir.conf docs/conf/extra/httpd-vhosts.conf include/ap_config_layout.h support/apxs support/apachectl support/dbmmanage support/envvars-std support/log_server_status support/logresolve.pl support/phf_abuse_log.cgi support/split-logfile build/rules.mk build/pkg/pkginfo build/config_vars.sh,[true],[
+AC_OUTPUT($APACHE_OUTPUT_FILES docs/conf/httpd.conf docs/conf/extra/httpd-autoindex.conf docs/conf/extra/httpd-dav.conf docs/conf/extra/httpd-default.conf docs/conf/extra/httpd-info.conf docs/conf/extra/httpd-languages.conf docs/conf/extra/httpd-manual.conf docs/conf/extra/httpd-mpm.conf docs/conf/extra/httpd-multilang-errordoc.conf docs/conf/extra/httpd-policy.conf docs/conf/extra/httpd-ssl.conf docs/conf/extra/httpd-userdir.conf docs/conf/extra/httpd-vhosts.conf docs/conf/extra/proxy-html.conf include/ap_config_layout.h support/apxs support/apachectl support/dbmmanage support/envvars-std support/log_server_status support/logresolve.pl support/phf_abuse_log.cgi support/split-logfile build/rules.mk build/pkg/pkginfo build/config_vars.sh,[true],[
   APACHE_GEN_MAKEFILES
 ])

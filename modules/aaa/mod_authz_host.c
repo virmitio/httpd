@@ -153,16 +153,12 @@ static authz_status ip_check_authorization(request_rec *r,
     apr_ipsubnet_t **ip = (apr_ipsubnet_t **)parsed_require_line;
 
     while (*ip) {
-        if (apr_ipsubnet_test(*ip, r->connection->remote_addr))
+        if (apr_ipsubnet_test(*ip, r->useragent_addr))
             return AUTHZ_GRANTED;
         ip++;
     }
 
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
-                  "access to %s failed, reason: ip address list does not meet "
-                  "'require'ments for user '%s' to be allowed access",
-                  r->uri, r->user);
-
+    /* authz_core will log the require line and the result at DEBUG */
     return AUTHZ_DENIED;
 }
 
@@ -180,9 +176,9 @@ static authz_status host_check_authorization(request_rec *r,
                                     &remotehost_is_ip);
 
     if ((remotehost == NULL) || remotehost_is_ip) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
-                      "access to %s failed, reason: unable to get the "
-                      "remote host name", r->uri);
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01753)
+                      "access check of '%s' to %s failed, reason: unable to get the "
+                      "remote host name", require_line, r->uri);
     }
     else {
         /* The 'host' provider will allow the configuration to specify a list of
@@ -194,13 +190,9 @@ static authz_status host_check_authorization(request_rec *r,
                 return AUTHZ_GRANTED;
             }
         }
-
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
-                      "access to %s failed, reason: host name list does not meet "
-                      "'require'ments for user '%s' to be allowed access",
-                      r->uri, r->user);
     }
 
+    /* authz_core will log the require line and the result at DEBUG */
     return AUTHZ_DENIED;
 }
 
@@ -209,10 +201,10 @@ static authz_status local_check_authorization(request_rec *r,
                                               const void *parsed_require_line)
 {
      if (   apr_sockaddr_equal(r->connection->local_addr,
-                               r->connection->remote_addr)
-         || apr_ipsubnet_test(localhost_v4, r->connection->remote_addr)
+                               r->useragent_addr)
+         || apr_ipsubnet_test(localhost_v4, r->useragent_addr)
 #if APR_HAVE_IPV6
-         || apr_ipsubnet_test(localhost_v6, r->connection->remote_addr) 
+         || apr_ipsubnet_test(localhost_v6, r->useragent_addr)
 #endif
         )
      {

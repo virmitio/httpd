@@ -27,7 +27,7 @@
 
 <summary>
 
-<p>This document supplements the <module>mod_rewrite</module> 
+<p>This document supplements the <module>mod_rewrite</module>
 <a href="../mod/mod_rewrite.html">reference documentation</a>. It describes
 how you can use <module>mod_rewrite</module> to control access to
 various resources, and other related techniques.
@@ -47,7 +47,7 @@ configuration.</note>
 <seealso><a href="vhosts.html">Virtual hosts</a></seealso>
 <seealso><a href="proxy.html">Proxying</a></seealso>
 <seealso><a href="rewritemap.html">Using RewriteMap</a></seealso>
-<seealso><a href="advanced.html">Advanced techniques and tricks</a></seealso>
+<seealso><a href="advanced.html">Advanced techniques</a></seealso>
 <seealso><a href="avoid.html">When not to use mod_rewrite</a></seealso>
 
     <section id="blocked-inline-images">
@@ -80,6 +80,8 @@ configuration.</note>
     <p>In this first example, we simply deny the request, if it didn't
     initiate from a page on our site. For the purpose of this example,
     we assume that our site is <code>www.example.com</code>.</p>
+
+<!-- TODO: Add discussion here of why we have !^$ in there. -->
 
 <example>
 RewriteCond %{HTTP_REFERER} <strong>!^$</strong><br />
@@ -304,4 +306,4 @@ http://badguys.example.com/bad/index3.html   http://somewhere.example.com/
 
 </section>
 
-</manualpage> 
+</manualpage>

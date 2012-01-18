@@ -18,7 +18,7 @@
  * @file ap_expr.h
  * @brief Expression parser
  *
- * @defgroup AP_EXPR ap_expr
+ * @defgroup AP_EXPR Expression parser
  * @ingroup  APACHE_CORE
  * @{
  */
@@ -130,6 +130,8 @@ typedef struct {
     const char **result_string;
     /** Arbitrary context data provided by the caller for custom functions */
     void *data;
+    /** The current recursion level */
+    int reclvl;
 } ap_expr_eval_ctx_t;
 
 /**

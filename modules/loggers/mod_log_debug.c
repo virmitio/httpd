@@ -67,7 +67,7 @@ static void do_debug_log(request_rec *r, const char *hookname)
         if (entry->condition) {
             int ret = ap_expr_exec(r, entry->condition, &err);
             if (err) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00640)
                               "Can't evaluate condition: %s", err);
                 continue;
             }
@@ -76,7 +76,7 @@ static void do_debug_log(request_rec *r, const char *hookname)
         }
         msg = ap_expr_str_exec(r, entry->msg_expr, &err);
         if (err)
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00641)
                           "Can't evaluate message expression: %s", err);
         if (APLOGrdebug(r))
             ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, "%s (%s hook, %s:%d)",
@@ -221,8 +221,8 @@ static const char *cmd_log_message(cmd_parms *cmd, void *dconf_, const char *arg
                     return apr_psprintf(cmd->pool, "Invalid hook name: %s", name);
             }
         }
-        else if (strncasecmp(args[i], "if=", 3) == 0) {
-            const char *expr = args[i] + 3;
+        else if (strncasecmp(args[i], "expr=", 5) == 0) {
+            const char *expr = args[i] + 5;
             entry->condition = ap_expr_parse_cmd(cmd, expr,
                                                  AP_EXPR_FLAG_DONT_VARY,
                                                  &err, NULL);

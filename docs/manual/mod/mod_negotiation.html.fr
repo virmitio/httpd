@@ -13,11 +13,11 @@
 <body>
 <div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p>
-<p class="apache">Serveur Apache HTTP Version 2.3</p>
+<p class="apache">Serveur Apache HTTP Version 2.5</p>
 <img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
-<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.3</a> &gt; <a href="./">Modules</a></div>
+<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.5</a> &gt; <a href="./">Modules</a></div>
 <div id="page-content">
 <div id="preamble"><h1>Module Apache mod_negotiation</h1>
 <div class="toplang">
@@ -140,7 +140,7 @@ contenu</a></li>
       <dd>l'URI du fichier contenant la variante (du type de médium
       donné, codé selon le codage de contenu donné). Cet URI est
       considéré comme relatif au fichier de correspondances ; il doit
-      être situé sur le même serveur (!), et doit faire référence au
+      être situé sur le même serveur, et doit faire référence au
       fichier auquel le client se verrait accorder l'accès s'il était
       requis directement.</dd>
 
@@ -171,7 +171,7 @@ contenu</a></li>
     <code>document.html.fr</code>, et <code>document.html.de</code>. Le
     fichier de correspondances de types se nommera
     <code>document.html.var</code> et contiendra ce qui suit :</p>
-    
+
     <div class="example"><p><code>
     URI: document.html<br />
     <br />
@@ -354,6 +354,6 @@ cas où le client n'a pas formulé de préférences</td></tr>
 <a href="../fr/mod/mod_negotiation.html" title="Français">&nbsp;fr&nbsp;</a> |
 <a href="../ja/mod/mod_negotiation.html" hreflang="ja" rel="alternate" title="Japanese">&nbsp;ja&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2011 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2012 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p></div>
 </body></html>

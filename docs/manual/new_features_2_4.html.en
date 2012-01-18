@@ -12,14 +12,15 @@
 <link href="./images/favicon.ico" rel="shortcut icon" /></head>
 <body id="manual-page"><div id="page-header">
 <p class="menu"><a href="./mod/">Modules</a> | <a href="./mod/directives.html">Directives</a> | <a href="./faq/">FAQ</a> | <a href="./glossary.html">Glossary</a> | <a href="./sitemap.html">Sitemap</a></p>
-<p class="apache">Apache HTTP Server Version 2.3</p>
+<p class="apache">Apache HTTP Server Version 2.5</p>
 <img alt="" src="./images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="./images/left.gif" /></a></div>
 <div id="path">
-<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="./">Version 2.3</a></div><div id="page-content"><div id="preamble"><h1>Overview of new features in Apache HTTP Server 2.4</h1>
+<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="./">Version 2.5</a></div><div id="page-content"><div id="preamble"><h1>Overview of new features in Apache HTTP Server 2.4</h1>
 <div class="toplang">
 <p><span>Available Languages: </span><a href="./en/new_features_2_4.html" title="English">&nbsp;en&nbsp;</a> |
-<a href="./fr/new_features_2_4.html" hreflang="fr" rel="alternate" title="Français">&nbsp;fr&nbsp;</a></p>
+<a href="./fr/new_features_2_4.html" hreflang="fr" rel="alternate" title="Français">&nbsp;fr&nbsp;</a> |
+<a href="./tr/new_features_2_4.html" hreflang="tr" rel="alternate" title="Türkçe">&nbsp;tr&nbsp;</a></p>
 </div>
 
   <p>This document describes some of the major changes between the
@@ -39,14 +40,13 @@
     
     <dl>
       <dt>KeepAliveTimeout in milliseconds</dt>
-
       <dd>It is now possible to specify <code class="directive"><a href="./mod/core.html#keepalivetimeout">KeepAliveTimeout</a></code> in milliseconds.
       </dd>
- 
+
       <dt>Loadable MPMs</dt>
-      <dd>Multiple MPMs can now be built as loadable modules at compile time.  
+      <dd>Multiple MPMs can now be built as loadable modules at compile time.
       The MPM of choice can be configured at run time.</dd>
- 
+
       <dt>Per-module and per-directory LogLevel configuration</dt>
       <dd>The <code class="directive"><a href="./mod/core.html#loglevel">LogLevel</a></code> can now be
       configured per module and per directory.  New levels <code>trace1</code>
@@ -54,16 +54,34 @@
       level.</dd>
 
       <dt>Event MPM</dt>
-      <dd>The Event MPM is no longer experimental but is rather fully supported.</dd>
- 
+      <dd>The Event MPM is no longer experimental but is now fully supported.</dd>
+
       <dt>Asynchronous support</dt>
       <dd>Better support for asynchronous read/write for supporting MPMs and
       platforms.</dd>
 
       <dt>Per-request configuration sections</dt>
-      <dd>&lt;<code class="directive"><a href="./mod/core.html#if">If</a></code>&gt; sections can be used to 
+      <dd>&lt;<code class="directive"><a href="./mod/core.html#if">If</a></code>&gt; sections can be used to
       set the configuration based on per-request criteria</dd>
- 
+
+      <dt>General-purpose expression parser</dt>
+      <dd>A new expression parser allows to specify
+          <a href="expr.html">complex conditions</a> using a common syntax
+          in directives like
+          <code class="directive"><a href="./mod/mod_setenvif.html#setenvifexpr">SetEnvIfExpr</a></code>,
+          <code class="directive"><a href="./mod/mod_rewrite.html#rewritecond">RewriteCond</a></code>,
+          <code class="directive"><a href="./mod/mod_headers.html#header">Header</a></code>,
+          <code class="directive"><a href="./mod/mod_headers.html#if">&lt;If&gt;</a></code>,
+          and others.
+      </dd>
+
+      <dt>Reduced memory usage</dt>
+      <dd>Despite many new features, 2.4.x tends to use less memory than
+      2.2.x.</dd>
+
+      <dt>NameVirtualHost directive</dt>
+      <dd>No longer needed and is now deprecated.</dd>
+
     </dl>
   </div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section">
@@ -81,8 +99,11 @@
       <dd>Convert response body into an RFC2397 data URL</dd>
 
       <dt><code class="module"><a href="./mod/mod_lua.html">mod_lua</a></code></dt>
-      <dd>Embeds the <a href="http://www.lua.org/">Lua</a> language into httpd, 
+      <dd>Embeds the <a href="http://www.lua.org/">Lua</a> language into httpd,
       for configuration and small business logic functions.</dd>
+
+      <dt><code class="module"><a href="./mod/mod_proxy_express.html">mod_proxy_express</a></code></dt>
+      <dd>Provides dynamically configured mass reverse proxies for <code class="module"><a href="./mod/mod_proxy.html">mod_proxy</a></code></dd>
 
       <dt><code class="module"><a href="./mod/mod_proxy_fcgi.html">mod_proxy_fcgi</a></code></dt>
       <dd>FastCGI Protocol backend for <code class="module"><a href="./mod/mod_proxy.html">mod_proxy</a></code></dd>
@@ -114,6 +135,15 @@
       <dd>Allows to add customizable debug logging at different phases of the
       request processing.</dd>
 
+      <dt><code class="module"><a href="./mod/mod_xml2enc.html">mod_xml2enc</a></code></dt>
+      <dd>Formerly a third-party module, this supports internationalisation
+      in libxml2-based (markup-aware) filter modules.</dd>
+
+      <dt><code class="module"><a href="./mod/mod_proxy_html.html">mod_proxy_html</a></code></dt>
+      <dd>Formerly a third-party module, this supports fixing of HTML
+      links in a reverse proxy situation, where the backend generates
+      URLs that are not valid for the proxy's clients.</dd>
+
     </dl>
   </div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section">
@@ -127,14 +157,14 @@
       certificate.  The default responder is configurable, along with
       the decision on whether to prefer the responder designated in
       the client certificate itself.</dd>
-      
-      <dd><code class="module"><a href="./mod/mod_ssl.html">mod_ssl</a></code> now also supports OCSP stapling, where the 
-      server pro-actively obtains an OCSP verification of its certificate and 
+
+      <dd><code class="module"><a href="./mod/mod_ssl.html">mod_ssl</a></code> now also supports OCSP stapling, where the
+      server pro-actively obtains an OCSP verification of its certificate and
       transmits that to the client during the handshake. </dd>
-      
-      <dd><code class="module"><a href="./mod/mod_ssl.html">mod_ssl</a></code> can now be configured to share SSL Session 
+
+      <dd><code class="module"><a href="./mod/mod_ssl.html">mod_ssl</a></code> can now be configured to share SSL Session
       data between servers through memcached</dd>
- 
+
       <dt><code class="module"><a href="./mod/mod_proxy.html">mod_proxy</a></code></dt>
 
       <dd>The <code class="directive"><a href="./mod/mod_proxy.html#proxypass">ProxyPass</a></code> directive
@@ -151,6 +181,11 @@
       <dd>Additional BalancerMembers can be added at runtime via balancer-manager</dd>
 
       <dd>Runtime configuration of a subset of Balancer parameters</dd>
+
+      <dd>BalancerMembers can be set to 'Drain' so that they only respond to existing sticky
+      sessions, allowing them to be taken gracefully offline.</dd>
+
+      <dd>Balancer settings can be persistant after restarts.</dd>
 
       <dt><code class="module"><a href="./mod/mod_cache.html">mod_cache</a></code></dt>
 
@@ -175,7 +210,7 @@
 
       <dt><code class="module"><a href="./mod/mod_cgi.html">mod_cgi</a></code>, <code class="module"><a href="./mod/mod_include.html">mod_include</a></code>,
           <code class="module"><a href="./mod/mod_isapi.html">mod_isapi</a></code>, ...</dt>
-      <dd>Translation of headers to environment variables is more strict than 
+      <dd>Translation of headers to environment variables is more strict than
       before to mitigate some possible cross-site-scripting attacks via header
       injection. Headers containing invalid characters (including underscores)
       are now silently dropped. <a href="env.html">Environment Variables
@@ -199,6 +234,19 @@
       (Query String Discard) and <code>[END]</code> flags for
       <code class="directive"><a href="./mod/mod_rewrite.html#rewriterule">RewriteRule</a></code> to
       simplify common rewriting scenarios.</dd>
+
+      <dt><code class="module"><a href="./mod/mod_ldap.html">mod_ldap</a></code>, <code class="module"><a href="./mod/mod_authnz_ldap.html">mod_authnz_ldap</a></code></dt>
+      <dd><code class="module"><a href="./mod/mod_authnz_ldap.html">mod_authnz_ldap</a></code> adds support for nested groups.</dd>
+      <dd><code class="module"><a href="./mod/mod_ldap.html">mod_ldap</a></code> adds
+          <code class="directive"><a href="./mod/mod_ldap.html#ldapconnectionpoolttl">LDAPConnectionPoolTTL</a></code>,
+          <code class="directive"><a href="./mod/mod_ldap.html#ldaptimeout">LDAPTimeout</a></code>, and
+          other improvements in the handling of timeouts.
+          This is especially useful for setups where a
+          stateful firewall drops idle connections to the LDAP server.</dd>
+      <dd><code class="module"><a href="./mod/mod_ldap.html">mod_ldap</a></code> adds
+          <code class="directive"><a href="./mod/mod_ldap.html#ldaplibrarydebug">LDAPLibraryDebug</a></code> to log
+          debug information provided by the used LDAP toolkit.</dd>
+
     </dl>
   </div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section">
@@ -241,10 +289,10 @@
       <dd>We now have a general-purpose expression parser, whose API is
           exposed in <var>ap_expr.h</var>.  This is adapted from the
           expression parser previously implemented in
-          <code class="module"><a href="./mod/mod_include.html">mod_include</a></code>.</dd>
+          <code class="module"><a href="./mod/mod_ssl.html">mod_ssl</a></code>.</dd>
 
       <dt>Authorization Logic Containers</dt>
-      
+
       <dd>Authorization modules now register as a provider, via
       ap_register_auth_provider(), to support advanced authorization logic,
       such as <code class="directive"><a href="./mod/mod_authz_core.html#requireall">&lt;RequireAll&gt;</a></code>.</dd>
@@ -259,7 +307,7 @@
       supported.</dd>
 
       <dt>Cache Status Hook Added</dt>
-      
+
       <dd>The <code class="module"><a href="./mod/mod_cache.html">mod_cache</a></code> module now includes a new
       <code>cache_status</code> hook, which is called when the caching
       decision becomes known. A default implementation is provided
@@ -272,8 +320,9 @@
   </div></div>
 <div class="bottomlang">
 <p><span>Available Languages: </span><a href="./en/new_features_2_4.html" title="English">&nbsp;en&nbsp;</a> |
-<a href="./fr/new_features_2_4.html" hreflang="fr" rel="alternate" title="Français">&nbsp;fr&nbsp;</a></p>
+<a href="./fr/new_features_2_4.html" hreflang="fr" rel="alternate" title="Français">&nbsp;fr&nbsp;</a> |
+<a href="./tr/new_features_2_4.html" hreflang="tr" rel="alternate" title="Türkçe">&nbsp;tr&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2011 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2012 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="./mod/">Modules</a> | <a href="./mod/directives.html">Directives</a> | <a href="./faq/">FAQ</a> | <a href="./glossary.html">Glossary</a> | <a href="./sitemap.html">Sitemap</a></p></div>
 </body></html>

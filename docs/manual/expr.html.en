@@ -12,11 +12,11 @@
 <link href="./images/favicon.ico" rel="shortcut icon" /></head>
 <body id="manual-page"><div id="page-header">
 <p class="menu"><a href="./mod/">Modules</a> | <a href="./mod/directives.html">Directives</a> | <a href="./faq/">FAQ</a> | <a href="./glossary.html">Glossary</a> | <a href="./sitemap.html">Sitemap</a></p>
-<p class="apache">Apache HTTP Server Version 2.3</p>
+<p class="apache">Apache HTTP Server Version 2.5</p>
 <img alt="" src="./images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="./images/left.gif" /></a></div>
 <div id="path">
-<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="./">Version 2.3</a></div><div id="page-content"><div id="preamble"><h1>Expressions in Apache HTTP Server</h1>
+<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="./">Version 2.5</a></div><div id="page-content"><div id="preamble"><h1>Expressions in Apache HTTP Server</h1>
 <div class="toplang">
 <p><span>Available Languages: </span><a href="./en/expr.html" title="English">&nbsp;en&nbsp;</a> |
 <a href="./fr/expr.html" hreflang="fr" rel="alternate" title="Français">&nbsp;fr&nbsp;</a></p>
@@ -40,7 +40,8 @@
 <li><img alt="" src="./images/down.gif" /> <a href="#unnop">Unary operators</a></li>
 <li><img alt="" src="./images/down.gif" /> <a href="#functions">Functions</a></li>
 <li><img alt="" src="./images/down.gif" /> <a href="#other">Other</a></li>
-</ul><h3>See also</h3><ul class="seealso"><li><code class="directive"><a href="./mod/core.html#if">&lt;If&gt;</a></code></li><li><code class="directive"><a href="./mod/core.html#elseif">&lt;ElseIf&gt;</a></code></li><li><code class="directive"><a href="./mod/core.html#else">&lt;Else&gt;</a></code></li><li><code class="directive"><a href="./mod/mod_rewrite.html#rewritecond">RewriteCond</a></code></li><li><code class="directive"><a href="./mod/mod_setenvif.html#setenvifexpr">SetEnvIfExpr</a></code></li><li><code class="directive"><a href="./mod/mod_filter.html#filterprovider">FilterProvider</a></code></li><li><a href="mod/mod_authz_core.html#reqexpr">Require expr</a></li><li><code class="directive"><a href="./mod/mod_ssl.html#sslrequire">SSLRequire</a></code></li><li><code class="directive"><a href="./mod/mod_log_debug.html#logmessage">LogMessage</a></code></li><li><code class="module"><a href="./mod/mod_include.html">mod_include</a></code></li></ul></div>
+<li><img alt="" src="./images/down.gif" /> <a href="#sslrequire">Comparison with SSLRequire</a></li>
+</ul><h3>See also</h3><ul class="seealso"><li><code class="directive"><a href="./mod/core.html#if">&lt;If&gt;</a></code></li><li><code class="directive"><a href="./mod/core.html#elseif">&lt;ElseIf&gt;</a></code></li><li><code class="directive"><a href="./mod/core.html#else">&lt;Else&gt;</a></code></li><li><code class="directive"><a href="./mod/mod_rewrite.html#rewritecond">RewriteCond</a></code></li><li><code class="directive"><a href="./mod/mod_setenvif.html#setenvifexpr">SetEnvIfExpr</a></code></li><li><code class="directive"><a href="./mod/mod_headers.html#header">Header</a></code></li><li><code class="directive"><a href="./mod/mod_headers.html#requestheader">RequestHeader</a></code></li><li><code class="directive"><a href="./mod/mod_filter.html#filterprovider">FilterProvider</a></code></li><li><a href="mod/mod_authz_core.html#reqexpr">Require expr</a></li><li><code class="directive"><a href="./mod/mod_ssl.html#sslrequire">SSLRequire</a></code></li><li><code class="directive"><a href="./mod/mod_log_debug.html#logmessage">LogMessage</a></code></li><li><code class="module"><a href="./mod/mod_include.html">mod_include</a></code></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="grammar" id="grammar">Grammar in Backus&#8211;Naur Form notation</a></h2>
@@ -147,7 +148,7 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
 <tr class="odd"><td><code>REQUEST_SCHEME</code></td>
         <td>The scheme part of the request's URI</td></tr>
 <tr><td><code>REQUEST_URI</code></td>
-        <td>The URI of the request</td></tr>
+        <td>The path part of the request's URI</td></tr>
 <tr class="odd"><td><code>DOCUMENT_URI</code></td>
         <td>Same as REQUEST_URI</td></tr>
 <tr><td><code>REQUEST_FILENAME</code></td>
@@ -222,6 +223,9 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
 <tr class="odd"><td><code>CONN_LOG_ID</code></td>
         <td>The error log id of the connection (see
             <code class="directive"><a href="./mod/core.html#errorlogformat">ErrorLogFormat</a></code>)</td></tr>
+<tr><td><code>CONN_REMOTE_ADDR</code></td>
+        <td>The peer IP address of the connection (see the
+            <code class="module"><a href="./mod/mod_remoteip.html">mod_remoteip</a></code> module)</td></tr>
 </table>
 
     <p>Misc variables</p>
@@ -343,34 +347,37 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
 <tr><td><code>-f</code></td>
         <td>The argument is treated as a filename.
             True if the file exists and is regular file</td><td>yes</td></tr>
-<tr class="odd"><td><code>-L</code></td>
+<tr class="odd"><td><code>-s</code></td>
+        <td>The argument is treated as a filename.
+            True if the file exists and is not empty</td><td>yes</td></tr>
+<tr><td><code>-L</code></td>
         <td>The argument is treated as a filename.
             True if the file exists and is symlink</td><td>yes</td></tr>
-<tr><td><code>-h</code></td>
+<tr class="odd"><td><code>-h</code></td>
         <td>The argument is treated as a filename.
             True if the file exists and is symlink
             (same as <code>-L</code>)</td><td>yes</td></tr>
-<tr class="odd"><td><code>-F</code></td>
+<tr><td><code>-F</code></td>
         <td>True if string is a valid file, accessible via all the server's
             currently-configured access controls for that path. This uses an
             internal subrequest to do the check, so use it with care - it can
             impact your server's performance!</td><td /></tr>
-<tr><td><code>-U</code></td>
+<tr class="odd"><td><code>-U</code></td>
         <td>True if string is a valid URL, accessible via all the server's
             currently-configured access controls for that path. This uses an
             internal subrequest to do the check, so use it with care - it can
             impact your server's performance!</td><td /></tr>
-<tr class="odd"><td><code>-A</code></td>
+<tr><td><code>-A</code></td>
         <td>Alias for <code>-U</code></td><td /></tr>
-<tr><td><code>-n</code></td>
+<tr class="odd"><td><code>-n</code></td>
         <td>True if string is not empty</td><td /></tr>
-<tr class="odd"><td><code>-z</code></td>
+<tr><td><code>-z</code></td>
         <td>True if string is empty</td><td /></tr>
-<tr><td><code>-T</code></td>
+<tr class="odd"><td><code>-T</code></td>
         <td>False if string is empty, "<code>0</code>", "<code>off</code>",
             "<code>false</code>", or "<code>no</code>" (case insensitive).
             True otherwise.</td><td /></tr>
-<tr class="odd"><td><code>-R</code></td>
+<tr><td><code>-R</code></td>
         <td>Same as "<code>%{REMOTE_ADDR} -ipmatch ...</code>", but more efficient
         </td><td /></tr>
 </table>
@@ -407,8 +414,8 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
 <tr><td><code>escape</code></td>
         <td>Escape special characters in %hex encoding</td><td /></tr>
 <tr class="odd"><td><code>unescape</code></td>
-        <td>Unescape %hex encoded string, leaving URL-special characters
-            encoded (XXX: describe better)</td><td /></tr>
+        <td>Unescape %hex encoded string, leaving encoded slashes alone;
+            return empty string if %00 is found</td><td /></tr>
 <tr><td><code>file</code></td>
         <td>Read contents from a file</td><td>yes</td></tr>
 <tr class="odd"><td><code>filesize</code></td>
@@ -460,11 +467,18 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
         uses.</p>
     
 
+</div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
+<div class="section">
+<h2><a name="sslrequire" id="sslrequire">Comparison with SSLRequire</a></h2>
+    
+    <p>The <em>ap_expr</em> syntax is mostly a superset of the syntax of the
+    deprecated <code class="directive"><a href="./mod/mod_ssl.html#sslrequire">SSLRequire</a></code> directive.
+    The differences are described in <code class="directive"><a href="./mod/mod_ssl.html#sslrequire">SSLRequire</a></code>'s documentation.</p>
 </div></div>
 <div class="bottomlang">
 <p><span>Available Languages: </span><a href="./en/expr.html" title="English">&nbsp;en&nbsp;</a> |
 <a href="./fr/expr.html" hreflang="fr" rel="alternate" title="Français">&nbsp;fr&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2011 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2012 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="./mod/">Modules</a> | <a href="./mod/directives.html">Directives</a> | <a href="./faq/">FAQ</a> | <a href="./glossary.html">Glossary</a> | <a href="./sitemap.html">Sitemap</a></p></div>
 </body></html>

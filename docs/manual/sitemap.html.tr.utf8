@@ -13,11 +13,11 @@
 <body id="manual-page">
 <div id="page-header">
 <p class="menu"><a href="./mod/">Modüller</a> | <a href="./mod/directives.html">Yönergeler</a> | <a href="./faq/">SSS</a> | <a href="./glossary.html">Terimler</a> | <a href="./sitemap.html">Site Haritası</a></p>
-<p class="apache">Apache HTTP Sunucusu Sürüm 2.3</p>
+<p class="apache">Apache HTTP Sunucusu Sürüm 2.5</p>
 <img alt="" src="./images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="./images/left.gif" /></a></div>
 <div id="path">
-<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Sunucusu</a> &gt; <a href="http://httpd.apache.org/docs/">Belgeleme</a> &gt; <a href="./">Sürüm 2.3</a></div>
+<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Sunucusu</a> &gt; <a href="http://httpd.apache.org/docs/">Belgeleme</a> &gt; <a href="./">Sürüm 2.5</a></div>
 <div id="page-content"><div id="preamble"><h1>Site Haritası</h1>
 <div class="toplang">
 <p><span>Mevcut Diller: </span><a href="./de/sitemap.html" hreflang="de" rel="alternate" title="Deutsch">&nbsp;de&nbsp;</a> |
@@ -31,7 +31,7 @@
 </div>
 <div class="outofdate">Bu çeviri güncel olmayabilir. Son değişiklikler için İngilizce sürüm geçerlidir.</div>
 
-<p>Bu sayfada <a href="./">Apache HTTP Sunucusu Sürüm 2.3
+<p>Bu sayfada <a href="./">Apache HTTP Sunucusu Sürüm 2.5
 Belgeleri</a>nin tamamı listelenmiştir.</p>
 </div>
 <div id="quickview"><ul id="toc">
@@ -211,6 +211,7 @@ Windows ile Apache Kullanımı</a></li>
 <li><a href="mod/mod_ext_filter.html">Apache Modülü mod_ext_filter</a></li>
 <li><a href="mod/mod_file_cache.html">Apache Modülü mod_file_cache</a></li>
 <li><a href="mod/mod_filter.html">Apache Modülü mod_filter</a></li>
+<li><a href="mod/mod_firehose.html">Apache Modülü mod_firehose</a></li>
 <li><a href="mod/mod_headers.html">Apache Modülü mod_headers</a></li>
 <li><a href="mod/mod_heartbeat.html">Apache Modülü mod_heartbeat</a></li>
 <li><a href="mod/mod_heartmonitor.html">Apache Modülü mod_heartmonitor</a></li>
@@ -233,6 +234,7 @@ Windows ile Apache Kullanımı</a></li>
 <li><a href="mod/mod_mime_magic.html">Apache Modülü mod_mime_magic</a></li>
 <li><a href="mod/mod_negotiation.html">Apache Modülü mod_negotiation</a></li>
 <li><a href="mod/mod_nw_ssl.html">Apache Modülü mod_nw_ssl</a></li>
+<li><a href="mod/mod_policy.html">Apache Modülü mod_policy</a></li>
 <li><a href="mod/mod_privileges.html">Apache Modülü mod_privileges</a></li>
 <li><a href="mod/mod_proxy.html">Apache Modülü mod_proxy</a></li>
 <li><a href="mod/mod_proxy_ajp.html">Apache Modülü mod_proxy_ajp</a></li>
@@ -242,6 +244,7 @@ Windows ile Apache Kullanımı</a></li>
 <li><a href="mod/mod_proxy_fcgi.html">Apache Modülü mod_proxy_fcgi</a></li>
 <li><a href="mod/mod_proxy_fdpass.html">Apache Modülü mod_proxy_fdpass</a></li>
 <li><a href="mod/mod_proxy_ftp.html">Apache Modülü mod_proxy_ftp</a></li>
+<li><a href="mod/mod_proxy_html.html">Apache Modülü mod_proxy_html</a></li>
 <li><a href="mod/mod_proxy_http.html">Apache Modülü mod_proxy_http</a></li>
 <li><a href="mod/mod_proxy_scgi.html">Apache Modülü mod_proxy_scgi</a></li>
 <li><a href="mod/mod_ratelimit.html">Apache Modülü mod_ratelimit</a></li>
@@ -259,6 +262,10 @@ Windows ile Apache Kullanımı</a></li>
 <li><a href="mod/mod_slotmem_plain.html">Apache Modülü mod_slotmem_plain</a></li>
 <li><a href="mod/mod_slotmem_shm.html">Apache Modülü mod_slotmem_shm</a></li>
 <li><a href="mod/mod_so.html">Apache Modülü mod_so</a></li>
+<li><a href="mod/mod_socache_dbm.html">Apache Modülü mod_socache_dbm</a></li>
+<li><a href="mod/mod_socache_dc.html">Apache Modülü mod_socache_dc</a></li>
+<li><a href="mod/mod_socache_memcache.html">Apache Modülü mod_socache_memcache</a></li>
+<li><a href="mod/mod_socache_shmcb.html">Apache Modülü mod_socache_shmcb</a></li>
 <li><a href="mod/mod_speling.html">Apache Modülü mod_speling</a></li>
 <li><a href="mod/mod_ssl.html">Apache Modülü mod_ssl</a></li>
 <li><a href="mod/mod_status.html">Apache Modülü mod_status</a></li>
@@ -270,6 +277,8 @@ Windows ile Apache Kullanımı</a></li>
 <li><a href="mod/mod_usertrack.html">Apache Modülü mod_usertrack</a></li>
 <li><a href="mod/mod_version.html">Apache Modülü mod_version</a></li>
 <li><a href="mod/mod_vhost_alias.html">Apache Modülü mod_vhost_alias</a></li>
+<li><a href="mod/mod_watchdog.html">Apache Modülü mod_watchdog</a></li>
+<li><a href="mod/mod_xml2enc.html">Apache Modülü mod_xml2enc</a></li>
 </ul>
 </div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section"><h2><a name="developer" id="developer">Geliştirici Belgeleri</a></h2>
@@ -300,6 +309,6 @@ Windows ile Apache Kullanımı</a></li>
 <a href="./tr/sitemap.html" title="Türkçe">&nbsp;tr&nbsp;</a> |
 <a href="./zh-cn/sitemap.html" hreflang="zh-cn" rel="alternate" title="Simplified Chinese">&nbsp;zh-cn&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2011 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
+<p class="apache">Copyright 2012 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
 <p class="menu"><a href="./mod/">Modüller</a> | <a href="./mod/directives.html">Yönergeler</a> | <a href="./faq/">SSS</a> | <a href="./glossary.html">Terimler</a> | <a href="./sitemap.html">Site Haritası</a></p></div>
 </body></html>

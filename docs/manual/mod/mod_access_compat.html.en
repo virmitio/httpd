@@ -13,11 +13,11 @@
 <body>
 <div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p>
-<p class="apache">Apache HTTP Server Version 2.3</p>
+<p class="apache">Apache HTTP Server Version 2.5</p>
 <img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
-<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.3</a> &gt; <a href="./">Modules</a></div>
+<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.5</a> &gt; <a href="./">Modules</a></div>
 <div id="page-content">
 <div id="preamble"><h1>Apache Module mod_access_compat</h1>
 <div class="toplang">
@@ -30,9 +30,9 @@ address)</td></tr>
 <tr><th><a href="module-dict.html#Status">Status:</a></th><td>Extension</td></tr>
 <tr><th><a href="module-dict.html#ModuleIdentifier">Module Identifier:</a></th><td>access_compat_module</td></tr>
 <tr><th><a href="module-dict.html#SourceFile">Source File:</a></th><td>mod_access_compat.c</td></tr>
-<tr><th><a href="module-dict.html#Compatibility">Compatibility:</a></th><td>Available in Apache HTTP Server 2.3 as a compatibility module with 
+<tr><th><a href="module-dict.html#Compatibility">Compatibility:</a></th><td>Available in Apache HTTP Server 2.3 as a compatibility module with
 previous versions of Apache httpd 2.x.  The directives provided by this module
-have been deprecated by the new authz refactoring.  Please see 
+have been deprecated by the new authz refactoring.  Please see
 <code class="module"><a href="../mod/mod_authz_host.html">mod_authz_host</a></code></td></tr></table>
 <h3>Summary</h3>
 
@@ -57,7 +57,7 @@ have been deprecated by the new authz refactoring.  Please see
 
     <div class="warning"><h3>Note</h3>
       <p>The directives provided by <code class="module"><a href="../mod/mod_access_compat.html">mod_access_compat</a></code> have
-      been deprecated by the new authz refactoring. Please see 
+      been deprecated by the new authz refactoring. Please see
       <code class="module"><a href="../mod/mod_authz_host.html">mod_authz_host</a></code>.</p>
     </div>
 
@@ -67,6 +67,13 @@ have been deprecated by the new authz refactoring.  Please see
     cases. However, it is possible to restrict some methods, while
     leaving other methods unrestricted, by enclosing the directives
     in a <code class="directive"><a href="../mod/core.html#limit">&lt;Limit&gt;</a></code> section.</p>
+
+    <div class="note"> <h3>Merging of configuration sections</h3>
+      <p>When any directive provided by this module is used in a new 
+      configuration section, no directives provided by this module are
+      inherited from previous configuration sections.</p>
+    </div>
+
 </div>
 <div id="quickview"><h3 class="directives">Directives</h3>
 <ul id="toc">
@@ -183,8 +190,8 @@ server</td></tr>
     to be controlled based on the existence of an <a href="../env.html">environment variable</a>. When <code>Allow from
     env=<var>env-variable</var></code> is specified, then the request is
     allowed access if the environment variable <var>env-variable</var>
-    exists. When <code>Allow from env=!<var>env-variable</var></code> is 
-    specified, then the request is allowed access if the environment 
+    exists. When <code>Allow from env=!<var>env-variable</var></code> is
+    specified, then the request is allowed access if the environment
     variable <var>env-variable</var> doesn't exist.
     The server provides the ability to set environment
     variables in a flexible way based on characteristics of the client
@@ -208,6 +215,13 @@ server</td></tr>
     <p>In this case, browsers with a user-agent string beginning
     with <code>KnockKnock/2.0</code> will be allowed access, and all
     others will be denied.</p>
+
+    <div class="note"> <h3>Merging of configuration sections</h3>
+      <p>When any directive provided by this module is used in a new 
+      configuration section, no directives provided by this module are
+      inherited from previous configuration sections.</p>
+    </div>
+
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -377,6 +391,13 @@ evaluated.</td></tr>
     of configuration sections, see the documentation on <a href="../sections.html">How Directory, Location and Files sections
     work</a>.</p>
 
+    <div class="note"> <h3>Merging of configuration sections</h3>
+      <p>When any directive provided by this module is used in a new 
+      configuration section, no directives provided by this module are
+      inherited from previous configuration sections.</p>
+    </div>
+
+
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="Satisfy" id="Satisfy">Satisfy</a> <a name="satisfy" id="satisfy">Directive</a></h2>
@@ -422,7 +443,7 @@ later</td></tr>
 
     <div class="example"><p><code>
       &lt;Directory /var/www/private&gt;<br />
-        Require valid-user<br /> 
+        Require valid-user<br />
       &lt;/Directory&gt;<br />
       <br />
       &lt;Directory /var/www/private/public&gt;<br />
@@ -438,6 +459,13 @@ later</td></tr>
     <p>Since version 2.0.51 <code class="directive">Satisfy</code> directives can
     be restricted to particular methods by <code class="directive"><a href="../mod/core.html#limit">&lt;Limit&gt;</a></code> and <code class="directive"><a href="../mod/core.html#limitexcept">&lt;LimitExcept&gt;</a></code> sections.</p>
 
+    <div class="note"> <h3>Merging of configuration sections</h3>
+      <p>When any directive provided by this module is used in a new 
+      configuration section, no directives provided by this module are
+      inherited from previous configuration sections.</p>
+    </div>
+
+
 <h3>See also</h3>
 <ul>
 <li><code class="directive"><a href="#allow">Allow</a></code></li>
@@ -450,6 +478,6 @@ later</td></tr>
 <a href="../fr/mod/mod_access_compat.html" hreflang="fr" rel="alternate" title="Français">&nbsp;fr&nbsp;</a> |
 <a href="../ja/mod/mod_access_compat.html" hreflang="ja" rel="alternate" title="Japanese">&nbsp;ja&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2011 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2012 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div>
 </body></html>

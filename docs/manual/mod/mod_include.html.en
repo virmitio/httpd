@@ -13,11 +13,11 @@
 <body>
 <div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p>
-<p class="apache">Apache HTTP Server Version 2.3</p>
+<p class="apache">Apache HTTP Server Version 2.5</p>
 <img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
-<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.3</a> &gt; <a href="./">Modules</a></div>
+<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.5</a> &gt; <a href="./">Modules</a></div>
 <div id="page-content">
 <div id="preamble"><h1>Apache Module mod_include</h1>
 <div class="toplang">
@@ -41,7 +41,6 @@
 </div>
 <div id="quickview"><h3 class="directives">Directives</h3>
 <ul id="toc">
-<li><img alt="" src="../images/down.gif" /> <a href="#ssiaccessenable">SSIAccessEnable</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#ssiendtag">SSIEndTag</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#ssierrormsg">SSIErrorMsg</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#ssietag">SSIETag</a></li>
@@ -195,7 +194,7 @@
       determined by the <code class="directive"><a href="#ssiundefinedecho">SSIUndefinedEcho</a></code> directive. Any dates printed are
       subject to the currently configured <code>timefmt</code>.</p>
 
-      <p>Attributes:</p> 
+      <p>Attributes:</p>
 
       <dl>
       <dt><code>var</code></dt>
@@ -207,32 +206,37 @@
       is <code>none</code>, where no decoding will be done. If set to
       <code>url</code>, then URL decoding (also known as %-encoding;
       this is appropriate for use within URLs in links, etc.) will be
-      performed. If set to <code>base64</code>, base64 will be decoded,
-      and if set to <code>entity</code>, HTML entity encoding will be
-      stripped. Decoding is done prior to any further encoding on the
-      variable. Multiple encodings can be stripped by specifying more
-      than one comma separated encoding. The decoding setting will
-      remain in effect until the next decoding attribute is encountered,
-      or the element ends.</p>
+      performed. If set to <code>urlencoded</code>,
+      application/x-www-form-urlencoded compatible encoding (found in
+      query strings) will be stripped. If set to <code>base64</code>,
+      base64 will be decoded, and if set to <code>entity</code>, HTML
+      entity encoding will be stripped. Decoding is done prior to any
+      further encoding on the variable. Multiple encodings can be
+      stripped by specifying more than one comma separated encoding.
+      The decoding setting will remain in effect until the next decoding
+      attribute is encountered, or the element ends.</p>
 
       <p>The <code>decoding</code> attribute must <em>precede</em> the
       corresponding <code>var</code> attribute to be effective.</p>
       </dd>
-        
+
       <dt><code>encoding</code></dt>
       <dd><p>Specifies how Apache should encode special characters
       contained in the variable before outputting them. If set
       to <code>none</code>, no encoding will be done. If set to
       <code>url</code>, then URL encoding (also known as %-encoding;
       this is appropriate for use within URLs in links, etc.) will be
-      performed. If set to <code>base64</code>, base64 encoding will
-      be performed. At the start of an <code>echo</code> element,
-      the default is set to <code>entity</code>, resulting in entity
-      encoding (which is appropriate in the context of a block-level
-      HTML element, <em>e.g.</em> a paragraph of text). This can be
-      changed by adding an <code>encoding</code> attribute, which will
-      remain in effect until the next <code>encoding</code> attribute
-      is encountered or the element ends, whichever comes first.</p>
+      performed. If set to <code>urlencoded</code>,
+      application/x-www-form-urlencoded compatible encoding will be
+      performed instead, and should be used with query strings. If set
+      to <code>base64</code>, base64 encoding will be performed. At
+      the start of an <code>echo</code> element, the default is set to
+      <code>entity</code>, resulting in entity encoding (which is
+      appropriate in the context of a block-level HTML element,
+      <em>e.g.</em> a paragraph of text). This can be changed by adding
+      an <code>encoding</code> attribute, which will remain in effect
+      until the next <code>encoding</code> attribute is encountered or
+      the element ends, whichever comes first.</p>
 
       <p>The <code>encoding</code> attribute must <em>precede</em> the
       corresponding <code>var</code> attribute to be effective.</p>
@@ -442,29 +446,32 @@
       <dd><p>Specifies whether Apache should strip an encoding from
       the variable before processing the variable further. The default
       is <code>none</code>, where no decoding will be done. If set to
-      <code>url</code>, <code>base64</code> or <code>entity</code>,
-      URL decoding, base64 decoding or HTML entity decoding will be
-      performed respectively. More than one decoding can be specified
-      by separating with commas. The decoding setting will remain in
-      effect until the next decoding attribute is encountered, or the
-      element ends. The <code>decoding</code> attribute must
-      <em>precede</em> the corresponding <code>var</code> attribute to
-      be effective.</p>
+      <code>url</code>, <code>urlencoded</code>, <code>base64</code>
+      or <code>entity</code>, URL decoding,
+      application/x-www-form-urlencoded decoding, base64 decoding or HTML
+      entity decoding will be performed respectively. More than one
+      decoding can be specified by separating with commas. The decoding
+      setting will remain in effect until the next decoding attribute
+      is encountered, or the element ends. The <code>decoding</code>
+      attribute must <em>precede</em> the corresponding
+      <code>var</code> attribute to be effective.</p>
       </dd>
-      
+
       <dt><code>encoding</code></dt>
       <dd><p>Specifies how Apache should encode special characters
       contained in the variable before setting them. The default is
       <code>none</code>, where no encoding will be done. If set to
-      <code>url</code>, <code>base64</code> or <code>entity</code>,
-      URL encoding, base64 encoding or HTML entity encoding will be
-      performed respectively. More than one encoding can be specified
-      by separating with commas. The encoding setting will remain in
-      effect until the next encoding attribute is encountered, or the
-      element ends. The <code>encoding</code> attribute must
-      <em>precede</em> the corresponding <code>var</code> attribute
-      to be effective. Encodings are applied after all decodings have
-      been stripped.</p>
+      <code>url</code>, <code>urlencoding</code>, <code>base64</code>
+      or <code>entity</code>, URL encoding,
+      application/x-www-form-urlencoded encoding, base64 encoding or
+      HTML entity encoding will be performed respectively. More than
+      one encoding can be specified by separating with commas. The
+      encoding setting will remain in effect until the next encoding
+      attribute is encountered, or the element ends. The
+      <code>encoding</code> attribute must <em>precede</em> the
+      corresponding <code>var</code> attribute to be effective.
+      Encodings are applied after all decodings have been
+      stripped.</p>
       </dd>
       </dl>
 
@@ -624,12 +631,10 @@
 
       <dt><code><var>-A string</var></code></dt>
       <dd><p>true if the URL represented by the string is accessible by
-      configuration, false otherwise. This test only has an effect if
-      <code class="directive">SSIAccessEnable</code> is on. This is useful
-      where content on a page is to be hidden from users who are not
-      authorized to view the URL, such as a link to that URL. Note
-      that the URL is only tested for whether access would be granted,
-      not whether the URL exists.</p>
+      configuration, false otherwise. This is useful where content on a
+      page is to be hidden from users who are not authorized to view the
+      URL, such as a link to that URL. Note that the URL is only tested
+      for whether access would be granted, not whether the URL exists.</p>
 
       <div class="example"><h3>Example</h3><p><code>
         &lt;!--#if expr="-A /private" --&gt;<br />
@@ -644,7 +649,7 @@
       <dt><code><var>string1</var> = <var>string2</var><br />
       <var>string1</var> == <var>string2</var><br />
       <var>string1</var> != <var>string2</var></code></dt>
-      
+
       <dd><p>Compare <var>string1</var> with <var>string2</var>. If
       <var>string2</var> has the form <code>/<var>string2</var>/</code>
       then it is treated as a regular expression. Regular expressions are
@@ -744,46 +749,11 @@
       parsed expression tokenizer information, the parse tree and how it is
       evaluated into the output sent to the client.</p>
     </div>
- 
+
     <div class="note"><h3>Escaping slashes in regex strings</h3>
      <p>All slashes which are not intended to act as delimiters in your regex must
      be escaped.  This is regardless of their meaning to the regex engine.</p>
     </div>
-
-</div>
-<div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="SSIAccessEnable" id="SSIAccessEnable">SSIAccessEnable</a> <a name="ssiaccessenable" id="ssiaccessenable">Directive</a></h2>
-<table class="directive">
-<tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Enable the -A flag in legacy conditional expressions.</td></tr>
-<tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>SSIAccessEnable on|off</code></td></tr>
-<tr><th><a href="directive-dict.html#Default">Default:</a></th><td><code>SSIAccessEnable off</code></td></tr>
-<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>directory, .htaccess</td></tr>
-<tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Base</td></tr>
-<tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_include</td></tr>
-</table>
-    <div class="note"><code class="directive">SSIAccessEnable</code> has no effect unless
-    <code class="directive"><a href="#ssilegacyexprparser">SSILegacyExprParser</a></code> is set to
-    <code>on</code>.
-    </div>
-
-    <p>The <code class="directive">SSIAccessEnable</code> directive controls whether
-    the -A test is enabled during conditional flow control processing when
-    using the 2.2.x compatible expression parser.
-    <code class="directive">SSIAccessEnable</code> can take on the following values:</p>
-
-    <dl>
-
-      <dt><code>off</code></dt>
-      <dd>&lt;!--#if expr="-A /foo"--&gt; will be interpreted as a series
-      of string and regular expression tokens, the -A has no special
-      meaning.</dd>
-
-      <dt><code>on</code></dt>
-      <dd>&lt;!--#if expr="-A /foo"--&gt; will evaluate to false if the
-      URL /foo is inaccessible by configuration, or true otherwise.</dd>
-
-    </dl>
-
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -901,23 +871,23 @@ server.</td></tr>
         if already present, or set if the header is not already present. This can
         be used to enable caching of the output. <code class="directive">SSILastModified</code>
         can take on the following values:</p>
-      
+
       <dl>
-        
+
         <dt><code>off</code></dt>
         <dd>The <code>Last-Modified</code> header will be stripped from responses,
           unless the <code class="directive"><a href="#xbithack">XBitHack</a></code> directive
           is set to <code>full</code> as described below.</dd>
-        
+
         <dt><code>on</code></dt>
         <dd>The <code>Last-Modified</code> header will be respected if already
           present in a response, and added to the response if the response is a
           file and the header is missing. The
           <code class="directive"><a href="#ssilastmodified">SSILastModified</a></code> directive
           takes precedence over <code class="directive"><a href="#xbithack">XBitHack</a></code>.</dd>
-        
+
       </dl>
-      
+
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -935,7 +905,7 @@ server.</td></tr>
     new <a href="../expr.html">ap_expr</a> syntax for conditional expressions
     in <code>#if</code> flow control elements.  This directive allows to
     switch to the <a href="#legacyexpr">old syntax</a> which is compatible
-    with Apache HTTPD version 2.2.x and earlier. 
+    with Apache HTTPD version 2.2.x and earlier.
     </p>
 
 </div>
@@ -955,7 +925,7 @@ server.</td></tr>
 
     <p>You may want to use this option if you have 2 servers parsing the
     output of a file each processing different commands (possibly at
-    different times).</p> 
+    different times).</p>
 
     <div class="example"><h3>Example</h3><p><code>
       SSIStartTag "&lt;%"<br />
@@ -963,8 +933,8 @@ server.</td></tr>
     </code></p></div>
 
     <p>The example given above, which also specifies a matching
-    <code class="directive"><a href="#ssiendtag">SSIEndTag</a></code>, will 
-    allow you to use SSI directives as shown in the example 
+    <code class="directive"><a href="#ssiendtag">SSIEndTag</a></code>, will
+    allow you to use SSI directives as shown in the example
     below:</p>
 
     <div class="example"><h3>SSI directives with alternate start and end tags</h3><p><code>
@@ -989,7 +959,7 @@ displayed</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_include</td></tr>
 <tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Available in version 2.0.30 and later.</td></tr>
 </table>
-<p>This directive changes the format in which date strings are displayed 
+<p>This directive changes the format in which date strings are displayed
     when echoing <code>DATE</code> environment variables. The
     <var>formatstring</var> is as in <code>strftime(3)</code> from the
     C standard library.</p>
@@ -1055,13 +1025,13 @@ set</td></tr>
       returned file to be the last modified time of the file. If
       it is not set, then no last-modified date is sent. Setting
       this bit allows clients and proxies to cache the result of
-      the request. 
+      the request.
 
       <div class="note"><h3>Note</h3>
       <p>You would not want to use the full option, unless you assure the
       group-execute bit is unset for every SSI script which might <code>#include</code> a CGI or otherwise produces different output on
       each hit (or could potentially change on subsequent requests).</p>
-      
+
       <p>The <code class="directive"><a href="#ssilastmodified">SSILastModified</a></code>
       directive takes precedence over the
       <code class="directive"><a href="#xbithack">XBitHack</a></code> directive when
@@ -1079,6 +1049,6 @@ set</td></tr>
 <p><span>Available Languages: </span><a href="../en/mod/mod_include.html" title="English">&nbsp;en&nbsp;</a> |
 <a href="../ja/mod/mod_include.html" hreflang="ja" rel="alternate" title="Japanese">&nbsp;ja&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2011 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2012 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div>
 </body></html>

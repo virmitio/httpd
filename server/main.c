@@ -34,6 +34,7 @@
 #include "http_log.h"
 #include "http_config.h"
 #include "http_core.h"
+#include "mod_core.h"
 #include "http_request.h"
 #include "http_vhost.h"
 #include "apr_uri.h"
@@ -265,14 +266,10 @@ static void destroy_and_exit_process(process_rec *process,
     exit(process_exit_value);
 }
 
-#define OOM_MESSAGE "[crit] Memory allocation failed, " \
-    "aborting process." APR_EOL_STR
-
 /* APR callback invoked if allocation fails. */
 static int abort_on_oom(int retcode)
 {
-    write(STDERR_FILENO, OOM_MESSAGE, strlen(OOM_MESSAGE));
-    abort();
+    ap_abort_on_oom();
     return retcode; /* unreachable, hopefully. */
 }
 
@@ -302,7 +299,7 @@ static process_rec *init_process(int *argc, const char * const * *argv)
         char ctimebuff[APR_CTIME_LEN];
         apr_ctime(ctimebuff, apr_time_now());
         fprintf(stderr, "[%s] [crit] (%d) %s: %s failed "
-                        "to initial context, exiting\n", 
+                        "to initial context, exiting\n",
                         ctimebuff, stat, (*argv)[0], failed);
         apr_terminate();
         exit(1);
@@ -419,10 +416,11 @@ static void usage(process_rec *process)
                  "  -L                 : list available configuration "
                  "directives");
     ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL,
-                 "  -t -D DUMP_VHOSTS  : show parsed settings (currently only "
-                 "vhost settings)");
+                 "  -t -D DUMP_VHOSTS  : show parsed vhost settings");
     ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL,
-                 "  -S                 : a synonym for -t -D DUMP_VHOSTS");
+                 "  -t -D DUMP_RUN_CFG : show parsed run settings");
+    ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL,
+                 "  -S                 : a synonym for -t -D DUMP_VHOSTS -D DUMP_RUN_CFG");
     ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL,
                  "  -t -D DUMP_MODULES : show all loaded modules ");
     ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL,
@@ -440,7 +438,7 @@ static void usage(process_rec *process)
 int main(int argc, const char * const argv[])
 {
     char c;
-    int showcompile = 0;
+    int showcompile = 0, showdirectives = 0;
     const char *confname = SERVER_CONFIG_FILE;
     const char *def_server_root = HTTPD_ROOT;
     const char *temp_error_log = NULL;
@@ -462,6 +460,7 @@ int main(int argc, const char * const argv[])
     ap_pglobal = process->pool;
     pconf = process->pconf;
     ap_server_argv0 = process->short_name;
+    ap_init_rng(ap_pglobal);
 
     /* Set up the OOM callback in the global pool, so all pools should
      * by default inherit it. */
@@ -481,8 +480,8 @@ int main(int argc, const char * const argv[])
 
     error = ap_setup_prelinked_modules(process);
     if (error) {
-        ap_log_error(APLOG_MARK, APLOG_STARTUP|APLOG_EMERG, 0, NULL, "%s: %s",
-                     ap_server_argv0, error);
+        ap_log_error(APLOG_MARK, APLOG_STARTUP|APLOG_EMERG, 0, NULL, APLOGNO(00012)
+                     "%s: %s", ap_server_argv0, error);
         destroy_and_exit_process(process, 1);
     }
 
@@ -515,11 +514,14 @@ int main(int argc, const char * const argv[])
         case 'D':
             new = (char **)apr_array_push(ap_server_config_defines);
             *new = apr_pstrdup(pcommands, opt_arg);
-            /* Setting -D DUMP_VHOSTS is equivalent to setting -S */
+            /* Setting -D DUMP_VHOSTS should work like setting -S */
             if (strcmp(opt_arg, "DUMP_VHOSTS") == 0)
                 ap_run_mode = AP_SQ_RM_CONFIG_DUMP;
+            /* Setting -D DUMP_RUN_CFG should work like setting -S */
+            else if (strcmp(opt_arg, "DUMP_RUN_CFG") == 0)
+                ap_run_mode = AP_SQ_RM_CONFIG_DUMP;
             /* Setting -D DUMP_MODULES is equivalent to setting -M */
-            if (strcmp(opt_arg, "DUMP_MODULES") == 0)
+            else if (strcmp(opt_arg, "DUMP_MODULES") == 0)
                 ap_run_mode = AP_SQ_RM_CONFIG_DUMP;
             break;
 
@@ -551,8 +553,9 @@ int main(int argc, const char * const argv[])
             destroy_and_exit_process(process, 0);
 
         case 'L':
-            ap_show_directives();
-            destroy_and_exit_process(process, 0);
+            ap_run_mode = AP_SQ_RM_CONFIG_DUMP;
+            showdirectives = 1;
+            break;
 
         case 't':
             if (ap_run_mode == AP_SQ_RM_UNKNOWN)
@@ -567,6 +570,8 @@ int main(int argc, const char * const argv[])
             ap_run_mode = AP_SQ_RM_CONFIG_DUMP;
             new = (char **)apr_array_push(ap_server_config_defines);
             *new = "DUMP_VHOSTS";
+            new = (char **)apr_array_push(ap_server_config_defines);
+            *new = "DUMP_RUN_CFG";
             break;
 
         case 'M':
@@ -622,11 +627,12 @@ int main(int argc, const char * const argv[])
     }
     apr_pool_cleanup_register(pconf, &ap_server_conf, ap_pool_cleanup_set_null,
                               apr_pool_cleanup_null);
+    /* sort hooks here to make sure pre_config hooks are sorted properly */
     apr_hook_sort_all();
 
     if (ap_run_pre_config(pconf, plog, ptemp) != OK) {
         ap_log_error(APLOG_MARK, APLOG_STARTUP |APLOG_ERR, 0,
-                     NULL, "Pre-configuration failed");
+                     NULL, APLOGNO(00013) "Pre-configuration failed");
         destroy_and_exit_process(process, 1);
     }
 
@@ -635,16 +641,26 @@ int main(int argc, const char * const argv[])
     if (rv == OK) {
         ap_fixup_virtual_hosts(pconf, ap_server_conf);
         ap_fini_vhost_config(pconf, ap_server_conf);
+        /*
+         * Sort hooks again because ap_process_config_tree may have add modules
+         * and hence hooks. This happens with mod_perl and modules written in
+         * perl.
+         */
+        apr_hook_sort_all();
 
         if (ap_run_check_config(pconf, plog, ptemp, ap_server_conf) != OK) {
             ap_log_error(APLOG_MARK, APLOG_STARTUP |APLOG_ERR, 0,
-                         NULL, "Configuration check failed");
+                         NULL, APLOGNO(00014) "Configuration check failed");
             destroy_and_exit_process(process, 1);
         }
 
         if (ap_run_mode != AP_SQ_RM_NORMAL) {
             if (showcompile) { /* deferred due to dynamically loaded MPM */
                 show_compile_settings();
+            }
+            else if (showdirectives) { /* deferred in case of DSOs */
+                ap_show_directives();
+                destroy_and_exit_process(process, 0);
             }
             else {
                 ap_run_test_config(pconf, ap_server_conf);
@@ -673,26 +689,26 @@ int main(int argc, const char * const argv[])
 
     if ( ap_run_open_logs(pconf, plog, ptemp, ap_server_conf) != OK) {
         ap_log_error(APLOG_MARK, APLOG_STARTUP |APLOG_ERR,
-                     0, NULL, "Unable to open logs");
+                     0, NULL, APLOGNO(00015) "Unable to open logs");
         destroy_and_exit_process(process, 1);
     }
 
     if ( ap_run_post_config(pconf, plog, ptemp, ap_server_conf) != OK) {
         ap_log_error(APLOG_MARK, APLOG_STARTUP |APLOG_ERR, 0,
-                     NULL, "Configuration Failed");
+                     NULL, APLOGNO(00016) "Configuration Failed");
         destroy_and_exit_process(process, 1);
     }
 
     apr_pool_destroy(ptemp);
 
     for (;;) {
-        ap_config_generation++;
         ap_main_state = AP_SQ_MS_DESTROY_CONFIG;
         apr_hook_deregister_all();
         apr_pool_clear(pconf);
         ap_clear_auth_internal();
 
         ap_main_state = AP_SQ_MS_CREATE_CONFIG;
+        ap_config_generation++;
         for (mod = ap_prelinked_modules; *mod != NULL; mod++) {
             ap_register_hooks(*mod, pconf);
         }
@@ -711,11 +727,12 @@ int main(int argc, const char * const argv[])
         }
         apr_pool_cleanup_register(pconf, &ap_server_conf,
                                   ap_pool_cleanup_set_null, apr_pool_cleanup_null);
+        /* sort hooks here to make sure pre_config hooks are sorted properly */
         apr_hook_sort_all();
 
         if (ap_run_pre_config(pconf, plog, ptemp) != OK) {
-            ap_log_error(APLOG_MARK, APLOG_STARTUP |APLOG_ERR,
-                         0, NULL, "Pre-configuration failed");
+            ap_log_error(APLOG_MARK, APLOG_EMERG, 0, NULL,
+                         APLOGNO(00017) "Pre-configuration failed, exiting");
             destroy_and_exit_process(process, 1);
         }
 
@@ -725,23 +742,29 @@ int main(int argc, const char * const argv[])
         }
         ap_fixup_virtual_hosts(pconf, ap_server_conf);
         ap_fini_vhost_config(pconf, ap_server_conf);
+        /*
+         * Sort hooks again because ap_process_config_tree may have add modules
+         * and hence hooks. This happens with mod_perl and modules written in
+         * perl.
+         */
+        apr_hook_sort_all();
 
         if (ap_run_check_config(pconf, plog, ptemp, ap_server_conf) != OK) {
-            ap_log_error(APLOG_MARK, APLOG_STARTUP |APLOG_ERR, 0,
-                         NULL, "Configuration check failed");
+            ap_log_error(APLOG_MARK, APLOG_EMERG, 0, NULL,
+                         APLOGNO(00018) "Configuration check failed, exiting");
             destroy_and_exit_process(process, 1);
         }
 
         apr_pool_clear(plog);
         if (ap_run_open_logs(pconf, plog, ptemp, ap_server_conf) != OK) {
-            ap_log_error(APLOG_MARK, APLOG_STARTUP |APLOG_ERR,
-                         0, NULL, "Unable to open logs");
+            ap_log_error(APLOG_MARK, APLOG_EMERG, 0, NULL,
+                         APLOGNO(00019) "Unable to open logs, exiting");
             destroy_and_exit_process(process, 1);
         }
 
         if (ap_run_post_config(pconf, plog, ptemp, ap_server_conf) != OK) {
-            ap_log_error(APLOG_MARK, APLOG_STARTUP |APLOG_ERR,
-                         0, NULL, "Configuration Failed");
+            ap_log_error(APLOG_MARK, APLOG_EMERG, 0, NULL,
+                         APLOGNO(00020) "Configuration Failed, exiting");
             destroy_and_exit_process(process, 1);
         }
 

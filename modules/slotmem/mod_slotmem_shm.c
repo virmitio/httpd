@@ -24,6 +24,7 @@
 #include  "ap_slotmem.h"
 
 #include "httpd.h"
+#include "http_main.h"
 #ifdef AP_NEED_SET_MUTEX_PERMS
 #include "unixd.h"
 #endif
@@ -119,29 +120,23 @@ static apr_status_t unixd_set_shm_perms(const char *fname)
  * Persist the slotmem in a file
  * slotmem name and file name.
  * none      : no persistent data
- * anonymous : $server_root/logs/anonymous.slotmem
- * :rel_name : $server_root/logs/rel_name.slotmem
- * abs_name  : $abs_name.slotmem
+ * rel_name  : $server_root/rel_name
+ * /abs_name : $abs_name
  *
  */
 static const char *store_filename(apr_pool_t *pool, const char *slotmemname)
 {
-    const char *storename;
     const char *fname;
-    if (strcasecmp(slotmemname, "none") == 0)
+    if (strcasecmp(slotmemname, "none") == 0) {
         return NULL;
-    else if (strcasecmp(slotmemname, "anonymous") == 0)
-        fname = ap_server_root_relative(pool, "logs/anonymous");
-    else if (slotmemname[0] == ':') {
-        const char *tmpname;
-        tmpname = apr_pstrcat(pool, "logs/", &slotmemname[1], NULL);
-        fname = ap_server_root_relative(pool, tmpname);
+    }
+    else if (slotmemname[0] != '/') {
+        fname = ap_server_root_relative(pool, slotmemname);
     }
     else {
         fname = slotmemname;
     }
-    storename = apr_pstrcat(pool, fname, ".slotmem", NULL);
-    return storename;
+    return fname;
 }
 
 static void store_slotmem(ap_slotmem_instance_t *slotmem)
@@ -269,14 +264,15 @@ static apr_status_t slotmem_create(ap_slotmem_instance_t **new,
                       (item_num * sizeof(char)) + basesize;
     apr_status_t rv;
 
-    if (gpool == NULL)
+    if (gpool == NULL) {
         return APR_ENOSHMAVAIL;
+    }
     if (name) {
-        if (name[0] == ':') {
-            fname = name;
+        if (name[0] != '/') {
+            fname = ap_server_root_relative(pool, name);
         }
         else {
-            fname = ap_server_root_relative(pool, name);
+            fname = name;
         }
 
         /* first try to attach to existing slotmem */
@@ -295,11 +291,11 @@ static apr_status_t slotmem_create(ap_slotmem_instance_t **new,
         }
     }
     else {
-        fname = "anonymous";
+        fname = "none";
     }
 
     /* first try to attach to existing shared memory */
-    fbased = (name && name[0] != ':');
+    fbased = (name != NULL);
     if (fbased) {
         rv = apr_shm_attach(&shm, fname, gpool);
     }
@@ -576,6 +572,10 @@ static apr_status_t slotmem_grab(ap_slotmem_instance_t *slot, unsigned int *id)
         }
     }
     if (i >= slot->desc.num) {
+        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, ap_server_conf, APLOGNO(02293)
+                     "slotmem(%s) grab failed. Num %u/num_free %u",
+                     slot->name, slotmem_num_slots(slot),
+                     slotmem_num_free_slots(slot));
         return APR_EINVAL;
     }
     *inuse = 1;
@@ -596,6 +596,10 @@ static apr_status_t slotmem_release(ap_slotmem_instance_t *slot,
     inuse = slot->inuse;
 
     if (id >= slot->desc.num || !inuse[id] ) {
+        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, ap_server_conf, APLOGNO(02294)
+                     "slotmem(%s) release failed. Num %u/inuse[%u] %d",
+                     slot->name, slotmem_num_slots(slot),
+                     id, (int)inuse[id]);
         return APR_NOTFOUND;
     }
     inuse[id] = 0;
@@ -657,7 +661,8 @@ static int pre_config(apr_pool_t *p, apr_pool_t *plog,
 static void ap_slotmem_shm_register_hook(apr_pool_t *p)
 {
     const ap_slotmem_provider_t *storage = slotmem_shm_getstorage();
-    ap_register_provider(p, AP_SLOTMEM_PROVIDER_GROUP, "shared", "0", storage);
+    ap_register_provider(p, AP_SLOTMEM_PROVIDER_GROUP, "shm",
+                         AP_SLOTMEM_PROVIDER_VERSION, storage);
     ap_hook_post_config(post_config, NULL, NULL, APR_HOOK_LAST);
     ap_hook_pre_config(pre_config, NULL, NULL, APR_HOOK_MIDDLE);
 }

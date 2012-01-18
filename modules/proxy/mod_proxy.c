@@ -19,6 +19,7 @@
 #include "apr_optional.h"
 #include "scoreboard.h"
 #include "mod_status.h"
+#include "proxy_util.h"
 
 #if (MODULE_MAGIC_NUMBER_MAJOR > 20020903)
 #include "mod_ssl.h"
@@ -281,7 +282,7 @@ static const char *set_balancer_param(proxy_server_conf *conf,
             return "stickysession length must be < 64 characters";
         PROXY_STRNCPY(balancer->s->sticky_path, val);
         PROXY_STRNCPY(balancer->s->sticky, val);
-        
+
         if ((path = strchr((char *)balancer->s->sticky, '|'))) {
             *path++ = '\0';
             PROXY_STRNCPY(balancer->s->sticky_path, path);
@@ -327,8 +328,12 @@ static const char *set_balancer_param(proxy_server_conf *conf,
         provider = ap_lookup_provider(PROXY_LBMETHOD, val, "0");
         if (provider) {
             balancer->lbmethod = provider;
-            PROXY_STRNCPY(balancer->s->lbpname, val);
-            return NULL;
+            if (PROXY_STRNCPY(balancer->s->lbpname, val) == APR_SUCCESS) {
+                return NULL;
+            }
+            else {
+                return "lbmethod name too large";
+            }
         }
         return "unknown lbmethod";
     }
@@ -369,13 +374,10 @@ static const char *set_balancer_param(proxy_server_conf *conf,
     else if (!strcasecmp(key, "nonce")) {
         if (!strcasecmp(val, "None")) {
             *balancer->s->nonce = '\0';
-        } 
+        }
         else {
-            if (strlen(val) > sizeof(balancer->s->nonce)-1) {
+            if (PROXY_STRNCPY(balancer->s->nonce, val) != APR_SUCCESS) {
                 return "Provided nonce is too large";
-            }
-            else {
-                PROXY_STRNCPY(balancer->s->nonce, val);
             }
         }
     }
@@ -576,6 +578,13 @@ PROXY_DECLARE(int) ap_proxy_trans_match(request_rec *r, struct proxy_alias *ent,
             }
             found = ap_pregsub(r->pool, real, use_uri, AP_MAX_REG_MATCH,
                     (use_uri == r->uri) ? regm : reg1);
+            if (!found) {
+                ap_log_rerror(APLOG_MARK, APLOG_CRIT, 0, r, APLOGNO(01135)
+                              "Substitution in regular expression failed. "
+                              "Replacement too long?");
+                return HTTP_INTERNAL_SERVER_ERROR;
+            }
+
             /* Note: The strcmp() below catches cases where there
              * was no regex substitution. This is so cases like:
              *
@@ -589,7 +598,7 @@ PROXY_DECLARE(int) ap_proxy_trans_match(request_rec *r, struct proxy_alias *ent,
              *
              * which may be confusing.
              */
-            if (found && strcmp(found, real)) {
+            if (strcmp(found, real) != 0) {
                 found = apr_pstrcat(r->pool, "proxy:", found, NULL);
             }
             else {
@@ -615,7 +624,7 @@ PROXY_DECLARE(int) ap_proxy_trans_match(request_rec *r, struct proxy_alias *ent,
         /* We made a reducing transformation, so we can't safely use
          * unparsed_uri.  Safe fallback is to ignore nocanon.
          */
-        ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, APLOGNO(01136)
                 "Unescaped URL path matched ProxyPass; ignoring unsafe nocanon");
     }
 
@@ -647,6 +656,18 @@ static int proxy_trans(request_rec *r)
         return OK;
     }
 
+    if (strcmp(r->unparsed_uri, "*") == 0) {
+        /* "*" cannot be proxied. */
+        return DECLINED;
+    }
+
+    /* Check that the URI is valid. */
+    if (!r->uri || r->uri[0] != '/') {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01137)
+                     "Invalid URI in request %s", r->the_request);
+        return HTTP_BAD_REQUEST;
+    }
+
     /* XXX: since r->uri has been manipulated already we're not really
      * compliant with RFC1945 at this point.  But this probably isn't
      * an issue because this is a hybrid proxy/origin server.
@@ -662,8 +683,8 @@ static int proxy_trans(request_rec *r)
         }
     }
 
-    conf
-            = (proxy_server_conf *) ap_get_module_config(r->server->module_config, &proxy_module);
+    conf = (proxy_server_conf *) ap_get_module_config(r->server->module_config,
+                                                      &proxy_module);
 
     /* long way - walk the list of aliases, find a match */
     if (conf->aliases->nelts) {
@@ -810,7 +831,7 @@ static int proxy_needsdomain(request_rec *r, const char *url, const char *domain
                            APR_URI_UNP_REVEALPASSWORD);
 
     apr_table_setn(r->headers_out, "Location", nuri);
-    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r,
+    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(01138)
                   "Domain missing: %s sent to %s%s%s", r->uri,
                   apr_uri_unparse(r->pool, &r->parsed_uri,
                                   APR_URI_UNP_OMITUSERINFO),
@@ -896,8 +917,8 @@ static int proxy_handler(request_rec *r)
             apr_table_setn(r->notes, "error-notes",
                            "TRACE forbidden by server configuration");
             apr_table_setn(r->notes, "verbose-error-to", "*");
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
-                          "proxy: TRACE forbidden by server configuration");
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01139)
+                          "TRACE forbidden by server configuration");
             return HTTP_METHOD_NOT_ALLOWED;
         }
 
@@ -914,8 +935,8 @@ static int proxy_handler(request_rec *r)
             apr_table_setn(r->notes, "error-notes",
                            "TRACE with request body is not allowed");
             apr_table_setn(r->notes, "verbose-error-to", "*");
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
-                          "proxy: TRACE with request body is not allowed");
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01140)
+                          "TRACE with request body is not allowed");
             return HTTP_REQUEST_ENTITY_TOO_LARGE;
         }
     }
@@ -923,7 +944,7 @@ static int proxy_handler(request_rec *r)
     uri = r->filename + 6;
     p = strchr(uri, ':');
     if (p == NULL) {
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01141)
                       "proxy_handler no URL in %s", r->filename);
         return HTTP_BAD_REQUEST;
     }
@@ -989,8 +1010,8 @@ static int proxy_handler(request_rec *r)
                                 strlen(ents[i].scheme)) == 0)) {
 
                     /* handle the scheme */
-                    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
-                                 "Trying to run scheme_handler against proxy");
+                    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01142)
+                                  "Trying to run scheme_handler against proxy");
                     access_status = proxy_run_scheme_handler(r, worker,
                                                              conf, url,
                                                              ents[i].hostname,
@@ -1011,7 +1032,7 @@ static int proxy_handler(request_rec *r)
                         }
                         cl_a = apr_table_get(r->headers_in, "Content-Length");
                         if (cl_a) {
-                            apr_strtoff(&cl, cl_a, &end, 0);
+                            apr_strtoff(&cl, cl_a, &end, 10);
                             /*
                              * The request body is of length > 0. We cannot
                              * retry with a direct connection since we already
@@ -1041,9 +1062,9 @@ static int proxy_handler(request_rec *r)
         */
 
         /* handle the scheme */
-        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
-                     "Running scheme %s handler (attempt %d)",
-                     scheme, attempts);
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01143)
+                      "Running scheme %s handler (attempt %d)",
+                      scheme, attempts);
         AP_PROXY_RUN(r, worker, conf, url, attempts);
         access_status = proxy_run_scheme_handler(r, worker, conf,
                                                  url, NULL, 0);
@@ -1083,11 +1104,11 @@ static int proxy_handler(request_rec *r)
              max_attempts > attempts++);
 
     if (DECLINED == access_status) {
-        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, r->server,
-                    "proxy: No protocol handler was valid for the URL %s. "
-                    "If you are using a DSO version of mod_proxy, make sure "
-                    "the proxy submodules are included in the configuration "
-                    "using LoadModule.", r->uri);
+        ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, APLOGNO(01144)
+                      "No protocol handler was valid for the URL %s. "
+                      "If you are using a DSO version of mod_proxy, make sure "
+                      "the proxy submodules are included in the configuration "
+                      "using LoadModule.", r->uri);
         access_status = HTTP_INTERNAL_SERVER_ERROR;
         goto cleanup;
     }
@@ -1220,8 +1241,6 @@ static void *create_proxy_dir_config(apr_pool_t *p, char *dummy)
     new->raliases = apr_array_make(p, 10, sizeof(struct proxy_alias));
     new->cookie_paths = apr_array_make(p, 10, sizeof(struct proxy_alias));
     new->cookie_domains = apr_array_make(p, 10, sizeof(struct proxy_alias));
-    new->cookie_path_str = apr_strmatch_precompile(p, "path=", 0);
-    new->cookie_domain_str = apr_strmatch_precompile(p, "domain=", 0);
     new->preserve_host_set = 0;
     new->preserve_host = 0;
     new->interpolate_env = -1; /* unset */
@@ -1248,8 +1267,6 @@ static void *merge_proxy_dir_config(apr_pool_t *p, void *basev, void *addv)
         = apr_array_append(p, base->cookie_paths, add->cookie_paths);
     new->cookie_domains
         = apr_array_append(p, base->cookie_domains, add->cookie_domains);
-    new->cookie_path_str = base->cookie_path_str;
-    new->cookie_domain_str = base->cookie_domain_str;
     new->interpolate_env = (add->interpolate_env == -1) ? base->interpolate_env
                                                         : add->interpolate_env;
     new->preserve_host = (add->preserve_host_set == 0) ? base->preserve_host
@@ -1445,11 +1462,14 @@ static const char *
     elts = (const apr_table_entry_t *)arr->elts;
     /* Distinguish the balancer from worker */
     if (ap_proxy_valid_balancer_name(r, 9)) {
-        proxy_balancer *balancer = ap_proxy_get_balancer(cmd->pool, conf, r);
+        proxy_balancer *balancer = ap_proxy_get_balancer(cmd->pool, conf, r, 0);
         if (!balancer) {
-            const char *err = ap_proxy_define_balancer(cmd->pool, &balancer, conf, r, 0);
+            const char *err = ap_proxy_define_balancer(cmd->pool, &balancer, conf, r, f, 0);
             if (err)
                 return apr_pstrcat(cmd->temp_pool, "ProxyPass ", err, NULL);
+        }
+        else {
+            ap_proxy_update_balancer(cmd->pool, balancer, f);
         }
         for (i = 0; i < arr->nelts; i++) {
             const char *err = set_balancer_param(conf, cmd->pool, balancer, elts[i].key,
@@ -1457,6 +1477,7 @@ static const char *
             if (err)
                 return apr_pstrcat(cmd->temp_pool, "ProxyPass ", err, NULL);
         }
+        new->balancer = balancer;
     }
     else {
         proxy_worker *worker = ap_proxy_get_worker(cmd->temp_pool, NULL, conf, r);
@@ -1469,14 +1490,14 @@ static const char *
             PROXY_COPY_CONF_PARAMS(worker, conf);
         } else {
             reuse = 1;
-            ap_log_error(APLOG_MARK, APLOG_INFO, 0, cmd->server,
+            ap_log_error(APLOG_MARK, APLOG_INFO, 0, cmd->server, APLOGNO(01145)
                          "Sharing worker '%s' instead of creating new worker '%s'",
                          worker->s->name, new->real);
         }
 
         for (i = 0; i < arr->nelts; i++) {
             if (reuse) {
-                ap_log_error(APLOG_MARK, APLOG_WARNING, 0, cmd->server,
+                ap_log_error(APLOG_MARK, APLOG_WARNING, 0, cmd->server, APLOGNO(01146)
                              "Ignoring parameter '%s=%s' for worker '%s' because of worker sharing",
                              elts[i].key, elts[i].val, worker->s->name);
             } else {
@@ -1860,7 +1881,10 @@ static const char *add_member(cmd_parms *cmd, void *dummy, const char *arg)
     const apr_table_entry_t *elts;
     int reuse = 0;
     int i;
-    const char *err;
+    /* XXX: Should this be NOT_IN_DIRECTORY|NOT_IN_FILES? */
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_HTACCESS);
+    if (err)
+        return err;
 
     if (cmd->path)
         path = apr_pstrdup(cmd->pool, cmd->path);
@@ -1895,9 +1919,9 @@ static const char *add_member(cmd_parms *cmd, void *dummy, const char *arg)
     ap_str_tolower(path);   /* lowercase scheme://hostname */
 
     /* Try to find the balancer */
-    balancer = ap_proxy_get_balancer(cmd->temp_pool, conf, path);
+    balancer = ap_proxy_get_balancer(cmd->temp_pool, conf, path, 0);
     if (!balancer) {
-        err = ap_proxy_define_balancer(cmd->pool, &balancer, conf, path, 0);
+        err = ap_proxy_define_balancer(cmd->pool, &balancer, conf, path, "/", 0);
         if (err)
             return apr_pstrcat(cmd->temp_pool, "BalancerMember ", err, NULL);
     }
@@ -1905,18 +1929,18 @@ static const char *add_member(cmd_parms *cmd, void *dummy, const char *arg)
     /* Try to find existing worker */
     worker = ap_proxy_get_worker(cmd->temp_pool, balancer, conf, name);
     if (!worker) {
-        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, cmd->server,
+        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, cmd->server, APLOGNO(01147)
                      "Defining worker '%s' for balancer '%s'",
-                     name, balancer->name);
+                     name, balancer->s->name);
         if ((err = ap_proxy_define_worker(cmd->pool, &worker, balancer, conf, name, 0)) != NULL)
             return apr_pstrcat(cmd->temp_pool, "BalancerMember ", err, NULL);
-        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, cmd->server,
+        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, cmd->server, APLOGNO(01148)
                      "Defined worker '%s' for balancer '%s'",
-                     worker->s->name, balancer->name);
+                     worker->s->name, balancer->s->name);
         PROXY_COPY_CONF_PARAMS(worker, conf);
     } else {
         reuse = 1;
-        ap_log_error(APLOG_MARK, APLOG_INFO, 0, cmd->server,
+        ap_log_error(APLOG_MARK, APLOG_INFO, 0, cmd->server, APLOGNO(01149)
                      "Sharing worker '%s' instead of creating new worker '%s'",
                      worker->s->name, name);
     }
@@ -1925,7 +1949,7 @@ static const char *add_member(cmd_parms *cmd, void *dummy, const char *arg)
     elts = (const apr_table_entry_t *)arr->elts;
     for (i = 0; i < arr->nelts; i++) {
         if (reuse) {
-            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, cmd->server,
+            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, cmd->server, APLOGNO(01150)
                          "Ignoring parameter '%s=%s' for worker '%s' because of worker sharing",
                          elts[i].key, elts[i].val, worker->s->name);
         } else {
@@ -1949,8 +1973,11 @@ static const char *
     char *word, *val;
     proxy_balancer *balancer = NULL;
     proxy_worker *worker = NULL;
-    const char *err;
     int in_proxy_section = 0;
+    /* XXX: Should this be NOT_IN_DIRECTORY|NOT_IN_FILES? */
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_HTACCESS);
+    if (err)
+        return err;
 
     if (cmd->directive->parent &&
         strncasecmp(cmd->directive->parent->directive,
@@ -1972,10 +1999,10 @@ static const char *
     }
 
     if (ap_proxy_valid_balancer_name(name, 9)) {
-        balancer = ap_proxy_get_balancer(cmd->pool, conf, name);
+        balancer = ap_proxy_get_balancer(cmd->pool, conf, name, 0);
         if (!balancer) {
             if (in_proxy_section) {
-                err = ap_proxy_define_balancer(cmd->pool, &balancer, conf, name, 0);
+                err = ap_proxy_define_balancer(cmd->pool, &balancer, conf, name, "/", 0);
                 if (err)
                     return apr_pstrcat(cmd->temp_pool, "ProxySet ",
                                        err, NULL);
@@ -2121,10 +2148,10 @@ static const char *proxysection(cmd_parms *cmd, void *mconfig, const char *arg)
                                "> arguments are not supported for non url.",
                                NULL);
         if (ap_proxy_valid_balancer_name((char *)conf->p, 9)) {
-            balancer = ap_proxy_get_balancer(cmd->pool, sconf, conf->p);
+            balancer = ap_proxy_get_balancer(cmd->pool, sconf, conf->p, 0);
             if (!balancer) {
                 err = ap_proxy_define_balancer(cmd->pool, &balancer,
-                                               sconf, conf->p, 0);
+                                               sconf, conf->p, "/", 0);
                 if (err)
                     return apr_pstrcat(cmd->temp_pool, thiscmd->name,
                                        " ", err, NULL);
@@ -2293,6 +2320,8 @@ static int proxy_post_config(apr_pool_t *pconf, apr_pool_t *plog,
     proxy_ssl_disable = APR_RETRIEVE_OPTIONAL_FN(ssl_engine_disable);
     proxy_is_https = APR_RETRIEVE_OPTIONAL_FN(ssl_is_https);
     proxy_ssl_val = APR_RETRIEVE_OPTIONAL_FN(ssl_var_lookup);
+    ap_proxy_strmatch_path = apr_strmatch_precompile(pconf, "path=", 0);
+    ap_proxy_strmatch_domain = apr_strmatch_precompile(pconf, "domain=", 0);
 
     return OK;
 }
@@ -2316,7 +2345,7 @@ static int proxy_status_hook(request_rec *r, int flags)
     balancer = (proxy_balancer *)conf->balancers->elts;
     for (i = 0; i < conf->balancers->nelts; i++) {
         ap_rputs("<hr />\n<h1>Proxy LoadBalancer Status for ", r);
-        ap_rvputs(r, balancer->name, "</h1>\n\n", NULL);
+        ap_rvputs(r, balancer->s->name, "</h1>\n\n", NULL);
         ap_rputs("\n\n<table border=\"0\"><tr>"
                  "<th>SSes</th><th>Timeout</th><th>Method</th>"
                  "</tr>\n<tr>", r);
@@ -2412,28 +2441,32 @@ static void child_init(apr_pool_t *p, server_rec *s)
             PROXY_STRNCPY(conf->forward->s->name,     "proxy:forward");
             PROXY_STRNCPY(conf->forward->s->hostname, "*");
             PROXY_STRNCPY(conf->forward->s->scheme,   "*");
-            conf->forward->hash = conf->forward->s->hash =
+            conf->forward->hash.def = conf->forward->s->hash.def =
                 ap_proxy_hashfunc(conf->forward->s->name, PROXY_HASHFUNC_DEFAULT);
-             /* Do not disable worker in case of errors */
+             conf->forward->hash.fnv = conf->forward->s->hash.fnv =
+                ap_proxy_hashfunc(conf->forward->s->name, PROXY_HASHFUNC_FNV);
+            /* Do not disable worker in case of errors */
             conf->forward->s->status |= PROXY_WORKER_IGNORE_ERRORS;
+            ap_proxy_initialize_worker(conf->forward, s, conf->pool);
             /* Disable address cache for generic forward worker */
             conf->forward->s->is_address_reusable = 0;
-            ap_proxy_initialize_worker(conf->forward, s, conf->pool);
         }
         if (!reverse) {
             ap_proxy_define_worker(p, &reverse, NULL, NULL, "http://www.apache.org", 0);
             PROXY_STRNCPY(reverse->s->name,     "proxy:reverse");
             PROXY_STRNCPY(reverse->s->hostname, "*");
             PROXY_STRNCPY(reverse->s->scheme,   "*");
-            reverse->hash = reverse->s->hash =
+            reverse->hash.def = reverse->s->hash.def =
                 ap_proxy_hashfunc(reverse->s->name, PROXY_HASHFUNC_DEFAULT);
+            reverse->hash.fnv = reverse->s->hash.fnv =
+                ap_proxy_hashfunc(reverse->s->name, PROXY_HASHFUNC_FNV);
             /* Do not disable worker in case of errors */
             reverse->s->status |= PROXY_WORKER_IGNORE_ERRORS;
+            conf->reverse = reverse;
+            ap_proxy_initialize_worker(conf->reverse, s, conf->pool);
             /* Disable address cache for generic reverse worker */
             reverse->s->is_address_reusable = 0;
         }
-        conf->reverse = reverse;
-        ap_proxy_initialize_worker(conf->reverse, s, conf->pool);
         s = s->next;
     }
 }
@@ -2480,6 +2513,8 @@ static void register_hooks(apr_pool_t *p)
     /* child init handling */
     ap_hook_child_init(child_init, aszPred, NULL, APR_HOOK_MIDDLE);
 
+    /* register optional functions within proxy_util.c */
+    proxy_util_register_hooks(p);
 }
 
 AP_DECLARE_MODULE(proxy) =

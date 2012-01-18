@@ -57,7 +57,7 @@
     found in <code>build/config.nice</code> in the installed server
     directory) can be used in most cases.  There are some changes in
     the default settings.  Some details of changes:</p>
-    
+
     <ul>
       <li>These modules have been removed: mod_authn_default,
       mod_authz_default, mod_mem_cache.  If you were using
@@ -76,7 +76,14 @@
 
       <li>configure: dynamic modules (DSO) are built by default</li>
 
+      <li>configure: By default, only a basic set of modules is loaded. The
+      other <directive>LoadModule</directive> directives are commented
+      out.</li>
+
       <li>configure: the "most" module set gets built by default</li>
+
+      <li>configure: the "reallyall" module set adds developer modules
+      to the "all" set</li>
     </ul>
 
   </section>
@@ -188,6 +195,9 @@
         <li><directive module="core">EnableSendfile</directive> now
         defaults to Off.</li>
 
+        <li><directive module="core">FileETag</directive> now
+        defaults to "MTime Size" (without INode).</li>
+
         <li><module>mod_log_config</module>: <a
         href="modules/mod_log_config.html#formats">${cookie}C</a>
         matches whole cookie names.  Previously any substring would
@@ -256,6 +266,19 @@
         option has been removed in favour of per-module <directive
         module="core">LogLevel</directive> configuration.
         </li>
+
+        <li><module>mod_ssl</module>: CRL based revocation checking
+        now needs to be explicitly configured through <directive
+        module="mod_ssl">SSLCARevocationCheck</directive>.
+        </li>
+
+        <li><module>mod_substitute</module>: The maximum line length is now
+        limited to 1MB.
+        </li>
+
+        <li><module>mod_reqtimeout</module>: If the module is loaded, it
+        will now set some default timeouts.</li>
+
       </ul>
     </section>
   </section>
@@ -271,7 +294,8 @@
       <li><module>mod_ssl</module>: The default format of the <code>*_DN</code>
       variables has changed. The old format can still be used with the new
       <code>LegacyDNStringFormat</code> argument to <directive
-      module="mod_ssl">SSLOptions</directive>.</li>
+      module="mod_ssl">SSLOptions</directive>. The SSLv2 protocol is
+      no longer supported.</li>
 
       <li><program>htpasswd</program> now uses MD5 hash by default on
       all platforms.</li>
@@ -281,8 +305,20 @@
       warning.  Any address/port combination appearing in multiple
       virtual hosts is implicitly treated as a name-based virtual host.
       </li>
+
+      <li><module>mod_deflate</module> will now skip compression if it knows
+      that the size overhead added by the compression is larger than the data
+      to be compressed.
+      </li>
+
+      <li>Multi-language error documents from 2.2.x may not work unless
+      they are adjusted to the new syntax of <module>mod_include</module>'s
+      <code>#if expr=</code> element or the directive
+      <directive module="mod_include">SSILegacyExprParser</directive> is
+      enabled for the directory containing the error documents.
+      </li>
+
     </ul>
-    
 
   </section>
 

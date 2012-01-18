@@ -30,7 +30,7 @@ void ap_lua_rstack_dump(lua_State *L, request_rec *r, const char *msg)
     int i;
     int top = lua_gettop(L);
 
-    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, "Lua Stack Dump: [%s]", msg);
+    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(01484) "Lua Stack Dump: [%s]", msg);
 
     for (i = 1; i <= top; i++) {
         int t = lua_type(L, i);
@@ -194,12 +194,39 @@ static int req_add_output_filter(lua_State *L)
 {
     request_rec *r = ap_lua_check_request_rec(L, 1);
     const char *name = luaL_checkstring(L, 2);
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "adding output filter %s",
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01485) "adding output filter %s",
                   name);
     ap_add_output_filter(name, L, r, r->connection);
     return 0;
 }
 
+/* wrap ap_construct_url as r:construct_url(String) */
+static int req_construct_url(lua_State *L)
+{
+    request_rec *r = ap_lua_check_request_rec(L, 1);
+    const char *name = luaL_checkstring(L, 2);
+    lua_pushstring(L, ap_construct_url(r->pool, name, r));
+    return 1;
+}
+
+/* wrap ap_escape_html r:escape_html(String) */
+static int req_escape_html(lua_State *L)
+{
+    request_rec *r = ap_lua_check_request_rec(L, 1);
+    const char *s = luaL_checkstring(L, 2);
+    lua_pushstring(L, ap_escape_html(r->pool, s));
+    return 1;
+}
+/* wrap optional ssl_var_lookup as  r:ssl_var_lookup(String) */
+static int req_ssl_var_lookup(lua_State *L)
+{
+    request_rec *r = ap_lua_check_request_rec(L, 1);
+    const char *s = luaL_checkstring(L, 2);
+    const char *res = ap_lua_ssl_val(r->pool, r->server, r->connection, r, 
+                                     (char *)s);
+    lua_pushstring(L, res);
+    return 1;
+}
 /* BEGIN dispatch mathods for request_rec fields */
 
 /* not really a field, but we treat it like one */
@@ -217,7 +244,20 @@ static const char *req_method_field(request_rec *r)
 {
     return r->method;
 }
-
+static const char *req_handler_field(request_rec *r)
+{
+    return r->handler;
+}
+static const char *req_proxyreq_field(request_rec *r)
+{
+    switch (r->proxyreq) {
+        case PROXYREQ_NONE:     return "PROXYREQ_NONE";
+        case PROXYREQ_PROXY:    return "PROXYREQ_PROXY";
+        case PROXYREQ_REVERSE:  return "PROXYREQ_REVERSE";
+        case PROXYREQ_RESPONSE: return "PROXYREQ_RESPONSE";
+        default: return NULL;
+    }
+}
 static const char *req_hostname_field(request_rec *r)
 {
     return r->hostname;
@@ -318,6 +358,11 @@ static apr_table_t* req_notes(request_rec *r)
   return r->notes;
 }
 
+static int req_ssl_is_https_field(request_rec *r)
+{
+    return ap_lua_ssl_is_https(r->connection);
+}
+
 /* END dispatch mathods for request_rec fields */
 
 static int req_dispatch(lua_State *L)
@@ -338,17 +383,17 @@ static int req_dispatch(lua_State *L)
         case APL_REQ_FUNTYPE_TABLE:{
                 apr_table_t *rs;
                 req_field_apr_table_f func = (req_field_apr_table_f)rft->fun;
-                ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01486)
                               "request_rec->dispatching %s -> apr table",
                               name);
                 rs = (*func)(r);
-                ap_lua_push_apr_table(L, rs);          
+                ap_lua_push_apr_table(L, rs);
                 return 1;
             }
 
         case APL_REQ_FUNTYPE_LUACFUN:{
                 lua_CFunction func = (lua_CFunction)rft->fun;
-                ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01487)
                               "request_rec->dispatching %s -> lua_CFunction",
                               name);
                 lua_pushcfunction(L, func);
@@ -357,7 +402,7 @@ static int req_dispatch(lua_State *L)
         case APL_REQ_FUNTYPE_STRING:{
                 req_field_string_f func = (req_field_string_f)rft->fun;
                 char *rs;
-                ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01488)
                               "request_rec->dispatching %s -> string", name);
                 rs = (*func) (r);
                 lua_pushstring(L, rs);
@@ -366,7 +411,7 @@ static int req_dispatch(lua_State *L)
         case APL_REQ_FUNTYPE_INT:{
                 req_field_int_f func = (req_field_int_f)rft->fun;
                 int rs;
-                ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01489)
                               "request_rec->dispatching %s -> int", name);
                 rs = (*func) (r);
                 lua_pushnumber(L, rs);
@@ -375,7 +420,7 @@ static int req_dispatch(lua_State *L)
         case APL_REQ_FUNTYPE_BOOLEAN:{
                 req_field_int_f func = (req_field_int_f)rft->fun;
                 int rs;
-                ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01490)
                               "request_rec->dispatching %s -> boolean", name);
                 rs = (*func) (r);
                 lua_pushboolean(L, rs);
@@ -384,7 +429,7 @@ static int req_dispatch(lua_State *L)
         }
     }
 
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "nothing for %s", name);
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01491) "nothing for %s", name);
     return 0;
 }
 
@@ -399,7 +444,8 @@ static int req_log_at(lua_State *L, int level)
     lua_getinfo(L, "Sl", &dbg);
 
     msg = luaL_checkstring(L, 2);
-    ap_log_rerror(dbg.source, dbg.currentline, APLOG_MODULE_INDEX, level, 0, r, msg);
+    ap_log_rerror(dbg.source, dbg.currentline, APLOG_MODULE_INDEX, level, 0,
+                  r, "%s", msg);
     return 0;
 }
 
@@ -445,6 +491,21 @@ static int req_debug(lua_State *L)
     return 0;
 }
 
+#define APLUA_REQ_TRACE(lev) static int req_trace##lev(lua_State *L)  \
+{                                                               \
+    req_log_at(L, APLOG_TRACE##lev);                            \
+    return 0;                                                   \
+}
+
+APLUA_REQ_TRACE(1)
+APLUA_REQ_TRACE(2)
+APLUA_REQ_TRACE(3)
+APLUA_REQ_TRACE(4)
+APLUA_REQ_TRACE(5)
+APLUA_REQ_TRACE(6)
+APLUA_REQ_TRACE(7)
+APLUA_REQ_TRACE(8)
+
 /* handle r.status = 201 */
 static int req_newindex(lua_State *L)
 {
@@ -453,9 +514,10 @@ static int req_newindex(lua_State *L)
     /* const char* key = luaL_checkstring(L, -2); */
     request_rec *r = ap_lua_check_request_rec(L, 1);
     key = luaL_checkstring(L, 2);
-    if (0 == strcmp("status", key)) {
-        int code = luaL_checkinteger(L, 3);
-        r->status = code;
+
+    if (0 == strcmp("args", key)) {
+        const char *value = luaL_checkstring(L, 3);
+        r->args = apr_pstrdup(r->pool, value);
         return 0;
     }
 
@@ -471,13 +533,31 @@ static int req_newindex(lua_State *L)
         return 0;
     }
 
+    if (0 == strcmp("handler", key)) {
+        const char *value = luaL_checkstring(L, 3);
+        r->handler = apr_pstrdup(r->pool, value);
+        return 0;
+    }
+
+    if (0 == strcmp("proxyreq", key)) {
+        int value = luaL_checkinteger(L, 3);
+        r->proxyreq = value;
+        return 0;
+    }
+
+    if (0 == strcmp("status", key)) {
+        int code = luaL_checkinteger(L, 3);
+        r->status = code;
+        return 0;
+    }
+
     if (0 == strcmp("uri", key)) {
         const char *value = luaL_checkstring(L, 3);
         r->uri = apr_pstrdup(r->pool, value);
         return 0;
     }
 
-    if (0 == apr_strnatcmp("user", key)) {
+    if (0 == strcmp("user", key)) {
         const char *value = luaL_checkstring(L, 3);
         r->user = apr_pstrdup(r->pool, value);
         return 0;
@@ -546,8 +626,32 @@ AP_LUA_DECLARE(void) ap_lua_load_request_lmodule(lua_State *L, apr_pool_t *p)
                  makefun(&req_alert, APL_REQ_FUNTYPE_LUACFUN, p));
     apr_hash_set(dispatch, "emerg", APR_HASH_KEY_STRING,
                  makefun(&req_emerg, APL_REQ_FUNTYPE_LUACFUN, p));
+    apr_hash_set(dispatch, "trace1", APR_HASH_KEY_STRING,
+                 makefun(&req_trace1, APL_REQ_FUNTYPE_LUACFUN, p));
+    apr_hash_set(dispatch, "trace2", APR_HASH_KEY_STRING,
+                 makefun(&req_trace2, APL_REQ_FUNTYPE_LUACFUN, p));
+    apr_hash_set(dispatch, "trace3", APR_HASH_KEY_STRING,
+                 makefun(&req_trace3, APL_REQ_FUNTYPE_LUACFUN, p));
+    apr_hash_set(dispatch, "trace4", APR_HASH_KEY_STRING,
+                 makefun(&req_trace4, APL_REQ_FUNTYPE_LUACFUN, p));
+    apr_hash_set(dispatch, "trace5", APR_HASH_KEY_STRING,
+                 makefun(&req_trace5, APL_REQ_FUNTYPE_LUACFUN, p));
+    apr_hash_set(dispatch, "trace6", APR_HASH_KEY_STRING,
+                 makefun(&req_trace6, APL_REQ_FUNTYPE_LUACFUN, p));
+    apr_hash_set(dispatch, "trace7", APR_HASH_KEY_STRING,
+                 makefun(&req_trace7, APL_REQ_FUNTYPE_LUACFUN, p));
+    apr_hash_set(dispatch, "trace8", APR_HASH_KEY_STRING,
+                 makefun(&req_trace8, APL_REQ_FUNTYPE_LUACFUN, p));
     apr_hash_set(dispatch, "add_output_filter", APR_HASH_KEY_STRING,
                  makefun(&req_add_output_filter, APL_REQ_FUNTYPE_LUACFUN, p));
+    apr_hash_set(dispatch, "construct_url", APR_HASH_KEY_STRING,
+                 makefun(&req_construct_url, APL_REQ_FUNTYPE_LUACFUN, p));
+    apr_hash_set(dispatch, "escape_html", APR_HASH_KEY_STRING,
+                 makefun(&req_escape_html, APL_REQ_FUNTYPE_LUACFUN, p));
+    apr_hash_set(dispatch, "ssl_var_lookup", APR_HASH_KEY_STRING,
+                 makefun(&req_ssl_var_lookup, APL_REQ_FUNTYPE_LUACFUN, p));
+    apr_hash_set(dispatch, "is_https", APR_HASH_KEY_STRING,
+                 makefun(&req_ssl_is_https_field, APL_REQ_FUNTYPE_BOOLEAN, p));
     apr_hash_set(dispatch, "assbackwards", APR_HASH_KEY_STRING,
                  makefun(&req_assbackwards_field, APL_REQ_FUNTYPE_BOOLEAN, p));
     apr_hash_set(dispatch, "status", APR_HASH_KEY_STRING,
@@ -576,6 +680,8 @@ AP_LUA_DECLARE(void) ap_lua_load_request_lmodule(lua_State *L, apr_pool_t *p)
                  makefun(&req_path_info_field, APL_REQ_FUNTYPE_STRING, p));
     apr_hash_set(dispatch, "args", APR_HASH_KEY_STRING,
                  makefun(&req_args_field, APL_REQ_FUNTYPE_STRING, p));
+    apr_hash_set(dispatch, "handler", APR_HASH_KEY_STRING,
+                 makefun(&req_handler_field, APL_REQ_FUNTYPE_STRING, p));
     apr_hash_set(dispatch, "hostname", APR_HASH_KEY_STRING,
                  makefun(&req_hostname_field, APL_REQ_FUNTYPE_STRING, p));
     apr_hash_set(dispatch, "uri", APR_HASH_KEY_STRING,
@@ -584,6 +690,8 @@ AP_LUA_DECLARE(void) ap_lua_load_request_lmodule(lua_State *L, apr_pool_t *p)
                  makefun(&req_the_request_field, APL_REQ_FUNTYPE_STRING, p));
     apr_hash_set(dispatch, "method", APR_HASH_KEY_STRING,
                  makefun(&req_method_field, APL_REQ_FUNTYPE_STRING, p));
+    apr_hash_set(dispatch, "proxyreq", APR_HASH_KEY_STRING,
+                 makefun(&req_proxyreq_field, APL_REQ_FUNTYPE_STRING, p));
     apr_hash_set(dispatch, "headers_in", APR_HASH_KEY_STRING,
                  makefun(&req_headers_in, APL_REQ_FUNTYPE_TABLE, p));
     apr_hash_set(dispatch, "headers_out", APR_HASH_KEY_STRING,
@@ -594,7 +702,7 @@ AP_LUA_DECLARE(void) ap_lua_load_request_lmodule(lua_State *L, apr_pool_t *p)
                  makefun(&req_notes, APL_REQ_FUNTYPE_TABLE, p));
     apr_hash_set(dispatch, "subprocess_env", APR_HASH_KEY_STRING,
                  makefun(&req_subprocess_env, APL_REQ_FUNTYPE_TABLE, p));
-    
+
 
     lua_pushlightuserdata(L, dispatch);
     lua_setfield(L, LUA_REGISTRYINDEX, "Apache2.Request.dispatch");
@@ -635,7 +743,7 @@ AP_LUA_DECLARE(void) ap_lua_push_connection(lua_State *L, conn_rec *c)
     ap_lua_push_apr_table(L, c->notes);
     lua_setfield(L, -2, "notes");
 
-    lua_pushstring(L, c->remote_ip);
+    lua_pushstring(L, c->client_ip);
     lua_setfield(L, -2, "remote_ip");
 
     lua_pop(L, 1);

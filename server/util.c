@@ -54,6 +54,7 @@
 #include "http_config.h"
 #include "http_core.h"
 #include "util_ebcdic.h"
+#include "util_varbuf.h"
 
 #ifdef HAVE_PWD_H
 #include <pwd.h>
@@ -357,52 +358,79 @@ AP_DECLARE(const char *) ap_stripprefix(const char *bigstring,
  * passed ap_regexec(). pmatch should not be greater than the maximum number
  * of subexpressions - i.e. one more than the re_nsub member of ap_regex_t.
  *
+ * nmatch must be <=AP_MAX_REG_MATCH (10).
+ *
  * input should be the string with the $-expressions, source should be the
  * string that was matched against.
  *
- * It returns the substituted string, or NULL on error.
+ * It returns the substituted string, or NULL if a vbuf is used.
+ * On errors, returns the orig string.
  *
  * Parts of this code are based on Henry Spencer's regsub(), from his
  * AT&T V8 regexp package.
  */
 
-AP_DECLARE(char *) ap_pregsub(apr_pool_t *p, const char *input,
-                              const char *source, size_t nmatch,
-                              ap_regmatch_t pmatch[])
+static apr_status_t regsub_core(apr_pool_t *p, char **result,
+                                struct ap_varbuf *vb, const char *input,
+                                const char *source, apr_size_t nmatch,
+                                ap_regmatch_t pmatch[], apr_size_t maxlen)
 {
     const char *src = input;
-    char *dest, *dst;
+    char *dst;
     char c;
-    size_t no;
-    int len;
+    apr_size_t no;
+    apr_size_t len = 0;
 
-    if (!source)
-        return NULL;
-    if (!nmatch)
-        return apr_pstrdup(p, src);
+    AP_DEBUG_ASSERT((result && p && !vb) || (vb && !p && !result));
+    if (!source || nmatch>AP_MAX_REG_MATCH)
+        return APR_EINVAL;
+    if (!nmatch) {
+        len = strlen(src);
+        if (maxlen > 0 && len >= maxlen)
+            return APR_ENOMEM;
+        if (!vb) {
+            *result = apr_pstrmemdup(p, src, len);
+            return APR_SUCCESS;
+        }
+        else {
+            ap_varbuf_strmemcat(vb, src, len);
+            return APR_SUCCESS;
+        }
+    }
 
     /* First pass, find the size */
-
-    len = 0;
-
     while ((c = *src++) != '\0') {
         if (c == '$' && apr_isdigit(*src))
             no = *src++ - '0';
         else
-            no = 10;
+            no = AP_MAX_REG_MATCH;
 
-        if (no > 9) {                /* Ordinary character. */
+        if (no >= AP_MAX_REG_MATCH) {  /* Ordinary character. */
             if (c == '\\' && *src)
                 src++;
             len++;
         }
         else if (no < nmatch && pmatch[no].rm_so < pmatch[no].rm_eo) {
+            if (APR_SIZE_MAX - len <= pmatch[no].rm_eo - pmatch[no].rm_so)
+                return APR_ENOMEM;
             len += pmatch[no].rm_eo - pmatch[no].rm_so;
         }
 
     }
 
-    dest = dst = apr_pcalloc(p, len + 1);
+    if (len >= maxlen && maxlen > 0)
+        return APR_ENOMEM;
+
+    if (!vb) {
+        *result = dst = apr_palloc(p, len + 1);
+    }
+    else {
+        if (vb->buf && vb->strlen == AP_VARBUF_UNKNOWN)
+            vb->strlen = strlen(vb->buf);
+        ap_varbuf_grow(vb, vb->strlen + len);
+        dst = vb->buf + vb->strlen;
+        vb->strlen += len;
+    }
 
     /* Now actually fill in the string */
 
@@ -414,9 +442,9 @@ AP_DECLARE(char *) ap_pregsub(apr_pool_t *p, const char *input,
         else if (c == '$' && apr_isdigit(*src))
             no = *src++ - '0';
         else
-            no = 10;
+            no = AP_MAX_REG_MATCH;
 
-        if (no > 9) {                /* Ordinary character. */
+        if (no >= AP_MAX_REG_MATCH) {  /* Ordinary character. */
             if (c == '\\' && (*src == '$' || *src == '&'))
                 c = *src++;
             *dst++ = c;
@@ -430,7 +458,34 @@ AP_DECLARE(char *) ap_pregsub(apr_pool_t *p, const char *input,
     }
     *dst = '\0';
 
-    return dest;
+    return APR_SUCCESS;
+}
+
+#ifndef AP_PREGSUB_MAXLEN
+#define AP_PREGSUB_MAXLEN   (HUGE_STRING_LEN * 8)
+#endif
+AP_DECLARE(char *) ap_pregsub(apr_pool_t *p, const char *input,
+                              const char *source, apr_size_t nmatch,
+                              ap_regmatch_t pmatch[])
+{
+    char *result;
+    apr_status_t rc = regsub_core(p, &result, NULL, input, source, nmatch,
+                                  pmatch, AP_PREGSUB_MAXLEN);
+    if (rc != APR_SUCCESS)
+        result = NULL;
+    return result;
+}
+
+AP_DECLARE(apr_status_t) ap_pregsub_ex(apr_pool_t *p, char **result,
+                                       const char *input, const char *source,
+                                       apr_size_t nmatch, ap_regmatch_t pmatch[],
+                                       apr_size_t maxlen)
+{
+    apr_status_t rc = regsub_core(p, result, NULL, input, source, nmatch,
+                                  pmatch, maxlen);
+    if (rc != APR_SUCCESS)
+        *result = NULL;
+    return rc;
 }
 
 /*
@@ -670,7 +725,7 @@ AP_DECLARE(char *) ap_getword_nulls(apr_pool_t *atrans, const char **line,
     char *res;
 
     if (!pos) {
-        size_t len = strlen(*line);
+        apr_size_t len = strlen(*line);
         res = apr_pstrmemdup(atrans, *line, len);
         *line += len;
         return res;
@@ -764,7 +819,7 @@ AP_DECLARE(char *) ap_getword_conf(apr_pool_t *p, const char **line)
 AP_DECLARE(int) ap_cfg_closefile(ap_configfile_t *cfp)
 {
 #ifdef DEBUG
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, NULL,
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, NULL, APLOGNO(00551)
         "Done with config file %s", cfp->name);
 #endif
     return (cfp->close == NULL) ? 0 : cfp->close(cfp->param);
@@ -781,7 +836,7 @@ static apr_status_t cfg_getch(char *ch, void *param)
     return apr_file_getc(ch, param);
 }
 
-static apr_status_t cfg_getstr(void *buf, size_t bufsiz, void *param)
+static apr_status_t cfg_getstr(void *buf, apr_size_t bufsiz, void *param)
 {
     return apr_file_gets(buf, bufsiz, param);
 }
@@ -799,7 +854,7 @@ AP_DECLARE(apr_status_t) ap_pcfg_openfile(ap_configfile_t **ret_cfg,
 #endif
 
     if (name == NULL) {
-        ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL, APLOGNO(00552)
                "Internal error: pcfg_openfile() called with NULL filename");
         return APR_EBADF;
     }
@@ -807,7 +862,7 @@ AP_DECLARE(apr_status_t) ap_pcfg_openfile(ap_configfile_t **ret_cfg,
     status = apr_file_open(&file, name, APR_READ | APR_BUFFERED,
                            APR_OS_DEFAULT, p);
 #ifdef DEBUG
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, NULL,
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, NULL, APLOGNO(00553)
                 "Opening config file %s (%s)",
                 name, (status != APR_SUCCESS) ?
                 apr_strerror(status, buf, sizeof(buf)) : "successful");
@@ -825,7 +880,7 @@ AP_DECLARE(apr_status_t) ap_pcfg_openfile(ap_configfile_t **ret_cfg,
 #else
         strcmp(name, "/dev/null") != 0) {
 #endif /* WIN32 || OS2 */
-        ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL, APLOGNO(00554)
                      "Access to file %s denied by server: not a regular file",
                      name);
         apr_file_close(file);
@@ -871,7 +926,7 @@ AP_DECLARE(apr_status_t) ap_pcfg_openfile(ap_configfile_t **ret_cfg,
 AP_DECLARE(ap_configfile_t *) ap_pcfg_open_custom(
             apr_pool_t *p, const char *descr, void *param,
             apr_status_t (*getc_func) (char *ch, void *param),
-            apr_status_t (*gets_func) (void *buf, size_t bufsize, void *param),
+            apr_status_t (*gets_func) (void *buf, apr_size_t bufsize, void *param),
             apr_status_t (*close_func) (void *param))
 {
     ap_configfile_t *new_cfg = apr_palloc(p, sizeof(*new_cfg));
@@ -907,27 +962,27 @@ AP_DECLARE(const char *) ap_pcfg_strerror(apr_pool_t *p, ap_configfile_t *cfp,
 
 /* Read one line from open ap_configfile_t, strip LF, increase line number */
 /* If custom handler does not define a getstr() function, read char by char */
-AP_DECLARE(apr_status_t) ap_cfg_getline(char *buf, size_t bufsize, ap_configfile_t *cfp)
+static apr_status_t ap_cfg_getline_core(char *buf, apr_size_t bufsize,
+                                        ap_configfile_t *cfp)
 {
     apr_status_t rc;
-    char *src, *dst;
     /* If a "get string" function is defined, use it */
     if (cfp->getstr != NULL) {
         char *cp;
         char *cbuf = buf;
-        size_t cbufsize = bufsize;
+        apr_size_t cbufsize = bufsize;
 
         while (1) {
             ++cfp->line_number;
             rc = cfp->getstr(cbuf, cbufsize, cfp->param);
             if (rc == APR_EOF) {
                 if (cbuf != buf) {
-		    *cbuf = '\0';
+                    *cbuf = '\0';
                     break;
-		}
+                }
                 else {
                     return APR_EOF;
-		}
+                }
             }
             if (rc != APR_SUCCESS) {
                 return rc;
@@ -961,7 +1016,7 @@ AP_DECLARE(apr_status_t) ap_cfg_getline(char *buf, size_t bufsize, ap_configfile
         }
     } else {
         /* No "get string" function defined; read character by character */
-        size_t i = 0;
+        apr_size_t i = 0;
 
         if (bufsize < 2) {
             /* too small, assume caller is crazy */
@@ -997,27 +1052,72 @@ AP_DECLARE(apr_status_t) ap_cfg_getline(char *buf, size_t bufsize, ap_configfile
             buf[i] = c;
             ++i;
         }
-	buf[i] = '\0';
+        buf[i] = '\0';
     }
+    return APR_SUCCESS;
+}
 
+static int cfg_trim_line(char *buf)
+{
+    char *start, *end;
     /*
      * Leading and trailing white space is eliminated completely
      */
-    src = buf;
-    while (apr_isspace(*src))
-        ++src;
+    start = buf;
+    while (apr_isspace(*start))
+        ++start;
     /* blast trailing whitespace */
-    dst = &src[strlen(src)];
-    while (--dst >= src && apr_isspace(*dst))
-        *dst = '\0';
+    end = &start[strlen(start)];
+    while (--end >= start && apr_isspace(*end))
+        *end = '\0';
     /* Zap leading whitespace by shifting */
-    if (src != buf)
-        memmove(buf, src, dst - src + 2);
-
+    if (start != buf)
+        memmove(buf, start, end - start + 2);
 #ifdef DEBUG_CFG_LINES
-    ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, NULL, "Read config: '%s'", buf);
+    ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, NULL, APLOGNO(00555) "Read config: '%s'", buf);
 #endif
-    return APR_SUCCESS;
+    return end - start + 1;
+}
+
+/* Read one line from open ap_configfile_t, strip LF, increase line number */
+/* If custom handler does not define a getstr() function, read char by char */
+AP_DECLARE(apr_status_t) ap_cfg_getline(char *buf, apr_size_t bufsize,
+                                        ap_configfile_t *cfp)
+{
+    apr_status_t rc = ap_cfg_getline_core(buf, bufsize, cfp);
+    if (rc == APR_SUCCESS)
+        cfg_trim_line(buf);
+    return rc;
+}
+
+AP_DECLARE(apr_status_t) ap_varbuf_cfg_getline(struct ap_varbuf *vb,
+                                               ap_configfile_t *cfp,
+                                               apr_size_t max_len)
+{
+    apr_status_t rc;
+    vb->strlen = 0;
+    *vb->buf = '\0';
+
+    for (;;) {
+        apr_size_t new_len;
+        rc = ap_cfg_getline_core(vb->buf + vb->strlen, vb->avail - vb->strlen, cfp);
+        if (rc == APR_ENOSPC || rc == APR_SUCCESS)
+            vb->strlen += strlen(vb->buf + vb->strlen);
+        if (rc != APR_ENOSPC)
+            break;
+        if (vb->avail >= max_len)
+            return APR_ENOSPC;
+        new_len = vb->avail * 2;
+        if (new_len > max_len)
+            new_len = max_len;
+        ap_varbuf_grow(vb, new_len);
+        --cfp->line_number;
+    }
+    if (vb->strlen > max_len)
+        return APR_ENOSPC;
+    if (rc == APR_SUCCESS)
+        vb->strlen = cfg_trim_line(vb->buf);
+    return rc;
 }
 
 /* Size an HTTP header field list item, as separated by a comma.
@@ -1526,6 +1626,23 @@ AP_DECLARE(int) ap_unescape_url_reserved(char *url, const char *reserved)
 }
 #endif
 
+AP_DECLARE(int) ap_unescape_urlencoded(char *query)
+{
+    char *slider;
+
+    /* replace plus with a space */
+    if (query) {
+        for (slider = query; *slider; slider++) {
+            if (*slider == '+') {
+                *slider = ' ';
+            }
+        }
+    }
+
+    /* unescape everything else */
+    return unescape_url(query, NULL, NULL);
+}
+
 AP_DECLARE(char *) ap_construct_server(apr_pool_t *p, const char *hostname,
                                        apr_port_t port, const request_rec *r)
 {
@@ -1632,6 +1749,33 @@ AP_DECLARE(char *) ap_os_escape_path(apr_pool_t *p, const char *path, int partia
     }
     *d = '\0';
     return copy;
+}
+
+AP_DECLARE(char *) ap_escape_urlencoded_buffer(char *copy, const char *buffer)
+{
+    const unsigned char *s = (const unsigned char *)buffer;
+    unsigned char *d = (unsigned char *)copy;
+    unsigned c;
+
+    while ((c = *s)) {
+        if (TEST_CHAR(c, T_ESCAPE_URLENCODED)) {
+            d = c2x(c, '%', d);
+        }
+        else if (c == ' ') {
+            *d++ = '+';
+        }
+        else {
+            *d++ = c;
+        }
+        ++s;
+    }
+    *d = '\0';
+    return copy;
+}
+
+AP_DECLARE(char *) ap_escape_urlencoded(apr_pool_t *p, const char *buffer)
+{
+    return ap_escape_urlencoded_buffer(apr_palloc(p, 3 * strlen(buffer) + 1), buffer);
 }
 
 /* ap_escape_uri is now a macro for os_escape_path */
@@ -1912,7 +2056,7 @@ char *ap_get_local_host(apr_pool_t *a)
     char *hostname;
 
     if (apr_gethostname(str, sizeof(str) - 1, a) != APR_SUCCESS) {
-        ap_log_perror(APLOG_MARK, APLOG_STARTUP | APLOG_WARNING, 0, a,
+        ap_log_perror(APLOG_MARK, APLOG_STARTUP | APLOG_WARNING, 0, a, APLOGNO(00556)
                      "%s: apr_gethostname() failed to determine ServerName",
                      ap_server_argv0);
     } else {
@@ -1929,7 +2073,7 @@ char *ap_get_local_host(apr_pool_t *a)
                 server_hostname = apr_pstrdup(a, hostname);
             }
         } else {
-            ap_log_perror(APLOG_MARK, APLOG_STARTUP | APLOG_WARNING, 0, a,
+            ap_log_perror(APLOG_MARK, APLOG_STARTUP | APLOG_WARNING, 0, a, APLOGNO(00557)
                          "%s: apr_sockaddr_info_get() failed for %s",
                          ap_server_argv0, str);
         }
@@ -1938,9 +2082,10 @@ char *ap_get_local_host(apr_pool_t *a)
     if (!server_hostname)
         server_hostname = apr_pstrdup(a, "127.0.0.1");
 
-    ap_log_perror(APLOG_MARK, APLOG_ALERT|APLOG_STARTUP, 0, a,
+    ap_log_perror(APLOG_MARK, APLOG_ALERT|APLOG_STARTUP, 0, a, APLOGNO(00558)
                  "%s: Could not reliably determine the server's fully qualified "
-                 "domain name, using %s for ServerName",
+                 "domain name, using %s. Set the 'ServerName' directive globally "
+                 "to suppress this message",
                  ap_server_argv0, server_hostname);
 
     return server_hostname;
@@ -2399,4 +2544,233 @@ AP_DECLARE(int) ap_parse_form_data(request_rec *r, ap_filter_t *f,
 
     return OK;
 
+}
+
+#define VARBUF_SMALL_SIZE 2048
+#define VARBUF_MAX_SIZE   (APR_SIZE_MAX - 1 -                                \
+                           APR_ALIGN_DEFAULT(sizeof(struct ap_varbuf_info)))
+
+struct ap_varbuf_info {
+    struct apr_memnode_t *node;
+    apr_allocator_t *allocator;
+};
+
+static apr_status_t varbuf_cleanup(void *info_)
+{
+    struct ap_varbuf_info *info = info_;
+    info->node->next = NULL;
+    apr_allocator_free(info->allocator, info->node);
+    return APR_SUCCESS;
+}
+
+const char nul = '\0';
+static char * const varbuf_empty = (char *)&nul;
+
+AP_DECLARE(void) ap_varbuf_init(apr_pool_t *p, struct ap_varbuf *vb,
+                                apr_size_t init_size)
+{
+    vb->buf = varbuf_empty;
+    vb->avail = 0;
+    vb->strlen = AP_VARBUF_UNKNOWN;
+    vb->pool = p;
+    vb->info = NULL;
+
+    ap_varbuf_grow(vb, init_size);
+}
+
+AP_DECLARE(void) ap_varbuf_grow(struct ap_varbuf *vb, apr_size_t new_len)
+{
+    apr_memnode_t *new_node = NULL;
+    apr_allocator_t *allocator;
+    struct ap_varbuf_info *new_info;
+    char *new;
+
+    if (new_len <= vb->avail)
+        return;
+
+    if (new_len < 2 * vb->avail && vb->avail < VARBUF_MAX_SIZE/2) {
+        /* at least double the size, to avoid repeated reallocations */
+        new_len = 2 * vb->avail;
+    }
+    else if (new_len > VARBUF_MAX_SIZE) {
+        apr_abortfunc_t abort_fn = apr_pool_abort_get(vb->pool);
+        ap_assert(abort_fn != NULL);
+        abort_fn(APR_ENOMEM);
+        return;
+    }
+
+    new_len++;  /* add space for trailing \0 */
+    if (new_len <= VARBUF_SMALL_SIZE) {
+        new_len = APR_ALIGN_DEFAULT(new_len);
+        new = apr_palloc(vb->pool, new_len);
+        if (vb->avail && vb->strlen != 0) {
+            AP_DEBUG_ASSERT(vb->buf != NULL);
+            AP_DEBUG_ASSERT(vb->buf != varbuf_empty);
+            if (new == vb->buf + vb->avail + 1) {
+                /* We are lucky: the new memory lies directly after our old
+                 * buffer, we can now use both.
+                 */
+                vb->avail += new_len;
+                return;
+            }
+            else {
+                /* copy up to vb->strlen + 1 bytes */
+                memcpy(new, vb->buf, vb->strlen == AP_VARBUF_UNKNOWN ?
+                                     vb->avail + 1 : vb->strlen + 1);
+            }
+        }
+        else {
+            *new = '\0';
+        }
+        vb->avail = new_len - 1;
+        vb->buf = new;
+        return;
+    }
+
+    /* The required block is rather larger. Use allocator directly so that
+     * the memory can be freed independently from the pool. */
+    allocator = apr_pool_allocator_get(vb->pool);
+    if (new_len <= VARBUF_MAX_SIZE)
+        new_node = apr_allocator_alloc(allocator,
+                                       new_len + APR_ALIGN_DEFAULT(sizeof(*new_info)));
+    if (!new_node) {
+        apr_abortfunc_t abort_fn = apr_pool_abort_get(vb->pool);
+        ap_assert(abort_fn != NULL);
+        abort_fn(APR_ENOMEM);
+        return;
+    }
+    new_info = (struct ap_varbuf_info *)new_node->first_avail;
+    new_node->first_avail += APR_ALIGN_DEFAULT(sizeof(*new_info));
+    new_info->node = new_node;
+    new_info->allocator = allocator;
+    new = new_node->first_avail;
+    AP_DEBUG_ASSERT(new_node->endp - new_node->first_avail >= new_len);
+    new_len = new_node->endp - new_node->first_avail;
+
+    if (vb->avail && vb->strlen != 0)
+        memcpy(new, vb->buf, vb->strlen == AP_VARBUF_UNKNOWN ?
+                             vb->avail + 1 : vb->strlen + 1);
+    else
+        *new = '\0';
+    if (vb->info)
+        apr_pool_cleanup_run(vb->pool, vb->info, varbuf_cleanup);
+    apr_pool_cleanup_register(vb->pool, new_info, varbuf_cleanup,
+                              apr_pool_cleanup_null);
+    vb->info = new_info;
+    vb->buf = new;
+    vb->avail = new_len - 1;
+}
+
+AP_DECLARE(void) ap_varbuf_strmemcat(struct ap_varbuf *vb, const char *str,
+                                     int len)
+{
+    if (len == 0)
+        return;
+    if (!vb->avail) {
+        ap_varbuf_grow(vb, len);
+        memcpy(vb->buf, str, len);
+        vb->buf[len] = '\0';
+        vb->strlen = len;
+        return;
+    }
+    if (vb->strlen == AP_VARBUF_UNKNOWN)
+        vb->strlen = strlen(vb->buf);
+    ap_varbuf_grow(vb, vb->strlen + len);
+    memcpy(vb->buf + vb->strlen, str, len);
+    vb->strlen += len;
+    vb->buf[vb->strlen] = '\0';
+}
+
+AP_DECLARE(void) ap_varbuf_free(struct ap_varbuf *vb)
+{
+    if (vb->info) {
+        apr_pool_cleanup_run(vb->pool, vb->info, varbuf_cleanup);
+        vb->info = NULL;
+    }
+    vb->buf = NULL;
+}
+
+AP_DECLARE(char *) ap_varbuf_pdup(apr_pool_t *p, struct ap_varbuf *buf,
+                                  const char *prepend, apr_size_t prepend_len,
+                                  const char *append, apr_size_t append_len,
+                                  apr_size_t *new_len)
+{
+    apr_size_t i = 0;
+    struct iovec vec[3];
+
+    if (prepend) {
+        vec[i].iov_base = (void *)prepend;
+        vec[i].iov_len = prepend_len;
+        i++;
+    }
+    if (buf->avail && buf->strlen) {
+        vec[i].iov_base = (void *)buf->buf;
+        vec[i].iov_len = (buf->strlen == AP_VARBUF_UNKNOWN) ? buf->avail
+                                                            : buf->strlen;
+        i++;
+    }
+    if (append) {
+        vec[i].iov_base = (void *)append;
+        vec[i].iov_len = append_len;
+        i++;
+    }
+    if (i)
+        return apr_pstrcatv(p, vec, i, new_len);
+
+    if (new_len)
+        *new_len = 0;
+    return "";
+}
+
+AP_DECLARE(apr_status_t) ap_varbuf_regsub(struct ap_varbuf *vb,
+                                          const char *input,
+                                          const char *source,
+                                          apr_size_t nmatch,
+                                          ap_regmatch_t pmatch[],
+                                          apr_size_t maxlen)
+{
+    return regsub_core(NULL, NULL, vb, input, source, nmatch, pmatch, maxlen);
+}
+
+static const char * const oom_message = "[crit] Memory allocation failed, "
+                                        "aborting process." APR_EOL_STR;
+
+AP_DECLARE(void) ap_abort_on_oom()
+{
+    int written, count = strlen(oom_message);
+    const char *buf = oom_message;
+    do {
+        written = write(STDERR_FILENO, buf, count);
+        if (written == count)
+            break;
+        if (written > 0) {
+            buf += written;
+            count -= written;
+        }
+    } while (written >= 0 || errno == EINTR);
+    abort();
+}
+
+AP_DECLARE(void *) ap_malloc(size_t size)
+{
+    void *p = malloc(size);
+    if (p == NULL && size != 0)
+        ap_abort_on_oom();
+    return p;
+}
+
+AP_DECLARE(void *) ap_calloc(size_t nelem, size_t size)
+{
+    void *p = calloc(nelem, size);
+    if (p == NULL && nelem != 0 && size != 0)
+        ap_abort_on_oom();
+    return p;
+}
+
+AP_DECLARE(void *) ap_realloc(void *ptr, size_t size)
+{
+    void *p = realloc(ptr, size);
+    if (p == NULL && size != 0)
+        ap_abort_on_oom();
+    return p;
 }

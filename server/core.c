@@ -20,6 +20,7 @@
 #include "apr_fnmatch.h"
 #include "apr_hash.h"
 #include "apr_thread_proc.h"    /* for RLIMIT stuff */
+#include "apr_random.h"
 
 #define APR_WANT_IOVEC
 #define APR_WANT_STRFUNC
@@ -63,7 +64,7 @@
 
 /* LimitXMLRequestBody handling */
 #define AP_LIMIT_UNSET                  ((long) -1)
-#define AP_DEFAULT_LIMIT_XML_BODY       ((size_t)1000000)
+#define AP_DEFAULT_LIMIT_XML_BODY       ((apr_size_t)1000000)
 
 #define AP_MIN_SENDFILE_BYTES           (256)
 
@@ -73,11 +74,11 @@
 #endif
 
 /* valid in core-conf, but not in runtime r->used_path_info */
-#define AP_ACCEPT_PATHINFO_UNSET 3 
+#define AP_ACCEPT_PATHINFO_UNSET 3
 
-#define AP_CONTENT_MD5_OFF   0 
-#define AP_CONTENT_MD5_ON    1 
-#define AP_CONTENT_MD5_UNSET 2 
+#define AP_CONTENT_MD5_OFF   0
+#define AP_CONTENT_MD5_ON    1
+#define AP_CONTENT_MD5_UNSET 2
 
 APR_HOOK_STRUCT(
     APR_HOOK_LINK(get_mgmt_items)
@@ -119,7 +120,7 @@ static apr_table_t *server_config_defined_vars = NULL;
 
 AP_DECLARE_DATA int ap_main_state = AP_SQ_MS_INITIAL_STARTUP;
 AP_DECLARE_DATA int ap_run_mode = AP_SQ_RM_UNKNOWN;
-AP_DECLARE_DATA int ap_config_generation = 1;
+AP_DECLARE_DATA int ap_config_generation = 0;
 
 static void *create_core_dir_config(apr_pool_t *a, char *dir)
 {
@@ -179,6 +180,10 @@ static void *create_core_dir_config(apr_pool_t *a, char *dir)
     conf->allow_encoded_slashes = 0;
     conf->decode_encoded_slashes = 0;
 
+    conf->max_ranges = AP_MAXRANGES_UNSET;
+    conf->max_overlaps = AP_MAXRANGES_UNSET;
+    conf->max_reversals = AP_MAXRANGES_UNSET;
+
     return (void *)conf;
 }
 
@@ -234,6 +239,10 @@ static void *merge_core_dir_configs(apr_pool_t *a, void *basev, void *newv)
 
     if (!(new->override_opts & OPT_UNSET)) {
         conf->override_opts = new->override_opts;
+    }
+
+    if (conf->override_list == NULL) {
+        conf->override_list = new->override_list;
     }
 
     if (conf->response_code_strings == NULL) {
@@ -392,6 +401,10 @@ static void *merge_core_dir_configs(apr_pool_t *a, void *basev, void *newv)
             ap_merge_log_config(base->log, conf->log);
         }
     }
+
+    conf->max_ranges = new->max_ranges != AP_MAXRANGES_UNSET ? new->max_ranges : base->max_ranges;
+    conf->max_overlaps = new->max_overlaps != AP_MAXRANGES_UNSET ? new->max_overlaps : base->max_overlaps;
+    conf->max_reversals = new->max_reversals != AP_MAXRANGES_UNSET ? new->max_reversals : base->max_reversals;
 
     return (void*)conf;
 }
@@ -816,7 +829,7 @@ static APR_INLINE void do_double_reverse (conn_rec *conn)
     rv = apr_sockaddr_info_get(&sa, conn->remote_host, APR_UNSPEC, 0, 0, conn->pool);
     if (rv == APR_SUCCESS) {
         while (sa) {
-            if (apr_sockaddr_equal(sa, conn->remote_addr)) {
+            if (apr_sockaddr_equal(sa, conn->client_addr)) {
                 conn->double_reverse = 1;
                 return;
             }
@@ -858,7 +871,7 @@ AP_DECLARE(const char *) ap_get_remote_host(conn_rec *conn, void *dir_config,
         && (type == REMOTE_DOUBLE_REV
         || hostname_lookups != HOSTNAME_LOOKUP_OFF)) {
 
-        if (apr_getnameinfo(&conn->remote_host, conn->remote_addr, 0)
+        if (apr_getnameinfo(&conn->remote_host, conn->client_addr, 0)
             == APR_SUCCESS) {
             ap_str_tolower(conn->remote_host);
 
@@ -897,7 +910,7 @@ AP_DECLARE(const char *) ap_get_remote_host(conn_rec *conn, void *dir_config,
         }
         else {
             *str_is_ip = 1;
-            return conn->remote_ip;
+            return conn->client_ip;
         }
     }
 }
@@ -960,7 +973,7 @@ AP_DECLARE(const char *) ap_get_server_name(request_rec *r)
             retval = r->hostname ? r->hostname : r->server->server_hostname;
             break;
         default:
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00109)
                          "ap_get_server_name: Invalid UCN Option somehow");
             retval = "localhost";
             break;
@@ -1023,7 +1036,7 @@ AP_DECLARE(apr_port_t) ap_get_server_port(const request_rec *r)
                        ap_default_port(r);
             break;
         default:
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00110)
                          "ap_get_server_port: Invalid UCN Option somehow");
             port = ap_default_port(r);
             break;
@@ -1098,6 +1111,11 @@ AP_DECLARE(const char *) ap_check_cmd_context(cmd_parms *cmd,
         return apr_pstrcat(cmd->pool, cmd->cmd->name, gt,
                            " cannot occur within <Limit> or <LimitExcept> "
                            "section", NULL);
+    }
+
+    if ((forbidden & NOT_IN_HTACCESS) && (cmd->pool == cmd->temp_pool)) {
+         return apr_pstrcat(cmd->pool, cmd->cmd->name, gt,
+                            " cannot occur within htaccess files", NULL);
     }
 
     if ((forbidden & NOT_IN_DIR_LOC_FILE) == NOT_IN_DIR_LOC_FILE) {
@@ -1200,7 +1218,7 @@ AP_DECLARE(const char *) ap_resolve_env(apr_pool_t *p, const char * word)
                 }
                 else {
                     if (ap_strchr(name, ':') == 0)
-                        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, NULL,
+                        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, NULL, APLOGNO(00111)
                                      "Config variable ${%s} is not defined",
                                      name);
                     current->string = s;
@@ -1264,6 +1282,9 @@ static void init_config_defines(apr_pool_t *pconf)
 static const char *set_define(cmd_parms *cmd, void *dummy,
                               const char *name, const char *value)
 {
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_HTACCESS);
+    if (err)
+        return err;
     if (ap_strchr_c(name, ':') != NULL)
         return "Variable name must not contain ':'";
 
@@ -1287,6 +1308,9 @@ static const char *unset_define(cmd_parms *cmd, void *dummy,
 {
     int i;
     char **defines;
+    const char *err = ap_check_cmd_context(cmd, NOT_IN_HTACCESS);
+    if (err)
+        return err;
     if (ap_strchr_c(name, ':') != NULL)
         return "Variable name must not contain ':'";
 
@@ -1392,7 +1416,7 @@ static const char *set_document_root(cmd_parms *cmd, void *dummy,
         || !ap_is_directory(cmd->pool, arg)) {
         if (cmd->server->is_virtual) {
             ap_log_perror(APLOG_MARK, APLOG_STARTUP, 0,
-                          cmd->pool,
+                          cmd->pool, APLOGNO(00112)
                           "Warning: DocumentRoot [%s] does not exist",
                           arg);
             conf->ap_document_root = arg;
@@ -1457,7 +1481,7 @@ static const char *set_error_document(cmd_parms *cmd, void *conf_,
     /* The entry should be ignored if it is a full URL for a 401 error */
 
     if (error_number == 401 && what == REMOTE_PATH) {
-        ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, cmd->server,
+        ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, cmd->server, APLOGNO(00113)
                      "cannot use a full URL in a 401 ErrorDocument "
                      "directive --- ignoring!");
     }
@@ -1555,13 +1579,16 @@ static const char *set_override(cmd_parms *cmd, void *d_, const char *l)
     core_dir_config *d = d_;
     char *w;
     char *k, *v;
+    const char *err;
 
     /* Throw a warning if we're in <Location> or <Files> */
     if (ap_check_cmd_context(cmd, NOT_IN_LOCATION | NOT_IN_FILES)) {
-        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, cmd->server,
+        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, cmd->server, APLOGNO(00114)
                      "Useless use of AllowOverride in line %d of %s.",
                      cmd->directive->line_num, cmd->directive->filename);
     }
+    if ((err = ap_check_cmd_context(cmd, NOT_IN_HTACCESS)) != NULL)
+        return err;
 
     d->override = OR_NONE;
     while (l[0]) {
@@ -1592,6 +1619,17 @@ static const char *set_override(cmd_parms *cmd, void *d_, const char *l)
         else if (!strcasecmp(w, "Indexes")) {
             d->override |= OR_INDEXES;
         }
+        else if (!strcasecmp(w, "Nonfatal")) {
+            if (!strcasecmp(v, "Override")) {
+                d->override |= NONFATAL_OVERRIDE;
+            }
+            else if (!strcasecmp(v, "Unknown")) {
+                d->override |= NONFATAL_UNKNOWN;
+            }
+            else if (!strcasecmp(v, "All")) {
+                d->override |= NONFATAL_ALL;
+            }
+        }
         else if (!strcasecmp(w, "None")) {
             d->override = OR_NONE;
         }
@@ -1603,6 +1641,43 @@ static const char *set_override(cmd_parms *cmd, void *d_, const char *l)
         }
 
         d->override &= ~OR_UNSET;
+    }
+
+    return NULL;
+}
+
+static const char *set_override_list(cmd_parms *cmd, void *d_, int argc, char *const argv[])
+{
+    core_dir_config *d = d_;
+    int i;
+    const char *err;
+
+    /* Throw a warning if we're in <Location> or <Files> */
+    if (ap_check_cmd_context(cmd, NOT_IN_LOCATION | NOT_IN_FILES)) {
+        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, cmd->server, APLOGNO(00115)
+                     "Useless use of AllowOverrideList in line %d of %s.",
+                     cmd->directive->line_num, cmd->directive->filename);
+    }
+    if ((err = ap_check_cmd_context(cmd, NOT_IN_HTACCESS)) != NULL)
+        return err;
+
+    d->override_list = apr_table_make(cmd->pool, 1);
+
+    for (i=0;i<argc;i++){
+        if (!strcasecmp(argv[i], "None")) {
+            return NULL;
+        }
+        else {
+            const command_rec *result = NULL;
+            module *mod = ap_top_module;
+            result = ap_find_command_in_modules(argv[i], &mod);
+            if (result)
+                apr_table_set(d->override_list, argv[i], "1");
+            else
+                ap_log_error(APLOG_MARK, APLOG_WARNING, 0, cmd->server, APLOGNO(00116)
+                             "Discarding unrecognized directive `%s' in AllowOverrideList.",
+                             argv[i]);
+        }
     }
 
     return NULL;
@@ -1711,7 +1786,7 @@ static const char *set_default_type(cmd_parms *cmd, void *d_,
                                    const char *arg)
 {
     if ((strcasecmp(arg, "off") != 0) && (strcasecmp(arg, "none") != 0)) {
-        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, cmd->server,
+        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, cmd->server, APLOGNO(00117)
               "Ignoring deprecated use of DefaultType in line %d of %s.",
                      cmd->directive->line_num, cmd->directive->filename);
     }
@@ -2862,8 +2937,8 @@ static const char *include_config (cmd_parms *cmd, void *dummy,
                            name, NULL);
     }
 
-    error = ap_process_fnmatch_configs(cmd->server, conffile, &conftree, 
-                                       cmd->pool, cmd->temp_pool, 
+    error = ap_process_fnmatch_configs(cmd->server, conffile, &conftree,
+                                       cmd->pool, cmd->temp_pool,
                                        optional);
     if (error) {
         *recursion = 0;
@@ -2888,14 +2963,6 @@ static const char *set_loglevel(cmd_parms *cmd, void *config_, const char *arg_)
     char *arg = apr_pstrdup(cmd->temp_pool, arg_);
     struct ap_logconf *log;
     const char *err;
-
-    /* XXX: what check is necessary here? */
-#if 0
-    const char *err = ap_check_cmd_context(cmd, NOT_IN_DIR_LOC_FILE);
-    if (err != NULL) {
-        return err;
-    }
-#endif
 
     if (cmd->path) {
         core_dir_config *dconf = config_;
@@ -3213,7 +3280,85 @@ static const char *set_limit_xml_req_body(cmd_parms *cmd, void *conf_,
     return NULL;
 }
 
-AP_DECLARE(size_t) ap_get_limit_xml_body(const request_rec *r)
+static const char *set_max_ranges(cmd_parms *cmd, void *conf_, const char *arg)
+{
+    core_dir_config *conf = conf_;
+    int val = 0;
+
+    if (!strcasecmp(arg, "none")) {
+        val = AP_MAXRANGES_NORANGES;
+    }
+    else if (!strcasecmp(arg, "default")) {
+        val = AP_MAXRANGES_DEFAULT;
+    }
+    else if (!strcasecmp(arg, "unlimited")) {
+        val = AP_MAXRANGES_UNLIMITED;
+    }
+    else {
+        val = atoi(arg);
+        if (val <= 0)
+            return "MaxRanges requires 'none', 'default', 'unlimited' or "
+                   "a positive integer";
+    }
+
+    conf->max_ranges = val;
+
+    return NULL;
+}
+
+static const char *set_max_overlaps(cmd_parms *cmd, void *conf_, const char *arg)
+{
+    core_dir_config *conf = conf_;
+    int val = 0;
+
+    if (!strcasecmp(arg, "none")) {
+        val = AP_MAXRANGES_NORANGES;
+    }
+    else if (!strcasecmp(arg, "default")) {
+        val = AP_MAXRANGES_DEFAULT;
+    }
+    else if (!strcasecmp(arg, "unlimited")) {
+        val = AP_MAXRANGES_UNLIMITED;
+    }
+    else {
+        val = atoi(arg);
+        if (val <= 0)
+            return "MaxRangeOverlaps requires 'none', 'default', 'unlimited' or "
+            "a positive integer";
+    }
+
+    conf->max_overlaps = val;
+
+    return NULL;
+}
+
+static const char *set_max_reversals(cmd_parms *cmd, void *conf_, const char *arg)
+{
+    core_dir_config *conf = conf_;
+    int val = 0;
+
+    if (!strcasecmp(arg, "none")) {
+        val = AP_MAXRANGES_NORANGES;
+    }
+    else if (!strcasecmp(arg, "default")) {
+        val = AP_MAXRANGES_DEFAULT;
+    }
+    else if (!strcasecmp(arg, "unlimited")) {
+        val = AP_MAXRANGES_UNLIMITED;
+    }
+    else {
+        val = atoi(arg);
+        if (val <= 0)
+            return "MaxRangeReversals requires 'none', 'default', 'unlimited' or "
+            "a positive integer";
+    }
+
+    conf->max_reversals = val;
+
+    return NULL;
+}
+
+AP_DECLARE(apr_size_t) ap_get_limit_xml_body(const request_rec *r)
 {
     core_dir_config *conf;
 
@@ -3221,14 +3366,14 @@ AP_DECLARE(size_t) ap_get_limit_xml_body(const request_rec *r)
     if (conf->limit_xml_body == AP_LIMIT_UNSET)
         return AP_DEFAULT_LIMIT_XML_BODY;
 
-    return (size_t)conf->limit_xml_body;
+    return (apr_size_t)conf->limit_xml_body;
 }
 
 #if !defined (RLIMIT_CPU) || !(defined (RLIMIT_DATA) || defined (RLIMIT_VMEM) || defined(RLIMIT_AS)) || !defined (RLIMIT_NPROC)
 static const char *no_set_limit(cmd_parms *cmd, void *conf_,
                                 const char *arg, const char *arg2)
 {
-    ap_log_error(APLOG_MARK, APLOG_ERR, 0, cmd->server,
+    ap_log_error(APLOG_MARK, APLOG_ERR, 0, cmd->server, APLOGNO(00118)
                 "%s not supported on this platform", cmd->cmd->name);
 
     return NULL;
@@ -3286,7 +3431,7 @@ static const char *set_recursion_limit(cmd_parms *cmd, void *dummy,
         return "The recursion limit must be greater than zero.";
     }
     if (limit < 4) {
-        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, cmd->server,
+        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, cmd->server, APLOGNO(00119)
                      "Limiting internal redirects to very low numbers may "
                      "cause normal requests to fail.");
     }
@@ -3300,7 +3445,7 @@ static const char *set_recursion_limit(cmd_parms *cmd, void *dummy,
             return "The recursion limit must be greater than zero.";
         }
         if (limit < 4) {
-            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, cmd->server,
+            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, cmd->server, APLOGNO(00120)
                          "Limiting the subrequest depth to a very low level may"
                          " cause normal requests to fail.");
         }
@@ -3315,20 +3460,20 @@ static void log_backtrace(const request_rec *r)
 {
     const request_rec *top = r;
 
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(00121)
                   "r->uri = %s", r->uri ? r->uri : "(unexpectedly NULL)");
 
     while (top && (top->prev || top->main)) {
         if (top->prev) {
             top = top->prev;
-            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(00122)
                           "redirected from r->uri = %s",
                           top->uri ? top->uri : "(unexpectedly NULL)");
         }
 
         if (!top->prev && top->main) {
             top = top->main;
-            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(00123)
                           "subrequested from r->uri = %s",
                           top->uri ? top->uri : "(unexpectedly NULL)");
         }
@@ -3356,7 +3501,7 @@ AP_DECLARE(int) ap_is_recursion_limit_exceeded(const request_rec *r)
         if (top->prev) {
             if (++redirects >= rlimit) {
                 /* uuh, too much. */
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00124)
                               "Request exceeded the limit of %d internal "
                               "redirects due to probable configuration error. "
                               "Use 'LimitInternalRecursion' to increase the "
@@ -3376,7 +3521,7 @@ AP_DECLARE(int) ap_is_recursion_limit_exceeded(const request_rec *r)
         if (!top->prev && top->main) {
             if (++subreqs >= slimit) {
                 /* uuh, too much. */
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00125)
                               "Request exceeded the limit of %d subrequest "
                               "nesting levels due to probable configuration "
                               "error. Use 'LimitInternalRecursion' to increase "
@@ -3599,12 +3744,12 @@ static apr_array_header_t *parse_errorlog_string(apr_pool_t *p,
             *err = "The '+' flag cannot be used in the main error log format";
             return NULL;
         }
-	if (!is_main_fmt && item->min_loglevel) {
+        if (!is_main_fmt && item->min_loglevel) {
             *err = "The loglevel cannot be used as a condition in "
-		   "once-per-request or once-per-connection formats";
+                   "once-per-request or once-per-connection formats";
             return NULL;
         }
-	if (item->min_loglevel > APLOG_TRACE8) {
+        if (item->min_loglevel > APLOG_TRACE8) {
             *err = "The specified loglevel modifier is out of range";
             return NULL;
         }
@@ -3742,6 +3887,9 @@ AP_INIT_TAKE2("ErrorDocument", set_error_document, NULL, OR_FILEINFO,
 AP_INIT_RAW_ARGS("AllowOverride", set_override, NULL, ACCESS_CONF,
   "Controls what groups of directives can be configured by per-directory "
   "config files"),
+AP_INIT_TAKE_ARGV("AllowOverrideList", set_override_list, NULL, ACCESS_CONF,
+  "Controls what individual directives can be configured by per-directory "
+  "config files"),
 AP_INIT_RAW_ARGS("Options", set_options, NULL, OR_OPTIONS,
   "Set a number of attributes for a given directory"),
 AP_INIT_TAKE1("DefaultType", set_default_type, NULL, OR_FILEINFO,
@@ -3826,6 +3974,15 @@ AP_INIT_TAKE1("LimitXMLRequestBody", set_limit_xml_req_body, NULL, OR_ALL,
 AP_INIT_RAW_ARGS("Mutex", ap_set_mutex, NULL, RSRC_CONF,
                  "mutex (or \"default\") and mechanism"),
 
+AP_INIT_TAKE1("MaxRanges", set_max_ranges, NULL, RSRC_CONF|ACCESS_CONF,
+              "Maximum number of Ranges in a request before returning the entire "
+              "resource, or 0 for unlimited"),
+AP_INIT_TAKE1("MaxRangeOverlaps", set_max_overlaps, NULL, RSRC_CONF|ACCESS_CONF,
+              "Maximum number of overlaps in Ranges in a request before returning the entire "
+              "resource, or 0 for unlimited"),
+AP_INIT_TAKE1("MaxRangeReversals", set_max_reversals, NULL, RSRC_CONF|ACCESS_CONF,
+              "Maximum number of reversals in Ranges in a request before returning the entire "
+              "resource, or 0 for unlimited"),
 /* System Resource Controls */
 #ifdef RLIMIT_CPU
 AP_INIT_TAKE12("RLimitCPU", set_limit_cpu,
@@ -3915,9 +4072,8 @@ AP_INIT_TAKE1("TraceEnable", set_trace_enable, NULL, RSRC_CONF,
 
 AP_DECLARE_NONSTD(int) ap_core_translate(request_rec *r)
 {
-    void *sconf = r->server->module_config;
-    core_server_config *conf = ap_get_core_module_config(sconf);
     apr_status_t rv;
+    char *path;
 
     /* XXX this seems too specific, this should probably become
      * some general-case test
@@ -3926,7 +4082,7 @@ AP_DECLARE_NONSTD(int) ap_core_translate(request_rec *r)
         return HTTP_FORBIDDEN;
     }
     if (!r->uri || ((r->uri[0] != '/') && strcmp(r->uri, "*"))) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00126)
                      "Invalid URI in request %s", r->the_request);
         return HTTP_BAD_REQUEST;
     }
@@ -3937,46 +4093,31 @@ AP_DECLARE_NONSTD(int) ap_core_translate(request_rec *r)
             || r->uri[r->server->pathlen] == '/'
             || r->uri[r->server->pathlen] == '\0'))
     {
-        /* skip all leading /'s (e.g. http://localhost///foo)
-         * so we are looking at only the relative path.
-         */
-        char *path = r->uri + r->server->pathlen;
-        while (*path == '/') {
-            ++path;
-        }
-        if ((rv = apr_filepath_merge(&r->filename, conf->ap_document_root, path,
-                                     APR_FILEPATH_TRUENAME
-                                   | APR_FILEPATH_SECUREROOT, r->pool))
-                    != APR_SUCCESS) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
-                         "Cannot map %s to file", r->the_request);
-            return HTTP_FORBIDDEN;
-        }
-        r->canonical_filename = r->filename;
+        path = r->uri + r->server->pathlen;
     }
     else {
-        /*
-         * Make sure that we do not mess up the translation by adding two
-         * /'s in a row.  This happens under windows when the document
-         * root ends with a /
-         */
-        /* skip all leading /'s (e.g. http://localhost///foo)
-         * so we are looking at only the relative path.
-         */
-        char *path = r->uri;
-        while (*path == '/') {
-            ++path;
-        }
-        if ((rv = apr_filepath_merge(&r->filename, conf->ap_document_root, path,
-                                     APR_FILEPATH_TRUENAME
-                                   | APR_FILEPATH_SECUREROOT, r->pool))
-                    != APR_SUCCESS) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
-                         "Cannot map %s to file", r->the_request);
-            return HTTP_FORBIDDEN;
-        }
-        r->canonical_filename = r->filename;
+        path = r->uri;
     }
+    /*
+     * Make sure that we do not mess up the translation by adding two
+     * /'s in a row.  This happens under windows when the document
+     * root ends with a /
+     */
+    /* skip all leading /'s (e.g. http://localhost///foo)
+     * so we are looking at only the relative path.
+     */
+    while (*path == '/') {
+        ++path;
+    }
+    if ((rv = apr_filepath_merge(&r->filename, ap_document_root(r), path,
+                                 APR_FILEPATH_TRUENAME
+                               | APR_FILEPATH_SECUREROOT, r->pool))
+                != APR_SUCCESS) {
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(00127)
+                     "Cannot map %s to file", r->the_request);
+        return HTTP_FORBIDDEN;
+    }
+    r->canonical_filename = r->filename;
 
     return OK;
 }
@@ -4023,9 +4164,9 @@ static int core_override_type(request_rec *r)
      * beginning of the fixup phase (here!), so modules should override the user's
      * discretion in their own module fixup phase.  It is tristate, if
      * the user doesn't specify, the result is AP_REQ_DEFAULT_PATH_INFO.
-     * (which the module may interpret to its own customary behavior.)  
+     * (which the module may interpret to its own customary behavior.)
      * It won't be touched if the value is no longer AP_ACCEPT_PATHINFO_UNSET,
-     * so any module changing the value prior to the fixup phase 
+     * so any module changing the value prior to the fixup phase
      * OVERRIDES the user's choice.
      */
     if ((r->used_path_info == AP_REQ_DEFAULT_PATH_INFO)
@@ -4072,7 +4213,7 @@ static int default_handler(request_rec *r)
 
     if (r->method_number == M_GET || r->method_number == M_POST) {
         if (r->finfo.filetype == APR_NOFILE) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(00128)
                           "File does not exist: %s", r->filename);
             return HTTP_NOT_FOUND;
         }
@@ -4081,7 +4222,7 @@ static int default_handler(request_rec *r)
          * raw I/O on a dir.
          */
         if (r->finfo.filetype == APR_DIR) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(00129)
                           "Attempt to serve directory: %s", r->filename);
             return HTTP_NOT_FOUND;
         }
@@ -4090,7 +4231,7 @@ static int default_handler(request_rec *r)
             r->path_info && *r->path_info)
         {
             /* default to reject */
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(00130)
                           "File does not exist: %s",
                           apr_pstrcat(r->pool, r->filename, r->path_info, NULL));
             return HTTP_NOT_FOUND;
@@ -4110,7 +4251,7 @@ static int default_handler(request_rec *r)
             req_cfg = ap_get_core_module_config(r->request_config);
             if (!req_cfg->deliver_script) {
                 /* The flag hasn't been set for this request. Punt. */
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00131)
                               "This resource does not accept the %s method.",
                               r->method);
                 return HTTP_METHOD_NOT_ALLOWED;
@@ -4123,7 +4264,7 @@ static int default_handler(request_rec *r)
                             | AP_SENDFILE_ENABLED(d->enable_sendfile)
 #endif
                                     , 0, r->pool)) != APR_SUCCESS) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, status, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, status, r, APLOGNO(00132)
                           "file permissions deny server access: %s", r->filename);
             return HTTP_FORBIDDEN;
         }
@@ -4131,7 +4272,7 @@ static int default_handler(request_rec *r)
         ap_update_mtime(r, r->finfo.mtime);
         ap_set_last_modified(r);
         ap_set_etag(r);
-        apr_table_setn(r->headers_out, "Accept-Ranges", "bytes");
+        ap_set_accept_ranges(r);
         ap_set_content_length(r, r->finfo.size);
         if (bld_content_md5) {
             apr_table_setn(r->headers_out, "Content-MD5",
@@ -4165,7 +4306,7 @@ static int default_handler(request_rec *r)
         }
         else {
             /* no way to know what type of error occurred */
-            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, status, r,
+            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, status, r, APLOGNO(00133)
                           "default_handler: ap_pass_brigade returned %i",
                           status);
             return HTTP_INTERNAL_SERVER_ERROR;
@@ -4178,12 +4319,12 @@ static int default_handler(request_rec *r)
              * always allocated at least MIN_LINE_ALLOC (80) bytes.
              */
             if (r->the_request
-                && r->the_request[0] == 0x16                                
+                && r->the_request[0] == 0x16
                 && (r->the_request[1] == 0x2 || r->the_request[1] == 0x3)) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00134)
                               "Invalid method in request %s - possible attempt to establish SSL connection on non-SSL port", r->the_request);
             } else {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00135)
                               "Invalid method in request %s", r->the_request);
             }
             return HTTP_NOT_IMPLEMENTED;
@@ -4212,6 +4353,45 @@ AP_DECLARE(int) ap_sys_privileges_handlers(int inc)
     return sys_privileges;
 }
 
+static int check_errorlog_dir(apr_pool_t *p, server_rec *s)
+{
+    if (!s->error_fname || s->error_fname[0] == '|'
+        || strcmp(s->error_fname, "syslog") == 0) {
+        return APR_SUCCESS;
+    }
+    else {
+        char *abs = ap_server_root_relative(p, s->error_fname);
+        char *dir = ap_make_dirstr_parent(p, abs);
+        apr_finfo_t finfo;
+        apr_status_t rv = apr_stat(&finfo, dir, APR_FINFO_TYPE, p);
+        if (rv == APR_SUCCESS && finfo.filetype != APR_DIR)
+            rv = APR_ENOTDIR;
+        if (rv != APR_SUCCESS) {
+            const char *desc = "main error log";
+            if (s->defn_name)
+                desc = apr_psprintf(p, "error log of vhost defined at %s:%d",
+                                    s->defn_name, s->defn_line_number);
+            ap_log_error(APLOG_MARK, APLOG_STARTUP|APLOG_EMERG, rv,
+                          ap_server_conf, APLOGNO(02291)
+                         "Cannot access directory '%s' for %s", dir, desc);
+            return !OK;
+        }
+    }
+    return OK;
+}
+
+static int core_check_config(apr_pool_t *pconf, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s)
+{
+    int rv = OK;
+    while (s) {
+        if (check_errorlog_dir(ptemp, s) != OK)
+            rv = !OK;
+        s = s->next;
+    }
+    return rv;
+}
+
+
 static int core_pre_config(apr_pool_t *pconf, apr_pool_t *plog, apr_pool_t *ptemp)
 {
     ap_mutex_init(pconf);
@@ -4239,12 +4419,14 @@ static int core_post_config(apr_pool_t *pconf, apr_pool_t *plog, apr_pool_t *pte
     ap_setup_make_content_type(pconf);
     ap_setup_auth_internal(ptemp);
     if (!sys_privileges) {
-        ap_log_error(APLOG_MARK, APLOG_CRIT, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_CRIT, 0, NULL, APLOGNO(00136)
                      "Server MUST relinquish startup privileges before "
                      "accepting connections.  Please ensure mod_unixd "
                      "or other system security module is loaded.");
         return !OK;
     }
+    apr_pool_cleanup_register(pconf, NULL, ap_mpm_end_gen_helper,
+                              apr_pool_cleanup_null);
     return OK;
 }
 
@@ -4358,34 +4540,27 @@ static conn_rec *core_create_conn(apr_pool_t *ptrans, server_rec *server,
     c->pool = ptrans;
     if ((rv = apr_socket_addr_get(&c->local_addr, APR_LOCAL, csd))
         != APR_SUCCESS) {
-        ap_log_error(APLOG_MARK, APLOG_INFO, rv, server,
+        ap_log_error(APLOG_MARK, APLOG_INFO, rv, server, APLOGNO(00137)
                      "apr_socket_addr_get(APR_LOCAL)");
         apr_socket_close(csd);
         return NULL;
     }
 
     apr_sockaddr_ip_get(&c->local_ip, c->local_addr);
-    if ((rv = apr_socket_addr_get(&c->remote_addr, APR_REMOTE, csd))
+    if ((rv = apr_socket_addr_get(&c->client_addr, APR_REMOTE, csd))
         != APR_SUCCESS) {
-        ap_log_error(APLOG_MARK, APLOG_INFO, rv, server,
+        ap_log_error(APLOG_MARK, APLOG_INFO, rv, server, APLOGNO(00138)
                      "apr_socket_addr_get(APR_REMOTE)");
         apr_socket_close(csd);
         return NULL;
     }
 
-    apr_sockaddr_ip_get(&c->remote_ip, c->remote_addr);
+    apr_sockaddr_ip_get(&c->client_ip, c->client_addr);
     c->base_server = server;
 
     c->id = id;
     c->bucket_alloc = alloc;
 
-    c->cs = (conn_state_t *)apr_pcalloc(ptrans, sizeof(conn_state_t));
-    APR_RING_INIT(&(c->cs->timeout_list), conn_state_t, timeout_list);
-    c->cs->expiration_time = 0;
-    c->cs->state = CONN_STATE_CHECK_REQUEST_LINE_READABLE;
-    c->cs->c = c;
-    c->cs->p = ptrans;
-    c->cs->bucket_alloc = alloc;
     c->clogging_input_filters = 0;
 
     return c;
@@ -4408,7 +4583,7 @@ static int core_pre_connection(conn_rec *c, void *csd)
         /* expected cause is that the client disconnected already,
          * hence the debug level
          */
-        ap_log_cerror(APLOG_MARK, APLOG_DEBUG, rv, c,
+        ap_log_cerror(APLOG_MARK, APLOG_DEBUG, rv, c, APLOGNO(00139)
                       "apr_socket_opt_set(APR_TCP_NODELAY)");
     }
 
@@ -4421,7 +4596,7 @@ static int core_pre_connection(conn_rec *c, void *csd)
     rv = apr_socket_timeout_set(csd, c->base_server->timeout);
     if (rv != APR_SUCCESS) {
         /* expected cause is that the client disconnected already */
-        ap_log_cerror(APLOG_MARK, APLOG_DEBUG, rv, c,
+        ap_log_cerror(APLOG_MARK, APLOG_DEBUG, rv, c, APLOGNO(00140)
                       "apr_socket_timeout_set");
     }
 
@@ -4450,6 +4625,149 @@ AP_DECLARE(int) ap_state_query(int query)
     }
 }
 
+static apr_random_t *rng = NULL;
+#if APR_HAS_THREADS
+static apr_thread_mutex_t *rng_mutex = NULL;
+#endif
+
+static void core_child_init(apr_pool_t *pchild, server_rec *s)
+{
+    apr_proc_t proc;
+#if APR_HAS_THREADS
+    int threaded_mpm;
+    if (ap_mpm_query(AP_MPMQ_IS_THREADED, &threaded_mpm) == APR_SUCCESS
+        && threaded_mpm)
+    {
+        apr_thread_mutex_create(&rng_mutex, APR_THREAD_MUTEX_DEFAULT, pchild);
+    }
+#endif
+    /* The MPMs use plain fork() and not apr_proc_fork(), so we have to call
+     * apr_random_after_fork() manually in the child
+     */
+    proc.pid = getpid();
+    apr_random_after_fork(&proc);
+}
+
+AP_CORE_DECLARE(void) ap_random_parent_after_fork(void)
+{
+    /*
+     * To ensure that the RNG state in the parent changes after the fork, we
+     * pull some data from the RNG and discard it. This ensures that the RNG
+     * states in the children are different even after the pid wraps around.
+     * As we only use apr_random for insecure random bytes, pulling 2 bytes
+     * should be enough.
+     * XXX: APR should probably have some dedicated API to do this, but it
+     * XXX: currently doesn't.
+     */
+    apr_uint16_t data;
+    apr_random_insecure_bytes(rng, &data, sizeof(data));
+}
+
+AP_CORE_DECLARE(void) ap_init_rng(apr_pool_t *p)
+{
+    unsigned char seed[8];
+    apr_status_t rv;
+    rng = apr_random_standard_new(p);
+    do {
+        rv = apr_generate_random_bytes(seed, sizeof(seed));
+        if (rv != APR_SUCCESS)
+            goto error;
+        apr_random_add_entropy(rng, seed, sizeof(seed));
+        rv = apr_random_insecure_ready(rng);
+    } while (rv == APR_ENOTENOUGHENTROPY);
+    if (rv == APR_SUCCESS)
+        return;
+error:
+    ap_log_error(APLOG_MARK, APLOG_CRIT, rv, NULL, APLOGNO(00141)
+                 "Could not initialize random number generator");
+    exit(1);
+}
+
+AP_DECLARE(void) ap_random_insecure_bytes(void *buf, apr_size_t size)
+{
+#if APR_HAS_THREADS
+    if (rng_mutex)
+        apr_thread_mutex_lock(rng_mutex);
+#endif
+    /* apr_random_insecure_bytes can only fail with APR_ENOTENOUGHENTROPY,
+     * and we have ruled that out during initialization. Therefore we don't
+     * need to check the return code.
+     */
+    apr_random_insecure_bytes(rng, buf, size);
+#if APR_HAS_THREADS
+    if (rng_mutex)
+        apr_thread_mutex_unlock(rng_mutex);
+#endif
+}
+
+/*
+ * Finding a random number in a range.
+ *      n' = a + n(b-a+1)/(M+1)
+ * where:
+ *      n' = random number in range
+ *      a  = low end of range
+ *      b  = high end of range
+ *      n  = random number of 0..M
+ *      M  = maxint
+ * Algorithm 'borrowed' from PHP's rand() function.
+ */
+#define RAND_RANGE(__n, __min, __max, __tmax) \
+(__n) = (__min) + (long) ((double) ((__max) - (__min) + 1.0) * ((__n) / ((__tmax) + 1.0)))
+AP_DECLARE(apr_uint32_t) ap_random_pick(apr_uint32_t min, apr_uint32_t max)
+{
+    apr_uint32_t number;
+    if (max < 16384) {
+        apr_uint16_t num16;
+        ap_random_insecure_bytes(&num16, sizeof(num16));
+        RAND_RANGE(num16, min, max, APR_UINT16_MAX);
+        number = num16;
+    }
+    else {
+        ap_random_insecure_bytes(&number, sizeof(number));
+        RAND_RANGE(number, min, max, APR_UINT32_MAX);
+    }
+    return number;
+}
+
+static void core_dump_config(apr_pool_t *p, server_rec *s)
+{
+    core_server_config *sconf = ap_get_core_module_config(s->module_config);
+    apr_file_t *out = NULL;
+    const char *tmp;
+    const char **defines;
+    int i;
+    if (!ap_exists_config_define("DUMP_RUN_CFG"))
+        return;
+
+    apr_file_open_stdout(&out, p);
+    apr_file_printf(out, "ServerRoot: \"%s\"\n", ap_server_root);
+    tmp = ap_server_root_relative(p, sconf->ap_document_root);
+    apr_file_printf(out, "Main DocumentRoot: \"%s\"\n", tmp);
+    if (s->error_fname[0] != '|' && strcmp(s->error_fname, "syslog") != 0)
+        tmp = ap_server_root_relative(p, s->error_fname);
+    else
+        tmp = s->error_fname;
+    apr_file_printf(out, "Main ErrorLog: \"%s\"\n", tmp);
+    if (ap_scoreboard_fname) {
+        tmp = ap_server_root_relative(p, ap_scoreboard_fname);
+        apr_file_printf(out, "ScoreBoardFile: \"%s\"\n", tmp);
+    }
+    ap_dump_mutexes(p, s, out);
+    ap_mpm_dump_pidfile(p, out);
+
+    defines = (const char **)ap_server_config_defines->elts;
+    for (i = 0; i < ap_server_config_defines->nelts; i++) {
+        const char *name = defines[i];
+        const char *val = NULL;
+        if (server_config_defined_vars)
+           val = apr_table_get(server_config_defined_vars, name);
+        if (val)
+            apr_file_printf(out, "Define: %s=%s\n", name, val);
+        else
+            apr_file_printf(out, "Define: %s\n", name);
+    }
+}
+
 static void register_hooks(apr_pool_t *p)
 {
     errorlog_hash = apr_hash_make(p);
@@ -4459,7 +4777,7 @@ static void register_hooks(apr_pool_t *p)
 
     /* create_connection and pre_connection should always be hooked
      * APR_HOOK_REALLY_LAST by core to give other modules the opportunity
-     * to install alternate network transports and stop other functions 
+     * to install alternate network transports and stop other functions
      * from being run.
      */
     ap_hook_create_connection(core_create_conn, NULL, NULL,
@@ -4469,9 +4787,12 @@ static void register_hooks(apr_pool_t *p)
 
     ap_hook_pre_config(core_pre_config, NULL, NULL, APR_HOOK_REALLY_FIRST);
     ap_hook_post_config(core_post_config,NULL,NULL,APR_HOOK_REALLY_FIRST);
+    ap_hook_check_config(core_check_config,NULL,NULL,APR_HOOK_FIRST);
+    ap_hook_test_config(core_dump_config,NULL,NULL,APR_HOOK_FIRST);
     ap_hook_translate_name(ap_core_translate,NULL,NULL,APR_HOOK_REALLY_LAST);
     ap_hook_map_to_storage(core_map_to_storage,NULL,NULL,APR_HOOK_REALLY_LAST);
     ap_hook_open_logs(ap_open_logs,NULL,NULL,APR_HOOK_REALLY_FIRST);
+    ap_hook_child_init(core_child_init,NULL,NULL,APR_HOOK_REALLY_FIRST);
     ap_hook_child_init(ap_logs_child_init,NULL,NULL,APR_HOOK_MIDDLE);
     ap_hook_handler(default_handler,NULL,NULL,APR_HOOK_REALLY_LAST);
     /* FIXME: I suspect we can eliminate the need for these do_nothings - Ben */

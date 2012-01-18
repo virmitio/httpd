@@ -6,7 +6,9 @@ APACHE_MODULE(optional_hook_import, example optional hook importer, , , no)
 APACHE_MODULE(optional_fn_import, example optional function importer, , , no)
 APACHE_MODULE(optional_fn_export, example optional function exporter, , , no)
 
-APACHE_MODULE(dialup, rate limits static files to dialup modem speeds, , , no)
+APACHE_MODULE(dialup, rate limits static files to dialup modem speeds, , , )
+
+APACHE_MODULE(policy, HTTP protocol compliance filters, , , no)
 
 APR_ADDTO(INCLUDES, [-I\$(top_srcdir)/$modpath_current])
 

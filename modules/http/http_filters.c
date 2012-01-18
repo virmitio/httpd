@@ -267,12 +267,12 @@ apr_status_t ap_http_filter(ap_filter_t *f, apr_bucket_brigade *b,
                 /* Something that isn't in HTTP, unless some future
                  * edition defines new transfer ecodings, is unsupported.
                  */
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, f->r,
+                ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, f->r, APLOGNO(01585)
                               "Unknown Transfer-Encoding: %s", tenc);
                 return bail_out_on_error(ctx, f, HTTP_NOT_IMPLEMENTED);
             }
             else {
-                ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, f->r,
+                ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, f->r, APLOGNO(01586)
                   "Unknown Transfer-Encoding: %s; using Content-Length", tenc);
                 tenc = NULL;
             }
@@ -289,7 +289,7 @@ apr_status_t ap_http_filter(ap_filter_t *f, apr_bucket_brigade *b,
                 || endstr == lenp || *endstr || ctx->remaining < 0) {
 
                 ctx->remaining = 0;
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, f->r,
+                ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, f->r, APLOGNO(01587)
                               "Invalid Content-Length");
 
                 return bail_out_on_error(ctx, f, HTTP_REQUEST_ENTITY_TOO_LARGE);
@@ -299,7 +299,7 @@ apr_status_t ap_http_filter(ap_filter_t *f, apr_bucket_brigade *b,
              * time, stop it here if it is invalid.
              */
             if (ctx->limit && ctx->limit < ctx->remaining) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, f->r,
+                ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, f->r, APLOGNO(01588)
                           "Requested content-length of %" APR_OFF_T_FMT
                           " is larger than the configured limit"
                           " of %" APR_OFF_T_FMT, ctx->remaining, ctx->limit);
@@ -392,11 +392,11 @@ apr_status_t ap_http_filter(ap_filter_t *f, apr_bucket_brigade *b,
 
             /* Detect chunksize error (such as overflow) */
             if (rv != APR_SUCCESS || ctx->remaining < 0) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, f->r, "Error reading first chunk %s ", 
+                ap_log_rerror(APLOG_MARK, APLOG_INFO, rv, f->r, APLOGNO(01589) "Error reading first chunk %s ",
                               (ctx->remaining < 0) ? "(overflow)" : "");
                 ctx->remaining = 0; /* Reset it in case we have to
                                      * come back here later */
-                if (APR_STATUS_IS_TIMEUP(rv)) { 
+                if (APR_STATUS_IS_TIMEUP(rv)) {
                     http_error = HTTP_REQUEST_TIME_OUT;
                 }
                 return bail_out_on_error(ctx, f, http_error);
@@ -498,11 +498,11 @@ apr_status_t ap_http_filter(ap_filter_t *f, apr_bucket_brigade *b,
 
                 /* Detect chunksize error (such as overflow) */
                 if (rv != APR_SUCCESS || ctx->remaining < 0) {
-                    ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, f->r, "Error reading chunk %s ", 
+                    ap_log_rerror(APLOG_MARK, APLOG_INFO, rv, f->r, APLOGNO(01590) "Error reading chunk %s ",
                                   (ctx->remaining < 0) ? "(overflow)" : "");
                     ctx->remaining = 0; /* Reset it in case we have to
                                          * come back here later */
-                    if (APR_STATUS_IS_TIMEUP(rv)) { 
+                    if (APR_STATUS_IS_TIMEUP(rv)) {
                         http_error = HTTP_REQUEST_TIME_OUT;
                     }
                     return bail_out_on_error(ctx, f, http_error);
@@ -567,7 +567,7 @@ apr_status_t ap_http_filter(ap_filter_t *f, apr_bucket_brigade *b,
          * really count.  This seems to be up for interpretation.  */
         ctx->limit_used += totalread;
         if (ctx->limit < ctx->limit_used) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, f->r,
+            ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, f->r, APLOGNO(01591)
                           "Read content-length of %" APR_OFF_T_FMT
                           " is larger than the configured limit"
                           " of %" APR_OFF_T_FMT, ctx->limit_used, ctx->limit);
@@ -631,7 +631,7 @@ static long get_chunk_size(char *b)
         chunkbits -= 4;
         ++b;
     }
-    if (apr_isxdigit(*b) && (chunkbits <= 0)) {
+    if (apr_isxdigit(*b)) {
         /* overflow */
         return -1;
     }
@@ -655,23 +655,10 @@ static int form_header_field(header_struct *h,
 #if APR_CHARSET_EBCDIC
     char *headfield;
     apr_size_t len;
-    apr_size_t name_len;
-    apr_size_t val_len;
-    char *next;
 
-    name_len = strlen(fieldname);
-    val_len = strlen(fieldval);
-    len = name_len + val_len + 4; /* 4 for ": " plus CRLF */
-    headfield = (char *)apr_palloc(h->pool, len + 1);
-    memcpy(headfield, fieldname, name_len);
-    next = headfield + name_len;
-    *next++ = ':';
-    *next++ = ' ';
-    memcpy(next, fieldval, val_len);
-    next += val_len;
-    *next++ = CR;
-    *next++ = LF;
-    *next = 0;
+    headfield = apr_pstrcat(h->pool, fieldname, ": ", fieldval, CRLF, NULL);
+    len = strlen(headfield);
+
     ap_xlate_proto_to_ascii(headfield, len);
     apr_brigade_write(h->bb, NULL, NULL, headfield, len);
 #else
@@ -972,8 +959,8 @@ static void basic_http_header(request_rec *r, apr_bucket_brigade *bb,
     if (APLOGrtrace3(r)) {
         ap_log_rerror(APLOG_MARK, APLOG_TRACE3, 0, r,
                       "Response sent with status %d%s",
-		      r->status,
-		      APLOGrtrace4(r) ? ", headers:" : "");
+                      r->status,
+                      APLOGrtrace4(r) ? ", headers:" : "");
 
         /*
          * Date and Server are less interesting, use TRACE5 for them while
@@ -1484,12 +1471,12 @@ AP_DECLARE(int) ap_setup_client_block(request_rec *r, int read_policy)
 
     if (tenc) {
         if (strcasecmp(tenc, "chunked")) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(01592)
                           "Unknown Transfer-Encoding %s", tenc);
             return HTTP_NOT_IMPLEMENTED;
         }
         if (r->read_body == REQUEST_CHUNKED_ERROR) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(01593)
                           "chunked Transfer-Encoding forbidden: %s", r->uri);
             return (lenp) ? HTTP_BAD_REQUEST : HTTP_LENGTH_REQUIRED;
         }
@@ -1502,7 +1489,7 @@ AP_DECLARE(int) ap_setup_client_block(request_rec *r, int read_policy)
         if (apr_strtoff(&r->remaining, lenp, &endstr, 10)
             || *endstr || r->remaining < 0) {
             r->remaining = 0;
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(01594)
                           "Invalid Content-Length");
             return HTTP_BAD_REQUEST;
         }
@@ -1510,7 +1497,7 @@ AP_DECLARE(int) ap_setup_client_block(request_rec *r, int read_policy)
 
     if ((r->read_body == REQUEST_NO_BODY)
         && (r->read_chunked || (r->remaining > 0))) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(01595)
                       "%s with body is not allowed for %s", r->method, r->uri);
         return HTTP_REQUEST_ENTITY_TOO_LARGE;
     }

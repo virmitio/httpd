@@ -27,7 +27,7 @@
 
 <summary>
 
-<p>This document supplements the <module>mod_rewrite</module> 
+<p>This document supplements the <module>mod_rewrite</module>
 <a href="../mod/mod_rewrite.html">reference documentation</a>. It describes
 the way that the rules change when you use mod_rewrite in .htaccess files,
 and how to deal with these changes.</p>
@@ -40,7 +40,7 @@ and how to deal with these changes.</p>
 <seealso><a href="vhosts.html">Virtual hosts</a></seealso>
 <seealso><a href="proxy.html">Proxying</a></seealso>
 <seealso><a href="rewritemap.html">Using RewriteMap</a></seealso>
-<seealso><a href="advanced.html">Advanced techniques and tricks</a></seealso>
+<seealso><a href="advanced.html">Advanced techniques</a></seealso>
 <seealso><a href="avoid.html">When not to use mod_rewrite</a></seealso>
 
-</manualpage> 
+</manualpage>

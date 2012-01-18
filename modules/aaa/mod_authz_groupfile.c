@@ -52,6 +52,7 @@
 #include "http_log.h"
 #include "http_protocol.h"
 #include "http_request.h"
+#include "util_varbuf.h"
 
 #include "mod_auth.h"
 
@@ -90,13 +91,15 @@ static const command_rec authz_groupfile_cmds[] =
 
 module AP_MODULE_DECLARE_DATA authz_groupfile_module;
 
+#define VARBUF_INIT_LEN 512
+#define VARBUF_MAX_LEN  (16*1024*1024)
 static apr_status_t groups_for_user(apr_pool_t *p, char *user, char *grpfile,
                                     apr_table_t ** out)
 {
     ap_configfile_t *f;
     apr_table_t *grps = apr_table_make(p, 15);
     apr_pool_t *sp;
-    char l[MAX_STRING_LEN];
+    struct ap_varbuf vb;
     const char *group_name, *ll, *w;
     apr_status_t status;
     apr_size_t group_len;
@@ -106,12 +109,13 @@ static apr_status_t groups_for_user(apr_pool_t *p, char *user, char *grpfile,
     }
 
     apr_pool_create(&sp, p);
+    ap_varbuf_init(p, &vb, VARBUF_INIT_LEN);
 
-    while (!(ap_cfg_getline(l, MAX_STRING_LEN, f))) {
-        if ((l[0] == '#') || (!l[0])) {
+    while (!(ap_varbuf_cfg_getline(&vb, f, VARBUF_MAX_LEN))) {
+        if ((vb.buf[0] == '#') || (!vb.buf[0])) {
             continue;
         }
-        ll = l;
+        ll = vb.buf;
         apr_pool_clear(sp);
 
         group_name = ap_getword(sp, &ll, ':');
@@ -132,6 +136,7 @@ static apr_status_t groups_for_user(apr_pool_t *p, char *user, char *grpfile,
     }
     ap_cfg_closefile(f);
     apr_pool_destroy(sp);
+    ap_varbuf_free(&vb);
 
     *out = grps;
     return APR_SUCCESS;
@@ -156,7 +161,7 @@ static authz_status group_check_authorization(request_rec *r,
      * configured. So decline.
      */
     if (!(conf->groupfile)) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01664)
                         "No group file was specified in the configuration");
         return AUTHZ_DENIED;
     }
@@ -165,7 +170,7 @@ static authz_status group_check_authorization(request_rec *r,
                                 &grpstatus);
 
     if (status != APR_SUCCESS) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, status, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, status, r, APLOGNO(01665)
                         "Could not open group file: %s",
                         conf->groupfile);
         return AUTHZ_DENIED;
@@ -173,7 +178,7 @@ static authz_status group_check_authorization(request_rec *r,
 
     if (apr_table_elts(grpstatus)->nelts == 0) {
         /* no groups available, so exit immediately */
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01666)
                       "Authorization of user %s to access %s failed, reason: "
                       "user doesn't appear in group file (%s).",
                       r->user, r->uri, conf->groupfile);
@@ -187,7 +192,7 @@ static authz_status group_check_authorization(request_rec *r,
         }
     }
 
-    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01667)
                     "Authorization of user %s to access %s failed, reason: "
                     "user is not part of the 'require'ed group(s).",
                     r->user, r->uri);
@@ -216,7 +221,7 @@ static authz_status filegroup_check_authorization(request_rec *r,
      * configured. So decline.
      */
     if (!(conf->groupfile)) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01668)
                         "No group file was specified in the configuration");
         return AUTHZ_DENIED;
     }
@@ -224,7 +229,7 @@ static authz_status filegroup_check_authorization(request_rec *r,
     status = groups_for_user(r->pool, user, conf->groupfile,
                              &grpstatus);
     if (status != APR_SUCCESS) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, status, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, status, r, APLOGNO(01669)
                       "Could not open group file: %s",
                       conf->groupfile);
         return AUTHZ_DENIED;
@@ -232,7 +237,7 @@ static authz_status filegroup_check_authorization(request_rec *r,
 
     if (apr_table_elts(grpstatus)->nelts == 0) {
         /* no groups available, so exit immediately */
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01670)
                         "Authorization of user %s to access %s failed, reason: "
                         "user doesn't appear in group file (%s).",
                         r->user, r->uri, conf->groupfile);
@@ -254,7 +259,7 @@ static authz_status filegroup_check_authorization(request_rec *r,
         return AUTHZ_DENIED;
     }
 
-    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01671)
                   "Authorization of user %s to access %s failed, reason: "
                   "user is not part of the 'require'ed file group.",
                   r->user, r->uri);

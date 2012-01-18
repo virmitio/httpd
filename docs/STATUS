@@ -1,5 +1,4 @@
-Apache HTTP Server Trunk Documentation Status File.
-Last modified: $Date$
+Apache HTTP Server Trunk Documentation Status File.  Last modified: $Date$
 
 For more information on how to contribute to the Apache Documentation
 Project, please see http://httpd.apache.org/docs-project/ and
@@ -57,18 +56,8 @@ To Do List
   Start is in expr.xml, igalic is working on this
 
 - modules docs
-    - the follwing modules added since 2.2 lack documentation
+    - the following modules added since 2.2 lack documentation
         - mod_serf
-        - mod_watchdog
-        - mod_heartbeat
-        - mod_heartmonitor
-        - mod_lbmethod_bybusyness
-        - mod_lbmethod_byrequests
-        - mod_lbmethod_bytraffic
-        - mod_lbmethod_heartbeat
-        - mod_socache_dbm
-        - mod_socache_memcache
-        - mod_socache_shmcb
         - mpm_simple
       the list may be incomplete
       maybe some of the modules will not be included in 2.4
@@ -152,19 +141,18 @@ To Do List
 - Clarify which directives only affect requests when they're handled
   by the default handler.  (e.g. ForceType, TraceEnable, etc.)
 
-- Order directives alphabetically. Some modules, particularly in
-  translations, have directives in random order, rather than
-  alphabetically.
-
-- Run review_translations.pl on each of the files in the mod directory,
-  and determine which directives are missing from the translation docs.
-  Add them. This makes them show up in the directives listing for that
-  language, and also encourages translators to provide translations for
-  those directives.
-
 - Add examples using expr to mod_rewrite recipes. Possibly benchmark the
   different approaches and make intelligent remarks about the
   comparative value of each.
+
+- Fix this error message:
+    Request exceeded the limit of 10 internal redirects due to probable
+    configuration error. Use 'LimitInternalRecursion' to increase the limit
+    if necessary. Use 'LogLevel debug' to get a backtrace.
+  This error message is often returned when a RewriteRUle loops, in
+  which case setting LimitInternalRecursion won't do anything towards
+  fixing the problem. However, the error message is already very long.
+  Thoughts?
 
 LaTeX Todo list
 ==================
@@ -181,4 +169,5 @@ LaTeX Todo list
 - Reduce the size of the pdf (both bytes and pages) in any way possible.
 
 - Translations.
+
 

@@ -19,6 +19,7 @@
 #include "http_config.h"
 #include "http_main.h"
 #include "http_log.h"
+#include "http_core.h"
 #include "mpm_common.h"
 #include "os.h"
 #include "ap_mpm.h"
@@ -95,7 +96,7 @@ static int set_group_privs(void)
             uid_t uid = atol(&ap_unixd_config.user_name[1]);
 
             if ((ent = getpwuid(uid)) == NULL) {
-                ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL,
+                ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL, APLOGNO(02155)
                          "getpwuid: couldn't determine user name from uid %ld, "
                          "you probably need to modify the User directive",
                          (long)uid);
@@ -114,7 +115,7 @@ static int set_group_privs(void)
          * setgid() is known to zap the group list.
          */
         if (setgid(ap_unixd_config.group_id) == -1) {
-            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL,
+            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL, APLOGNO(02156)
                         "setgid: unable to set group id to Group %ld",
                         (long)ap_unixd_config.group_id);
             return -1;
@@ -123,7 +124,7 @@ static int set_group_privs(void)
         /* Reset `groups' attributes. */
 
         if (initgroups(name, ap_unixd_config.group_id) == -1) {
-            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL,
+            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL, APLOGNO(02157)
                         "initgroups: unable to set groups for User %s "
                         "and Group %ld", name, (long)ap_unixd_config.group_id);
             return -1;
@@ -134,7 +135,7 @@ static int set_group_privs(void)
 }
 
 
-static int 
+static int
 unixd_drop_privileges(apr_pool_t *pool, server_rec *s)
 {
     int rv = set_group_privs();
@@ -146,28 +147,28 @@ unixd_drop_privileges(apr_pool_t *pool, server_rec *s)
     if (NULL != ap_unixd_config.chroot_dir) {
         if (geteuid()) {
             rv = errno;
-            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL,
+            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL, APLOGNO(02158)
                          "Cannot chroot when not started as root");
             return rv;
         }
 
         if (chdir(ap_unixd_config.chroot_dir) != 0) {
             rv = errno;
-            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL,
+            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL, APLOGNO(02159)
                          "Can't chdir to %s", ap_unixd_config.chroot_dir);
             return rv;
         }
 
         if (chroot(ap_unixd_config.chroot_dir) != 0) {
             rv = errno;
-            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL,
+            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL, APLOGNO(02160)
                          "Can't chroot to %s", ap_unixd_config.chroot_dir);
             return rv;
         }
 
         if (chdir("/") != 0) {
             rv = errno;
-            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL,
+            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL, APLOGNO(02161)
                          "Can't chdir to new root");
             return rv;
         }
@@ -180,7 +181,7 @@ unixd_drop_privileges(apr_pool_t *pool, server_rec *s)
 #endif
         setuid(ap_unixd_config.user_id) == -1)) {
         rv = errno;
-        ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL,
+        ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL, APLOGNO(02162)
                     "setuid: unable to change to uid: %ld",
                     (long) ap_unixd_config.user_id);
         return rv;
@@ -190,7 +191,7 @@ unixd_drop_privileges(apr_pool_t *pool, server_rec *s)
     if (ap_coredumpdir_configured) {
         if (prctl(PR_SET_DUMPABLE, 1)) {
             rv = errno;
-            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL,
+            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL, APLOGNO(02163)
                          "set dumpable failed - this child will not coredump"
                          " after software errors");
             return rv;
@@ -230,7 +231,7 @@ unixd_set_user(cmd_parms *cmd, void *dummy,
     return NULL;
 }
 
-static const char* 
+static const char*
 unixd_set_group(cmd_parms *cmd, void *dummy,
                                          const char *arg)
 {
@@ -239,12 +240,13 @@ unixd_set_group(cmd_parms *cmd, void *dummy,
         return err;
     }
 
+    ap_unixd_config.group_name = arg;
     ap_unixd_config.group_id = ap_gname2id(arg);
 
     return NULL;
 }
 
-static const char* 
+static const char*
 unixd_set_chroot_dir(cmd_parms *cmd, void *dummy,
                     const char *arg)
 {
@@ -282,13 +284,14 @@ unixd_set_suexec(cmd_parms *cmd, void *dummy, int arg)
     return NULL;
 }
 
-static int 
+static int
 unixd_pre_config(apr_pool_t *pconf, apr_pool_t *plog,
                  apr_pool_t *ptemp)
 {
     apr_finfo_t wrapper;
     ap_unixd_config.user_name = DEFAULT_USER;
     ap_unixd_config.user_id = ap_uname2id(DEFAULT_USER);
+    ap_unixd_config.group_name = DEFAULT_GROUP;
     ap_unixd_config.group_id = ap_gname2id(DEFAULT_GROUP);
 
     ap_unixd_config.chroot_dir = NULL; /* none */
@@ -324,22 +327,22 @@ AP_DECLARE(int) ap_unixd_setup_child(void)
 
     if (NULL != ap_unixd_config.chroot_dir) {
         if (geteuid()) {
-            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL,
+            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL, APLOGNO(02164)
                          "Cannot chroot when not started as root");
             return -1;
         }
         if (chdir(ap_unixd_config.chroot_dir) != 0) {
-            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL,
+            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL, APLOGNO(02165)
                          "Can't chdir to %s", ap_unixd_config.chroot_dir);
             return -1;
         }
         if (chroot(ap_unixd_config.chroot_dir) != 0) {
-            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL,
+            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL, APLOGNO(02166)
                          "Can't chroot to %s", ap_unixd_config.chroot_dir);
             return -1;
         }
         if (chdir("/") != 0) {
-            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL,
+            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL, APLOGNO(02167)
                          "Can't chdir to new root");
             return -1;
         }
@@ -351,7 +354,7 @@ AP_DECLARE(int) ap_unixd_setup_child(void)
         os_init_job_environment(NULL, ap_unixd_config.user_name, ap_exists_config_define("DEBUG")) != 0 ||
 #endif
         setuid(ap_unixd_config.user_id) == -1)) {
-        ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL,
+        ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL, APLOGNO(02168)
                     "setuid: unable to change to uid: %ld",
                     (long) ap_unixd_config.user_id);
         return -1;
@@ -360,7 +363,7 @@ AP_DECLARE(int) ap_unixd_setup_child(void)
     /* this applies to Linux 2.4+ */
     if (ap_coredumpdir_configured) {
         if (prctl(PR_SET_DUMPABLE, 1)) {
-            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL,
+            ap_log_error(APLOG_MARK, APLOG_ALERT, errno, NULL, APLOGNO(02169)
                          "set dumpable failed - this child will not coredump"
                          " after software errors");
         }
@@ -369,11 +372,32 @@ AP_DECLARE(int) ap_unixd_setup_child(void)
     return 0;
 }
 
+static void unixd_dump_config(apr_pool_t *p, server_rec *s)
+{
+    apr_file_t *out = NULL;
+    apr_uid_t uid = ap_unixd_config.user_id;
+    apr_gid_t gid = ap_unixd_config.group_id;
+    char *no_root = "";
+    if (!ap_exists_config_define("DUMP_RUN_CFG"))
+        return;
+    if (geteuid() != 0)
+        no_root = " not_used";
+    apr_file_open_stdout(&out, p);
+    apr_file_printf(out, "User: name=\"%s\" id=%lu%s\n",
+                    ap_unixd_config.user_name, (unsigned long)uid, no_root);
+    apr_file_printf(out, "Group: name=\"%s\" id=%lu%s\n",
+                    ap_unixd_config.group_name, (unsigned long)gid, no_root);
+    if (ap_unixd_config.chroot_dir)
+        apr_file_printf(out, "ChrootDir: \"%s\"%s\n",
+                        ap_unixd_config.chroot_dir, no_root);
+}
+
 static void unixd_hooks(apr_pool_t *pool)
 {
     ap_hook_pre_config(unixd_pre_config,
                        NULL, NULL, APR_HOOK_FIRST);
-
+    ap_hook_test_config(unixd_dump_config,
+                        NULL, NULL, APR_HOOK_FIRST);
     ap_hook_drop_privileges(unixd_drop_privileges,
                             NULL, NULL, APR_HOOK_MIDDLE);
 }

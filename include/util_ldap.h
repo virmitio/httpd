@@ -28,10 +28,28 @@
 #include "apr_thread_rwlock.h"
 #include "apr_tables.h"
 #include "apr_time.h"
+#include "apr_version.h"
+#if APR_MAJOR_VERSION < 2
+/* The LDAP API is currently only present in APR 1.x */
+#include "apr_ldap.h"
+#include "apr_ldap_rebind.h"
+#else
+#define APR_HAS_LDAP 0
+#endif
 
 #if APR_HAS_SHARED_MEMORY
 #include "apr_rmm.h"
 #include "apr_shm.h"
+#endif
+
+/* this whole thing disappears if LDAP is not enabled */
+#if APR_HAS_LDAP
+
+#if APR_HAS_MICROSOFT_LDAPSDK
+#define AP_LDAP_IS_SERVER_DOWN(s)                ((s) == LDAP_SERVER_DOWN \
+                ||(s) == LDAP_UNAVAILABLE)
+#else
+#define AP_LDAP_IS_SERVER_DOWN(s)                ((s) == LDAP_SERVER_DOWN)
 #endif
 
 /* Apache header files */
@@ -44,11 +62,26 @@
 #include "http_request.h"
 #include "apr_optional.h"
 
-/* this whole thing disappears if LDAP is not enabled */
-#if AP_HAS_LDAP
-
-#include "ap_ldap.h"
-#include "ap_ldap_rebind.h"
+/* Create a set of LDAP_DECLARE macros with appropriate export
+ * and import tags for the platform
+ */
+#if !defined(WIN32)
+#define LDAP_DECLARE(type)            type
+#define LDAP_DECLARE_NONSTD(type)     type
+#define LDAP_DECLARE_DATA
+#elif defined(LDAP_DECLARE_STATIC)
+#define LDAP_DECLARE(type)            type __stdcall
+#define LDAP_DECLARE_NONSTD(type)     type
+#define LDAP_DECLARE_DATA
+#elif defined(LDAP_DECLARE_EXPORT)
+#define LDAP_DECLARE(type)            __declspec(dllexport) type __stdcall
+#define LDAP_DECLARE_NONSTD(type)     __declspec(dllexport) type
+#define LDAP_DECLARE_DATA             __declspec(dllexport)
+#else
+#define LDAP_DECLARE(type)            __declspec(dllimport) type __stdcall
+#define LDAP_DECLARE_NONSTD(type)     __declspec(dllimport) type
+#define LDAP_DECLARE_DATA             __declspec(dllimport)
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,9 +93,9 @@ extern "C" {
 
 /* Values that the deref member can have */
 typedef enum {
-    never=LDAP_DEREF_NEVER, 
-    searching=LDAP_DEREF_SEARCHING, 
-    finding=LDAP_DEREF_FINDING, 
+    never=LDAP_DEREF_NEVER,
+    searching=LDAP_DEREF_SEARCHING,
+    finding=LDAP_DEREF_FINDING,
     always=LDAP_DEREF_ALWAYS
 } deref_options;
 
@@ -104,7 +137,7 @@ typedef struct util_ldap_config_t {
     apr_array_header_t *client_certs;  /* Client certificates */
 } util_ldap_config_t;
 
-/* LDAP cache state information */ 
+/* LDAP cache state information */
 typedef struct util_ldap_state_t {
     apr_pool_t *pool;           /* pool from which this state is allocated */
 #if APR_HAS_THREADS
@@ -139,6 +172,8 @@ typedef struct util_ldap_state_t {
 
     int debug_level;                    /* SDK debug level */
     apr_interval_time_t connection_pool_ttl;
+    int retries;                        /* number of retries for failed bind/search/compare */
+    apr_interval_time_t retry_delay;    /* delay between retries of failed bind/search/compare */
 } util_ldap_state_t;
 
 /* Used to store arrays of attribute labels/values. */
@@ -158,7 +193,7 @@ struct mod_auth_ldap_groupattr_entry_t {
  * @fn int util_ldap_connection_open(request_rec *r,
  *                                        util_ldap_connection_t *ldc)
  */
-APR_DECLARE_OPTIONAL_FN(int,uldap_connection_open,(request_rec *r, 
+APR_DECLARE_OPTIONAL_FN(int,uldap_connection_open,(request_rec *r,
                                             util_ldap_connection_t *ldc));
 
 /**
@@ -167,7 +202,7 @@ APR_DECLARE_OPTIONAL_FN(int,uldap_connection_open,(request_rec *r,
  *            that was connected.
  * @tip This function unbinds from the LDAP server, and clears ldc->ldap.
  *      It is possible to rebind to this server again using the same ldc
- *      structure, using ap_ldap_open_connection().
+ *      structure, using apr_ldap_open_connection().
  * @fn util_ldap_close_connection(util_ldap_connection_t *ldc)
  */
 APR_DECLARE_OPTIONAL_FN(void,uldap_connection_close,(util_ldap_connection_t *ldc));
@@ -191,11 +226,11 @@ APR_DECLARE_OPTIONAL_FN(apr_status_t,uldap_connection_unbind,(void *param));
  * @param binddn The DN to bind with
  * @param bindpw The password to bind with
  * @param deref The dereferencing behavior
- * @param secure use SSL on the connection 
+ * @param secure use SSL on the connection
  * @tip Once a connection is found and returned, a lock will be acquired to
  *      lock that particular connection, so that another thread does not try and
  *      use this connection while it is busy. Once you are finished with a connection,
- *      ap_ldap_connection_close() must be called to release this connection.
+ *      apr_ldap_connection_close() must be called to release this connection.
  * @fn util_ldap_connection_t *util_ldap_connection_find(request_rec *r, const char *host, int port,
  *                                                           const char *binddn, const char *bindpw, deref_options deref,
  *                                                           int netscapessl, int starttls)
@@ -222,8 +257,8 @@ APR_DECLARE_OPTIONAL_FN(util_ldap_connection_t *,uldap_connection_find,(request_
  *                                        const char *url, const char *dn, const char *reqdn,
  *                                        int compare_dn_on_server)
  */
-APR_DECLARE_OPTIONAL_FN(int,uldap_cache_comparedn,(request_rec *r, util_ldap_connection_t *ldc, 
-                              const char *url, const char *dn, const char *reqdn, 
+APR_DECLARE_OPTIONAL_FN(int,uldap_cache_comparedn,(request_rec *r, util_ldap_connection_t *ldc,
+                              const char *url, const char *dn, const char *reqdn,
                               int compare_dn_on_server));
 
 /**
@@ -233,7 +268,7 @@ APR_DECLARE_OPTIONAL_FN(int,uldap_cache_comparedn,(request_rec *r, util_ldap_con
  * @param url The URL of the LDAP connection - used for deciding which cache to use.
  * @param dn The DN of the object in which we do the compare.
  * @param attrib The attribute within the object we are comparing for.
- * @param value The value of the attribute we are trying to compare for. 
+ * @param value The value of the attribute we are trying to compare for.
  * @tip Use this function to determine whether an attribute/value pair exists within an
  *      object. Typically this would be used to determine LDAP top-level group
  *      membership.
@@ -324,7 +359,7 @@ APR_DECLARE_OPTIONAL_FN(int,uldap_cache_getuserdn,(request_rec *r, util_ldap_con
  */
 APR_DECLARE_OPTIONAL_FN(int,uldap_ssl_supported,(request_rec *r));
 
-/* from ap_ldap_cache.c */
+/* from apr_ldap_cache.c */
 
 /**
  * Init the LDAP cache
@@ -339,7 +374,7 @@ APR_DECLARE_OPTIONAL_FN(int,uldap_ssl_supported,(request_rec *r));
  */
 apr_status_t util_ldap_cache_init(apr_pool_t *pool, util_ldap_state_t *st);
 
-/* from ap_ldap_cache_mgr.c */
+/* from apr_ldap_cache_mgr.c */
 
 /**
  * Display formatted stats for cache
@@ -352,5 +387,5 @@ char *util_ald_cache_display(request_rec *r, util_ldap_state_t *st);
 #ifdef __cplusplus
 }
 #endif
-#endif /* AP_HAS_LDAP */
+#endif /* APR_HAS_LDAP */
 #endif /* UTIL_LDAP_H */

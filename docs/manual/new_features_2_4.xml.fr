@@ -3,7 +3,7 @@
 <?xml-stylesheet type="text/xsl" href="./style/manual.fr.xsl"?>
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
-<!-- English Revision : 1142170 -->
+<!-- English Revision : 1205550 -->
 
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
@@ -39,12 +39,11 @@ serveur HTTP Apache</title>
     <title>Am&eacute;liorations du noyau</title>
     <dl>
       <dt>KeepAliveTimeout en millisecondes</dt>
-
       <dd>La directive <directive module="core"
       >KeepAliveTimeout</directive> permet dor&eacute;navant de
       pr&eacute;ciser une dur&eacute;e de vie en millisecondes.
       </dd>
- 
+
       <dt>Modules multiprocessus (MPMs) chargeables</dt>
       <dd>On peut maintenant compiler plusieurs MPMs en tant que modules
       chargeables. Le choix du MPM &agrave; utiliser s'effectue &agrave;
@@ -58,9 +57,9 @@ serveur HTTP Apache</title>
       ajout&eacute;s au dessus du niveau de journalisation <code>debug</code>.</dd>
 
       <dt>MPM Event</dt>
-      <dd>Le MPM Event est sorti du stade exp&eacute;rimental pour &ecirc;tre
-      pleinement support&eacute;.</dd>
- 
+      <dd>Le MPM Event est sorti du stade exp&eacute;rimental et est
+      maintenant pleinement support&eacute;.</dd>
+
       <dt>Support du mode asynchrone</dt>
       <dd>Le support des lectures/&eacute;critures asynchrones pour les MPMs et
       les plateformes qui l'impl&eacute;mentent a &eacute;t&eacute; am&eacute;lior&eacute;.</dd>
@@ -69,7 +68,25 @@ serveur HTTP Apache</title>
       <dd>Les sections &lt;<directive module="core">If</directive>&gt;
       permettent de d&eacute;finir une configuration en fonction de crit&egrave;res
       li&eacute;s &agrave; la requ&ecirc;te.</dd>
- 
+
+      <dt>Interpr&eacute;teur d'expressions &agrave; usage g&eacute;n&eacute;ral</dt>
+      <dd>Un nouvel interpr&eacute;teur d'expressions permet de sp&eacute;cifier des
+      <a href="expr.html">conditions complexes</a> via des directives &agrave;
+      syntaxe commune comme <directive
+      module="mod_setenvif">SetEnvIfExpr</directive>, <directive
+      module="mod_rewrite">RewriteCond</directive>, <directive
+      module="mod_headers">Header</directive>, <directive
+      module="mod_headers" type="section">If</directive>, etc...
+      </dd>
+
+      <dt>Utilisation de la m&eacute;moire en baisse</dt>
+      <dd>Malgr&eacute; l'ajout de nombreuses nouvelles fonctionnalit&eacute;s, la
+      version 2.4.x tend &agrave; utiliser moins de m&eacute;moire que la version
+      2.2.x.</dd>
+
+      <dt>NameVirtualHost directive</dt>
+      <dd>Cette directive obsol&egrave;te n'est plus utile.</dd>
+
     </dl>
   </section>
 
@@ -91,6 +108,10 @@ serveur HTTP Apache</title>
       <dt><module>mod_lua</module></dt>
       <dd>Embarque le langage <a href="http://www.lua.org/">Lua</a> dans
       httpd pour la configuration et les fonctions logiques courantes.</dd>
+
+      <dt><module>mod_proxy_express</module></dt>
+      <dd>Ajoute &agrave; <module>mod_proxy</module> la configuration dynamique
+      de mandataires inverses en masse.</dd>
 
       <dt><module>mod_proxy_fcgi</module></dt>
       <dd>Mise &agrave; disposition du protocole FastCGI pour
@@ -130,6 +151,18 @@ serveur HTTP Apache</title>
       <dd>Permet d'introduire une journalisation personnalis&eacute;e &agrave;
       diff&eacute;rentes phases du traitement de la requ&ecirc;te.</dd>
 
+      <dt><module>mod_xml2enc</module></dt>
+      <dd>Anciennement module tiers, il supporte l'internationalisation
+      dans les modules de filtrage bas&eacute;s sur libxml2 (support du
+      markup)</dd>
+      
+
+      <dt><module>mod_proxy_html</module></dt>
+      <dd>Anciennement module tiers, il supporte la correction des liens
+      HTML dans une situation de mandat inverse, o&ugrave; le serveur
+      d'arri&egrave;re-plan g&eacute;n&egrave;re des URLs qui ne sont pas valides du point de
+      vue des clients du mandataire.</dd>
+
     </dl>
   </section>
 
@@ -149,11 +182,11 @@ serveur HTTP Apache</title>
 	l'estampillage OCSP (OCSP stapling), qui permet au serveur
 	d'attester la validit&eacute; de son certificat aupr&egrave;s du client au
 	cours de la phase de n&eacute;gociation de la connexion.</dd>
-      
+
       <dd>Enfin, <module>mod_ssl</module> peut maintenant &ecirc;tre configur&eacute; pour
       que celui-ci partage les donn&eacute;es de session SSL entre les serveurs
       via memcached.</dd>
- 
+
       <dt><module>mod_proxy</module></dt>
 
       <dd>La directive <directive
@@ -163,7 +196,7 @@ serveur HTTP Apache</title>
       module="core">LocationMatch</directive>, et offre un gain de
       performances important par rapport &agrave; la syntaxe traditionnelle &agrave;
       deux param&egrave;tres lorsqu'elle est pr&eacute;sente en grand nombre.</dd>
- 
+
       <dt><module>mod_proxy_balancer</module></dt>
 
       <dd>Le gestionnaire de r&eacute;partition de charge propose de nouvelles
@@ -173,6 +206,14 @@ serveur HTTP Apache</title>
 
       <dd>Configuration &agrave; l'ex&eacute;cution d'un sous-ensemble de param&egrave;tres
       de r&eacute;partition de charge.</dd>
+
+      <dd>Les membres du groupe de r&eacute;partition peuvent &ecirc;tre d&eacute;finis &agrave;
+      'Drain' de fa&ccedil;on &agrave; ce qu'ils ne r&eacute;pondent qu'aux sessions
+      persistantes existantes, ce qui permet de les mettre hors ligne en
+      douceur.</dd>
+
+      <dd>Les r&egrave;glages du r&eacute;partiteur de charge peuvent &ecirc;tre rendus
+      persistants apr&egrave;s red&eacute;marrage.</dd>
 
       <dt><module>mod_cache</module></dt>
 
@@ -231,7 +272,21 @@ serveur HTTP Apache</title>
       des drapeaux <code>[QSD]</code> (Query String Discard) et
       <code>[END]</code> qui permettent de simplifier les sc&eacute;narios de
       r&eacute;&eacute;criture courants.</dd>
-      
+
+      <dt><module>mod_ldap</module>, <module>mod_authnz_ldap</module></dt>
+      <dd><module>mod_authnz_ldap</module> ajoute le support des
+      groupes imbriqu&eacute;s.</dd>
+      <dd><module>mod_ldap</module> apporte les directives <directive
+      module="mod_ldap">LDAPConnectionPoolTTL</directive> et <directive
+      module="mod_ldap">LDAPTimeout</directive>, ainsi que d'autres
+      am&eacute;liorations dans le traitement des d&eacute;lais. Ceci s'av&egrave;re utile
+      pour les configurations o&ugrave; un pare-feu &agrave; m&eacute;moire d'&eacute;tat (stateful)
+      rej&egrave;te les connexions inactives vers le serveur LDAP.</dd>
+      <dd><module>mod_ldap</module> propose la directive <directive
+      module="mod_ldap">LDAPLibraryDebug</directive> qui permet de
+      journaliser les informations de d&eacute;bogage fournies par la bo&icirc;te &agrave;
+      outils LDAP utilis&eacute;e</dd>
+
     </dl>
   </section>
 
@@ -274,10 +329,10 @@ serveur HTTP Apache</title>
       <dt>Ajout d'un analyseur syntaxique d'expressions</dt>
       <dd>Nous disposons &agrave; pr&eacute;sent d'un analyseur g&eacute;n&eacute;rique d'expressions, dont l'API
       est d&eacute;crite dans <var>ap_expr.h</var>. Il s'agit d'une adaptation de
-      l'analyseur qu'on trouvait auparavant dans <module>mod_include</module>.</dd>
+      l'analyseur qu'on trouvait auparavant dans <module>mod_ssl</module>.</dd>
 
       <dt>Conteneurs de logique d'autorisation</dt>
-      
+
       <dd>Afin de fournir une logique d'autorisation avanc&eacute;e via des
       directives telles que <directive module="mod_authz_core"
       type="section">RequireAll</directive>, les modules d'autorisation
@@ -296,7 +351,7 @@ serveur HTTP Apache</title>
       distribu&eacute;s de type memcache.</dd>
 
       <dt>Ajout du point d'ancrage Cache Status</dt>
-      
+
       <dd>Le module <module>mod_cache</module> inclut maintenant un
       nouveau point d'ancrage, <code>cache_status</code>, qui est appel&eacute;
       lorsque la d&eacute;cision &agrave; propos de la mise en cache est connue. Il en
@@ -304,7 +359,7 @@ serveur HTTP Apache</title>
       optionnels <code>X-Cache</code> et <code>X-Cache-Detail</code> &agrave;
       la r&eacute;ponse.</dd>
 
-      
+
     </dl>
     <p>La documentation du d&eacute;veloppeur contient une <a
     href="developer/new_api_2_4.html">liste d&eacute;taill&eacute;e des modifications

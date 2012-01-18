@@ -27,7 +27,7 @@
 
 <summary>
 
-<p>This document supplements the <module>mod_rewrite</module> 
+<p>This document supplements the <module>mod_rewrite</module>
 <a href="../mod/mod_rewrite.html">reference documentation</a>. It describes
 perhaps one of the most important concepts about mod_rewrite - namely,
 when to avoid using it.</p>
@@ -59,7 +59,7 @@ files to work with, you may need to resort to
 <seealso><a href="vhosts.html">Virtual hosts</a></seealso>
 <seealso><a href="proxy.html">Proxying</a></seealso>
 <seealso><a href="rewritemap.html">Using RewriteMap</a></seealso>
-<seealso><a href="advanced.html">Advanced techniques and tricks</a></seealso>
+<seealso><a href="advanced.html">Advanced techniques</a></seealso>
 <!--<seealso><a href="avoid.html">When not to use mod_rewrite</a></seealso>-->
 
 <section id="redirect">
@@ -217,10 +217,10 @@ variable or request header. This can be done more efficiently using the
 <directive>RewriteRule</directive> is used to enforce a canonical
 hostname, such as <code>www.example.com</code> instead of
 <code>example.com</code>. This can be done using the <directive
-module="core" type="section">If</directive> direct, as shown here:</p>
+module="core" type="section">If</directive> directive, as shown here:</p>
 
 <example>
-&lt;If "$req{Host} = 'example.com'"&gt;<br />
+&lt;If "$req{Host} != 'www.example.com'"&gt;<br />
 RedirectMatch (.*) http://www.example.com$1<br />
 &lt;/If&gt;
 </example>
@@ -235,5 +235,5 @@ use in &lt;If&gt; sections, and in certain other directives.</p>
 
 </section>
 
-</manualpage> 
+</manualpage>
 

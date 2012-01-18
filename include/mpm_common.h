@@ -55,14 +55,14 @@ extern "C" {
  * by listen(2).  Under some systems, it should be increased if you
  * are experiencing a heavy TCP SYN flood attack.
  *
- * It defaults to 511 instead of 512 because some systems store it 
- * as an 8-bit datatype; 512 truncated to 8-bits is 0, while 511 is 
+ * It defaults to 511 instead of 512 because some systems store it
+ * as an 8-bit datatype; 512 truncated to 8-bits is 0, while 511 is
  * 255 when truncated.
  */
 #ifndef DEFAULT_LISTENBACKLOG
 #define DEFAULT_LISTENBACKLOG 511
 #endif
-        
+
 /* Signal used to gracefully restart */
 #define AP_SIG_GRACEFUL SIGUSR1
 
@@ -92,9 +92,11 @@ typedef void ap_reclaim_callback_fn_t(int childnum, pid_t pid,
 /**
  * Make sure all child processes that have been spawned by the parent process
  * have died.  This includes process registered as "other_children".
+ *
  * @param terminate Either 1 or 0.  If 1, send the child processes SIGTERM
  *        each time through the loop.  If 0, give the process time to die
  *        on its own before signalling it.
+ * @param mpm_callback Callback invoked for each dead child process
  *
  * @note The MPM child processes which are reclaimed are those listed
  * in the scoreboard as well as those currently registered via
@@ -107,6 +109,8 @@ void ap_reclaim_child_processes(int terminate,
  * Catch any child processes that have been spawned by the parent process
  * which have exited. This includes processes registered as "other_children".
  *
+ * @param mpm_callback Callback invoked for each dead child process
+
  * @note The MPM child processes which are relieved are those listed
  * in the scoreboard as well as those currently registered via
  * ap_register_extra_mpm_process().
@@ -114,7 +118,7 @@ void ap_reclaim_child_processes(int terminate,
 void ap_relieve_child_processes(ap_reclaim_callback_fn_t *mpm_callback);
 
 /**
- * Tell ap_reclaim_child_processes() and ap_relieve_child_processes() about 
+ * Tell ap_reclaim_child_processes() and ap_relieve_child_processes() about
  * an MPM child process which has no entry in the scoreboard.
  * @param pid The process id of an MPM child process which should be
  * reclaimed when ap_reclaim_child_processes() is called.
@@ -137,6 +141,11 @@ void ap_register_extra_mpm_process(pid_t pid, ap_generation_t gen);
 int ap_unregister_extra_mpm_process(pid_t pid, ap_generation_t *old_gen);
 
 /**
+ * Pool cleanup for end-generation hook implementation
+ */
+apr_status_t ap_mpm_end_gen_helper(void *unused);
+
+/**
  * Safely signal an MPM child process, if the process is in the
  * current process group.  Otherwise fail.
  * @param pid the process id of a child process to signal
@@ -151,13 +160,13 @@ apr_status_t ap_mpm_safe_kill(pid_t pid, int sig);
  * Run the monitor hook (once every ten calls), determine if any child
  * process has died and, if none died, sleep one second.
  * @param status The return code if a process has died
- * @param exitcode The returned exit status of the child, if a child process 
+ * @param exitcode The returned exit status of the child, if a child process
  *                 dies, or the signal that caused the child to die.
  * @param ret The process id of the process that died
  * @param p The pool to allocate out of
  * @param s The server_rec to pass
  */
-void ap_wait_or_timeout(apr_exit_why_e *status, int *exitcode, apr_proc_t *ret, 
+void ap_wait_or_timeout(apr_exit_why_e *status, int *exitcode, apr_proc_t *ret,
                         apr_pool_t *p, server_rec *s);
 
 /**
@@ -207,7 +216,7 @@ AP_DECLARE(gid_t) ap_gname2id(const char *name);
 /**
  * The initgroups() function initializes the group access list by reading the
  * group database /etc/group and using all groups of which user is a member.
- * The additional group basegid is also added to the list. 
+ * The additional group basegid is also added to the list.
  * @param name The user name - must be non-NULL
  * @param basegid The basegid to add
  * @return returns 0 on success
@@ -290,6 +299,7 @@ const char *ap_mpm_set_max_requests(cmd_parms *cmd, void *dummy,
 extern const char *ap_pid_fname;
 const char *ap_mpm_set_pidfile(cmd_parms *cmd, void *dummy,
                                const char *arg);
+void ap_mpm_dump_pidfile(apr_pool_t *p, apr_file_t *out);
 
 /*
  * The directory that the server changes directory to dump core.
@@ -314,7 +324,7 @@ AP_INIT_TAKE1("GracefulShutdownTimeout", ap_mpm_set_graceful_shutdown, NULL, \
 int ap_signal_server(int *, apr_pool_t *);
 void ap_mpm_rewrite_args(process_rec *);
 
-extern apr_uint32_t ap_max_mem_free;
+extern AP_DECLARE_DATA apr_uint32_t ap_max_mem_free;
 extern const char *ap_mpm_set_max_mem_free(cmd_parms *cmd, void *dummy,
                                            const char *arg);
 
@@ -362,7 +372,7 @@ AP_DECLARE_HOOK(const char *,mpm_get_name,(void))
  * core's pre-config hook
  */
 void mpm_common_pre_config(apr_pool_t *pconf);
-  
+
 #ifdef __cplusplus
 }
 #endif

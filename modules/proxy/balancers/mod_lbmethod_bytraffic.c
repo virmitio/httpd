@@ -22,6 +22,9 @@
 
 module AP_MODULE_DECLARE_DATA lbmethod_bytraffic_module;
 
+static int (*ap_proxy_retry_worker_fn)(const char *proxy_function,
+        proxy_worker *worker, server_rec *s) = NULL;
+
 /*
  * The idea behind the find_best_bytraffic scheduler is the following:
  *
@@ -52,9 +55,18 @@ static proxy_worker *find_best_bytraffic(proxy_balancer *balancer,
     int checking_standby;
     int checked_standby;
 
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
+    if (!ap_proxy_retry_worker_fn) {
+        ap_proxy_retry_worker_fn =
+                APR_RETRIEVE_OPTIONAL_FN(ap_proxy_retry_worker);
+        if (!ap_proxy_retry_worker_fn) {
+            /* can only happen if mod_proxy isn't loaded */
+            return NULL;
+        }
+    }
+
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server, APLOGNO(01209)
                  "proxy: Entering bytraffic for BALANCER (%s)",
-                 balancer->name);
+                 balancer->s->name);
 
     /* First try to see if we have available candidate */
     do {
@@ -66,10 +78,14 @@ static proxy_worker *find_best_bytraffic(proxy_balancer *balancer,
                     if ((*worker)->s->lbset > max_lbset)
                         max_lbset = (*worker)->s->lbset;
                 }
-                if ((*worker)->s->lbset != cur_lbset)
+                if (
+                    ((*worker)->s->lbset != cur_lbset) ||
+                    (checking_standby ? !PROXY_WORKER_IS_STANDBY(*worker) : PROXY_WORKER_IS_STANDBY(*worker)) ||
+                    (PROXY_WORKER_IS_DRAINING(*worker))
+                    ) {
                     continue;
-                if ( (checking_standby ? !PROXY_WORKER_IS_STANDBY(*worker) : PROXY_WORKER_IS_STANDBY(*worker)) )
-                    continue;
+                }
+
                 /* If the worker is in error state run
                  * retry on that worker. It will be marked as
                  * operational if the retry timeout is elapsed.
@@ -77,7 +93,7 @@ static proxy_worker *find_best_bytraffic(proxy_balancer *balancer,
                  * anyway.
                  */
                 if (!PROXY_WORKER_IS_USABLE(*worker))
-                    ap_proxy_retry_worker("BALANCER", *worker, r->server);
+                    ap_proxy_retry_worker_fn("BALANCER", *worker, r->server);
                 /* Take into calculation only the workers that are
                  * not in error state or not disabled.
                  */
@@ -96,7 +112,7 @@ static proxy_worker *find_best_bytraffic(proxy_balancer *balancer,
     } while (cur_lbset <= max_lbset && !mycandidate);
 
     if (mycandidate) {
-        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
+        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server, APLOGNO(01210)
                      "proxy: bytraffic selected worker \"%s\" : busy %" APR_SIZE_T_FMT,
                      mycandidate->s->name, mycandidate->s->busy);
 

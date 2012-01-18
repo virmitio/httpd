@@ -12,11 +12,11 @@
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
 <body id="manual-page"><div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p>
-<p class="apache">Apache HTTP Server Version 2.3</p>
+<p class="apache">Apache HTTP Server Version 2.5</p>
 <img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
-<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.3</a> &gt; <a href="./">Platform Specific Notes</a></div><div id="page-content"><div id="preamble"><h1>Using Apache HTTP Server on Microsoft Windows</h1>
+<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.5</a> &gt; <a href="./">Platform Specific Notes</a></div><div id="page-content"><div id="preamble"><h1>Using Apache HTTP Server on Microsoft Windows</h1>
 <div class="toplang">
 <p><span>Available Languages: </span><a href="../en/platform/windows.html" title="English">&nbsp;en&nbsp;</a> |
 <a href="../ko/platform/windows.html" hreflang="ko" rel="alternate" title="Korean">&nbsp;ko&nbsp;</a></p>
@@ -25,7 +25,7 @@
     <p>This document explains how to install, configure and run
     Apache 2.3 under Microsoft Windows.  If you have questions after
     reviewing the documentation (and any event and error logs), you
-    should consult the peer-supported 
+    should consult the peer-supported
     <a href="http://httpd.apache.org/userslist.html">users' mailing
     list</a>.</p>
 
@@ -78,7 +78,7 @@
 
     <p>There is a choice between an *-openssl-*.msi flavor and
     a *-no_ssl.msi flavor.  The *-openssl-*.msi flavor is distributed
-    by the Apache Software Foundation under ECCN 5D002 pursuant to 
+    by the Apache Software Foundation under ECCN 5D002 pursuant to
     US Export Law license exception TSU.  This law may or may not
     apply to your circumstance, please review the httpd README as
     well as the <a href="http://www.apache.org/licenses/exports/">ASF
@@ -139,7 +139,7 @@
 
       <li><p><strong>Where to install.</strong> The default path is
       <code>C:\Program Files\Apache Software Foundation</code>
-      under which a directory called 
+      under which a directory called
       <code>Apache2.3</code> will be created by default.</p></li>
     </ol>
 
@@ -189,7 +189,7 @@
 
     <p>The installation options above can be customized by users familiar
     with msiexec.exe options and silent installation.  The actual installer
-    sources are available in the httpd/httpd/win32-msi/ tree of the httpd 
+    sources are available in the httpd/httpd/win32-msi/ tree of the httpd
     project subversion respository.  For reference, some of the more common
     variables which may be modified are;</p>
 
@@ -198,7 +198,7 @@
       <li><code>ALLUSERS</code> (choose between Null and "1")</li>
       <li><code>ApplicationUsers</code> (toggle to "OnlyCurrentUser")</li>
       <li><code>EXISTING_APACHE_SERVICE_PATH</code></li>
-      <li><code>INSTALLDIR</code> (default "ProgramFilesFolder\Apache Software Foundation\Apache2.2\")</li>
+      <li><code>INSTALLDIR</code> (default "ProgramFilesFolder\Apache Software Foundation\Apache2.5\")</li>
       <li><code>INSTALLLEVEL</code> (default "100", refer to list below)</li>
       <li><code>RESOLVED_WINSOCK2</code> (toggle to "1")</li>
       <li><code>SERVERADMIN</code></li>
@@ -206,16 +206,16 @@
       <li><code>SERVERNAME</code></li>
       <li><code>SERVERPORT</code> (default "80")</li>
       <li><code>SERVERSSLPORT</code> (default "443")</li>
-      <li><code>SERVICEINTERNALNAME</code> (default "Apache2.2", no spaces!)</li>
-      <li><code>SERVICENAME</code> (default "Apache2.2", include spaces)</li>
+      <li><code>SERVICEINTERNALNAME</code> (default "Apache2.5", no spaces!)</li>
+      <li><code>SERVICENAME</code> (default "Apache2.5", include spaces)</li>
       <li><code>SetupType</code> (default "Typical")</li>
     </ul>
 
-    <p>The installation level of various features, which may be individually 
+    <p>The installation level of various features, which may be individually
     toggled, include;</p>
 
     <ul>
-      <li>Apache (1, base Apache HTTP Server 2.2 feature)</li>
+      <li>Apache (1, base Apache HTTP Server 2.5 feature)</li>
       <li>ApacheDocs (11, Apache Documentation)</li>
       <li>ApacheMonitoring (41, Apache Service Taskbar Icon)</li>
       <li>ApacheRuntime (1, Apache Runtime)</li>
@@ -273,7 +273,7 @@
       <li><p>The directives that accept filenames as arguments must use
       Windows filenames instead of Unix ones. However, because Apache
       may interpret backslashes as an "escape character" sequence, you
-      should consistently use forward slashes in path names, not 
+      should consistently use forward slashes in path names, not
       backslashes.  Drive letters can be used; if omitted, the drive
       of the SystemRoot directive (or -d command line option) becomes
       the default.</p></li>
@@ -680,7 +680,7 @@
     </p>
 
     <div class="example"><p><code>
-      HKEY_LOCAL_MACHINE\SOFTWARE\Apache Software Foundation\Apache\2.2.2
+      HKEY_LOCAL_MACHINE\SOFTWARE\Apache Software Foundation\Apache\2.50
     </code></p></div>
 
     <p>Correspondingly, if you chose to install Apache for the current
@@ -689,7 +689,7 @@
     logged on:</p>
 
     <div class="example"><p><code>
-      HKEY_CURRENT_USER\SOFTWARE\Apache Software Foundation\Apache\2.2.2
+      HKEY_CURRENT_USER\SOFTWARE\Apache Software Foundation\Apache\2.50
     </code></p></div>
 
     <p>This key is compiled into the server and can enable you to test
@@ -810,6 +810,6 @@
 <p><span>Available Languages: </span><a href="../en/platform/windows.html" title="English">&nbsp;en&nbsp;</a> |
 <a href="../ko/platform/windows.html" hreflang="ko" rel="alternate" title="Korean">&nbsp;ko&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2011 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2012 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div>
 </body></html>

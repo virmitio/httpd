@@ -158,7 +158,7 @@ static int is_mpm_running(void)
     if (ap_mpm_query(AP_MPMQ_MPM_STATE, &mpm_state)) {
       return 0;
     }
-  
+
     if (mpm_state == AP_MPMQ_STOPPING) {
       return 0;
     }
@@ -497,7 +497,7 @@ AP_DECLARE(int) ap_method_register(apr_pool_t *p, const char *methname)
         /* The method registry  has run out of dynamically
          * assignable method numbers. Log this and return M_INVALID.
          */
-        ap_log_perror(APLOG_MARK, APLOG_ERR, 0, p,
+        ap_log_perror(APLOG_MARK, APLOG_ERR, 0, p, APLOGNO(01610)
                       "Maximum new request methods %d reached while "
                       "registering method %s.",
                       METHOD_NUMBER_LAST, methname);
@@ -849,6 +849,13 @@ AP_DECLARE(void) ap_set_content_type(request_rec *r, const char *ct)
     }
 }
 
+AP_DECLARE(void) ap_set_accept_ranges(request_rec *r)
+{
+    core_dir_config *d = ap_get_core_module_config(r->per_dir_config);
+    apr_table_setn(r->headers_out, "Accept-Ranges",
+                  (d->max_ranges == AP_MAXRANGES_NORANGES) ? "none"
+                                                           : "bytes");
+}
 static const char *add_optional_notes(request_rec *r,
                                       const char *prefix,
                                       const char *key,

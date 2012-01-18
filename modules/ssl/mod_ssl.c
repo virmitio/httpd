@@ -94,6 +94,11 @@ static const command_rec ssl_config_cmds[] = {
     SSL_CMD_SRV(PKCS7CertificateFile, TAKE1,
                 "PKCS#7 file containing server certificate and chain"
                 " certificates ('/path/to/file' - PEM encoded)")
+#ifdef HAVE_TLS_SESSION_TICKETS
+    SSL_CMD_SRV(SessionTicketKeyFile, TAKE1,
+                "TLS session ticket encryption/decryption key file (RFC 5077) "
+                "('/path/to/file' - file with 48 bytes of random data)")
+#endif
     SSL_CMD_ALL(CACertificatePath, TAKE1,
                 "SSL CA Certificate path "
                 "('/path/to/dir' - contains PEM encoded files)")
@@ -112,6 +117,8 @@ static const command_rec ssl_config_cmds[] = {
     SSL_CMD_SRV(CARevocationFile, TAKE1,
                 "SSL CA Certificate Revocation List (CRL) file "
                 "('/path/to/file' - PEM encoded)")
+    SSL_CMD_SRV(CARevocationCheck, TAKE1,
+                "SSL CA Certificate Revocation List (CRL) checking mode")
     SSL_CMD_ALL(VerifyClient, TAKE1,
                 "SSL Client verify type "
                 "('none', 'optional', 'require', 'optional_no_ca')")
@@ -121,9 +128,14 @@ static const command_rec ssl_config_cmds[] = {
     SSL_CMD_SRV(SessionCacheTimeout, TAKE1,
                 "SSL Session Cache object lifetime "
                 "('N' - number of seconds)")
+#ifdef HAVE_TLSV1_X
+#define SSL_PROTOCOLS "SSLv3|TLSv1|TLSv1.1|TLSv1.2"
+#else
+#define SSL_PROTOCOLS "SSLv3|TLSv1"
+#endif
     SSL_CMD_SRV(Protocol, RAW_ARGS,
-                "Enable or disable various SSL protocols"
-                "('[+-][SSLv2|SSLv3|TLSv1] ...' - see manual)")
+                "Enable or disable various SSL protocols "
+                "('[+-][" SSL_PROTOCOLS "] ...' - see manual)")
     SSL_CMD_SRV(HonorCipherOrder, FLAG,
                 "Use the server's cipher ordering preference")
     SSL_CMD_SRV(InsecureRenegotiation, FLAG,
@@ -141,7 +153,7 @@ static const command_rec ssl_config_cmds[] = {
                 "('on', 'off')")
     SSL_CMD_SRV(ProxyProtocol, RAW_ARGS,
                "SSL Proxy: enable or disable SSL protocol flavors "
-               "('[+-][SSLv2|SSLv3|TLSv1] ...' - see manual)")
+                "('[+-][" SSL_PROTOCOLS "] ...' - see manual)")
     SSL_CMD_SRV(ProxyCipherSuite, TAKE1,
                "SSL Proxy: colon-delimited list of permitted SSL ciphers "
                "('XXX:...:XXX' - see manual)")
@@ -163,12 +175,18 @@ static const command_rec ssl_config_cmds[] = {
     SSL_CMD_SRV(ProxyCARevocationFile, TAKE1,
                 "SSL Proxy: CA Certificate Revocation List (CRL) file "
                 "('/path/to/file' - PEM encoded)")
+    SSL_CMD_SRV(ProxyCARevocationCheck, TAKE1,
+                "SSL Proxy: CA Certificate Revocation List (CRL) checking mode")
     SSL_CMD_SRV(ProxyMachineCertificateFile, TAKE1,
                "SSL Proxy: file containing client certificates "
                "('/path/to/file' - PEM encoded certificates)")
     SSL_CMD_SRV(ProxyMachineCertificatePath, TAKE1,
                "SSL Proxy: directory containing client certificates "
                "('/path/to/dir' - contains PEM encoded certificates)")
+    SSL_CMD_SRV(ProxyMachineCertificateChainFile, TAKE1,
+               "SSL Proxy: file containing issuing certificates "
+               "of the client certificate "
+               "(`/path/to/file' - PEM encoded certificates)")
     SSL_CMD_SRV(ProxyCheckPeerExpire, FLAG,
                 "SSL Proxy: check the peers certificate expiration date")
     SSL_CMD_SRV(ProxyCheckPeerCN, FLAG,
@@ -223,10 +241,10 @@ static const command_rec ssl_config_cmds[] = {
                 "SSL stapling option for normal OCSP Response Cache Lifetime")
     SSL_CMD_SRV(StaplingReturnResponderErrors, FLAG,
                 "SSL stapling switch to return Status Errors Back to Client"
-		"(`on', `off')")
+                "(`on', `off')")
     SSL_CMD_SRV(StaplingFakeTryLater, FLAG,
                 "SSL stapling switch to send tryLater response to client on error "
-		"(`on', `off')")
+                "(`on', `off')")
     SSL_CMD_SRV(StaplingErrorCacheTimeout, TAKE1,
                 "SSL stapling option for OCSP Response Error Cache Lifetime")
     SSL_CMD_SRV(StaplingForceURL, TAKE1,
@@ -250,15 +268,11 @@ static apr_status_t ssl_cleanup_pre_config(void *data)
     /*
      * Try to kill the internals of the SSL library.
      */
-#ifdef HAVE_OPENSSL
-#if OPENSSL_VERSION_NUMBER >= 0x00907001
     /* Corresponds to OPENSSL_load_builtin_modules():
      * XXX: borrowed from apps.h, but why not CONF_modules_free()
      * which also invokes CONF_modules_finish()?
      */
     CONF_modules_unload(1);
-#endif
-#endif
     /* Corresponds to SSL_library_init: */
     EVP_cleanup();
 #if HAVE_ENGINE_LOAD_BUILTIN_ENGINES
@@ -292,20 +306,14 @@ static int ssl_hook_pre_config(apr_pool_t *pconf,
      * code can successfully test the SSL environment.
      */
     CRYPTO_malloc_init();
-#ifdef HAVE_OPENSSL
     ERR_load_crypto_strings();
-#endif
     SSL_load_error_strings();
     SSL_library_init();
 #if HAVE_ENGINE_LOAD_BUILTIN_ENGINES
     ENGINE_load_builtin_engines();
 #endif
-#ifdef HAVE_OPENSSL
     OpenSSL_add_all_algorithms();
-#if OPENSSL_VERSION_NUMBER >= 0x00907001
     OPENSSL_load_builtin_modules();
-#endif
-#endif
 
     /*
      * Let us cleanup the ssl library when the module is unloaded
@@ -354,7 +362,7 @@ int ssl_proxy_enable(conn_rec *c)
     sc = mySrvConfig(sslconn->server);
 
     if (!sc->proxy_enabled) {
-        ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, c,
+        ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, c, APLOGNO(01961)
                       "SSL Proxy requested for %s but not enabled "
                       "[Hint: SSLProxyEngine]", sc->vhost_id);
 
@@ -418,7 +426,7 @@ int ssl_init_ssl_connection(conn_rec *c, request_rec *r)
      * so we can detach later.
      */
     if (!(ssl = SSL_new(mctx->ssl_ctx))) {
-        ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, c,
+        ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, c, APLOGNO(01962)
                       "Unable to create a new SSL connection from the SSL "
                       "context");
         ssl_log_ssl_error(SSLLOG_MARK, APLOG_ERR, server);
@@ -434,7 +442,7 @@ int ssl_init_ssl_connection(conn_rec *c, request_rec *r)
     if (!SSL_set_session_id_context(ssl, (unsigned char *)vhost_md5,
                                     APR_MD5_DIGESTSIZE*2))
     {
-        ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, c,
+        ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, c, APLOGNO(01963)
                       "Unable to set session id context to '%s'", vhost_md5);
         ssl_log_ssl_error(SSLLOG_MARK, APLOG_ERR, server);
 
@@ -522,7 +530,7 @@ static int ssl_hook_pre_connection(conn_rec *c, void *csd)
      * later access inside callback functions
      */
 
-    ap_log_cerror(APLOG_MARK, APLOG_INFO, 0, c,
+    ap_log_cerror(APLOG_MARK, APLOG_INFO, 0, c, APLOGNO(01964)
                   "Connection to child %ld established "
                   "(server %s)", c->id, sc->vhost_id);
 

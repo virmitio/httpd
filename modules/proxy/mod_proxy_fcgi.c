@@ -85,19 +85,19 @@ static int proxy_fcgi_canon(request_rec *r, char *url)
     else {
         return DECLINED;
     }
-    
-    ap_log_error(APLOG_MARK, APLOG_TRACE1, 0, r->server,
-                 "proxy: FCGI: canonicalising URL %s", url);
+
+    ap_log_rerror(APLOG_MARK, APLOG_TRACE1, 0, r,
+                 "canonicalising URL %s", url);
 
     err = ap_proxy_canon_netloc(r->pool, &url, NULL, NULL, &host, &port);
     if (err) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01059)
                       "error parsing URL %s: %s", url, err);
         return HTTP_BAD_REQUEST;
     }
-        
+
     apr_snprintf(sport, sizeof(sport), ":%d", port);
-        
+
     if (ap_strchr_c(host, ':')) {
         /* if literal IPv6 address */
         host = apr_pstrcat(r->pool, "[", host, "]", NULL);
@@ -116,14 +116,14 @@ static int proxy_fcgi_canon(request_rec *r, char *url)
     r->filename = apr_pstrcat(r->pool, "proxy:fcgi://", host, sport, "/",
                               path, NULL);
 
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
-                  "proxy: FCGI: set r->filename to %s", r->filename);
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01060)
+                  "set r->filename to %s", r->filename);
 
     if (apr_table_get(r->subprocess_env, "proxy-fcgi-pathinfo")) {
         r->path_info = apr_pstrcat(r->pool, "/", path, NULL);
 
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
-                      "proxy: FCGI: set r->path_info to %s", r->path_info);
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01061)
+                      "set r->path_info to %s", r->path_info);
     }
 
     return OK;
@@ -246,7 +246,7 @@ static apr_status_t send_begin_request(proxy_conn_rec *conn, int request_id)
     fill_in_header(&header, FCGI_BEGIN_REQUEST, request_id, sizeof(abrb), 0);
 
     brb.roleB1 = ((FCGI_RESPONDER >> 8) & 0xff);
-    brb.roleB0 = ((FCGI_RESPONDER) & 0xff); 
+    brb.roleB0 = ((FCGI_RESPONDER) & 0xff);
     brb.flags = FCGI_KEEP_CONN;
     brb.reserved[0] = 0;
     brb.reserved[1] = 0;
@@ -257,15 +257,15 @@ static apr_status_t send_begin_request(proxy_conn_rec *conn, int request_id)
     fcgi_header_to_array(&header, farray);
     fcgi_begin_request_body_to_array(&brb, abrb);
 
-    vec[0].iov_base = farray;
+    vec[0].iov_base = (void *)farray;
     vec[0].iov_len = sizeof(farray);
-    vec[1].iov_base = abrb;
+    vec[1].iov_base = (void *)abrb;
     vec[1].iov_len = sizeof(abrb);
 
     return send_data(conn, vec, 2, &len, 1);
 }
 
-static apr_status_t send_environment(proxy_conn_rec *conn, request_rec *r, 
+static apr_status_t send_environment(proxy_conn_rec *conn, request_rec *r,
                                      int request_id)
 {
     const apr_array_header_t *envarr;
@@ -317,8 +317,8 @@ static apr_status_t send_environment(proxy_conn_rec *conn, request_rec *r,
         vallen = strlen(elts[i].val);
 
 #ifdef FCGI_DUMP_ENV_VARS
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
-                      "proxy: FCGI: sending env var '%s' value '%s'",
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01062)
+                      "sending env var '%s' value '%s'",
                       elts[i].key, elts[i].val);
 #endif
 
@@ -331,10 +331,10 @@ static apr_status_t send_environment(proxy_conn_rec *conn, request_rec *r,
 
         envlen += vallen;
 
-	/* The cast of bodylen is safe since FCGI_MAX_ENV_SIZE is for sure an int */
+        /* The cast of bodylen is safe since FCGI_MAX_ENV_SIZE is for sure an int */
         if (envlen > FCGI_MAX_ENV_SIZE) {
-            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
-                          "proxy: FCGI: truncating environment to %d bytes and %d elements",
+            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01063)
+                          "truncating environment to %d bytes and %d elements",
                           (int)bodylen, i);
             break;
         }
@@ -350,7 +350,7 @@ static apr_status_t send_environment(proxy_conn_rec *conn, request_rec *r,
 
     for (i = 0; i < numenv; ++i) {
         apr_size_t keylen, vallen;
-       
+
         if (! elts[i].key) {
             continue;
         }
@@ -393,7 +393,7 @@ static apr_status_t send_environment(proxy_conn_rec *conn, request_rec *r,
     fill_in_header(&header, FCGI_PARAMS, request_id, bodylen, 0);
     fcgi_header_to_array(&header, farray);
 
-    vec[0].iov_base = farray;
+    vec[0].iov_base = (void *)farray;
     vec[0].iov_len = sizeof(farray);
     vec[1].iov_base = body;
     vec[1].iov_len = bodylen;
@@ -406,7 +406,7 @@ static apr_status_t send_environment(proxy_conn_rec *conn, request_rec *r,
     fill_in_header(&header, FCGI_PARAMS, request_id, 0, 0);
     fcgi_header_to_array(&header, farray);
 
-    vec[0].iov_base = farray;
+    vec[0].iov_base = (void *)farray;
     vec[0].iov_len = sizeof(farray);
 
     return send_data(conn, vec, 1, &len, 1);
@@ -494,13 +494,13 @@ static void dump_header_to_log(request_rec *r, unsigned char fheader[],
     memset(hex_line, 0, sizeof(hex_line));
 
     while (posn < length) {
-        unsigned char c = fheader[posn]; 
+        unsigned char c = fheader[posn];
 
         if (i >= 20) {
             i = 0;
 
-            ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
-                         "HEADER: %s %s", asc_line, hex_line);
+            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01064)
+                          "HEADER: %s %s", asc_line, hex_line);
 
             memset(asc_line, 0, sizeof(asc_line));
             memset(hex_line, 0, sizeof(hex_line));
@@ -534,11 +534,11 @@ static void dump_header_to_log(request_rec *r, unsigned char fheader[],
     }
 
     if (i != 1) {
-        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server, "HEADER: %s %s",
-                     asc_line, hex_line);
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01065) "HEADER: %s %s",
+                      asc_line, hex_line);
     }
 
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server, "HEADER: -EOH-");
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01066) "HEADER: -EOH-");
 #endif
 }
 
@@ -617,7 +617,7 @@ static apr_status_t dispatch(proxy_conn_rec *conn, proxy_dir_conf *conf,
                            (apr_uint16_t) writebuflen, 0);
             fcgi_header_to_array(&header, farray);
 
-            vec[nvec].iov_base = farray;
+            vec[nvec].iov_base = (void *)farray;
             vec[nvec].iov_len = sizeof(farray);
             ++nvec;
             if (writebuflen) {
@@ -638,7 +638,7 @@ static apr_status_t dispatch(proxy_conn_rec *conn, proxy_dir_conf *conf,
                     fill_in_header(&header, FCGI_STDIN, request_id, 0, 0);
                     fcgi_header_to_array(&header, farray);
 
-                    vec[0].iov_base = farray;
+                    vec[0].iov_base = (void *)farray;
                     vec[0].iov_len = sizeof(farray);
 
                     rv = send_data(conn, vec, 1, &len, 1);
@@ -669,12 +669,12 @@ static apr_status_t dispatch(proxy_conn_rec *conn, proxy_dir_conf *conf,
             }
 
             dump_header_to_log(r, farray, readbuflen);
-            
+
             if (readbuflen != FCGI_HEADER_LEN) {
-                ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
-                             "proxy: FCGI: Failed to read entire header "
-                             "got %" APR_SIZE_T_FMT " wanted %d", 
-                             readbuflen, FCGI_HEADER_LEN);
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01067)
+                              "Failed to read entire header "
+                              "got %" APR_SIZE_T_FMT " wanted %d",
+                              readbuflen, FCGI_HEADER_LEN);
                 rv = APR_EINVAL;
                 break;
             }
@@ -682,9 +682,8 @@ static apr_status_t dispatch(proxy_conn_rec *conn, proxy_dir_conf *conf,
             fcgi_header_from_array(&header, farray);
 
             if (header.version != FCGI_VERSION) {
-                ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
-                             "proxy: FCGI: Got bogus version %d",
-                             (int) header.version);
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01068)
+                              "Got bogus version %d", (int) header.version);
                 rv = APR_EINVAL;
                 break;
             }
@@ -695,9 +694,9 @@ static apr_status_t dispatch(proxy_conn_rec *conn, proxy_dir_conf *conf,
             rid |= header.requestIdB0;
 
             if (rid != request_id) {
-                ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
-                             "proxy: FCGI: Got bogus rid %d, expected %d",
-                             rid, request_id);
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01069)
+                              "Got bogus rid %d, expected %d",
+                              rid, request_id);
                 rv = APR_EINVAL;
                 break;
             }
@@ -741,8 +740,8 @@ recv_again:
                             int status;
                             seen_end_of_headers = 1;
 
-                            status = ap_scan_script_header_err_brigade(r, ob,
-                                NULL);
+                            status = ap_scan_script_header_err_brigade_ex(r, ob,
+                                NULL, APLOG_MODULE_INDEX);
                             /* suck in all the rest */
                             if (status != OK) {
                                 apr_bucket *tmp_b;
@@ -750,8 +749,8 @@ recv_again:
                                 tmp_b = apr_bucket_eos_create(c->bucket_alloc);
                                 APR_BRIGADE_INSERT_TAIL(ob, tmp_b);
                                 ap_pass_brigade(r->output_filters, ob);
-                                ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
-                                    "proxy: FCGI: Error parsing script headers");
+                                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01070)
+                                              "Error parsing script headers");
                                 r->status = status;
                                 rv = APR_EINVAL;
                                 break;
@@ -829,8 +828,8 @@ recv_again:
             case FCGI_STDERR:
                 /* TODO: Should probably clean up this logging a bit... */
                 if (clen) {
-                    ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
-                                 "proxy: FCGI: Got error '%s'", readbuf);
+                    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01071)
+                                  "Got error '%s'", readbuf);
                 }
 
                 if (clen > readbuflen) {
@@ -844,8 +843,8 @@ recv_again:
                 break;
 
             default:
-                ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
-                             "proxy: FCGI: Got bogus record %d", type);
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01072)
+                              "Got bogus record %d", type);
                 break;
             }
 
@@ -881,29 +880,27 @@ static int fcgi_do_request(apr_pool_t *p, request_rec *r,
                            char *url, char *server_portstr)
 {
     /* Request IDs are arbitrary numbers that we assign to a
-     * single request. This would allow multiplex/pipelinig of 
-     * multiple requests to the same FastCGI connection, but 
+     * single request. This would allow multiplex/pipelinig of
+     * multiple requests to the same FastCGI connection, but
      * we don't support that, and always use a value of '1' to
      * keep things simple. */
-    int request_id = 1; 
+    int request_id = 1;
     apr_status_t rv;
-   
+
     /* Step 1: Send FCGI_BEGIN_REQUEST */
     rv = send_begin_request(conn, request_id);
     if (rv != APR_SUCCESS) {
-        ap_log_error(APLOG_MARK, APLOG_ERR, rv, r->server,
-                     "proxy: FCGI: Failed Writing Request to %s:",
-                     server_portstr);
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01073)
+                      "Failed Writing Request to %s:", server_portstr);
         conn->close = 1;
         return HTTP_SERVICE_UNAVAILABLE;
     }
-    
+
     /* Step 2: Send Environment via FCGI_PARAMS */
     rv = send_environment(conn, r, request_id);
     if (rv != APR_SUCCESS) {
-        ap_log_error(APLOG_MARK, APLOG_ERR, rv, r->server,
-                     "proxy: FCGI: Failed writing Environment to %s:",
-                     server_portstr);
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01074)
+                      "Failed writing Environment to %s:", server_portstr);
         conn->close = 1;
         return HTTP_SERVICE_UNAVAILABLE;
     }
@@ -911,9 +908,8 @@ static int fcgi_do_request(apr_pool_t *p, request_rec *r,
     /* Step 3: Read records from the back end server and handle them. */
     rv = dispatch(conn, conf, r, request_id);
     if (rv != APR_SUCCESS) {
-        ap_log_error(APLOG_MARK, APLOG_ERR, rv, r->server,
-                     "proxy: FCGI: Error dispatching request to %s:",
-                     server_portstr);
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01075)
+                      "Error dispatching request to %s:", server_portstr);
         conn->close = 1;
         return HTTP_SERVICE_UNAVAILABLE;
     }
@@ -943,21 +939,19 @@ static int proxy_fcgi_handler(request_rec *r, proxy_worker *worker,
 
     apr_uri_t *uri = apr_palloc(r->pool, sizeof(*uri));
 
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
-                 "proxy: FCGI: url: %s proxyname: %s proxyport: %d",
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01076)
+                  "url: %s proxyname: %s proxyport: %d",
                  url, proxyname, proxyport);
 
     if (strncasecmp(url, "fcgi:", 5) == 0) {
         url += 5;
     }
     else {
-        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
-                     "proxy: FCGI: declining URL %s", url);
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01077) "declining URL %s", url);
         return DECLINED;
     }
-    
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
-                 "proxy: FCGI: serving URL %s", url);
+
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01078) "serving URL %s", url);
 
     /* Create space for state information */
     if (! backend) {
@@ -991,9 +985,9 @@ static int proxy_fcgi_handler(request_rec *r, proxy_worker *worker,
 
     /* Step Two: Make the Connection */
     if (ap_proxy_connect_backend(FCGI_SCHEME, backend, worker, r->server)) {
-        ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server,
-                     "proxy: FCGI: failed to make connection to backend: %s",
-                     backend->hostname);
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01079)
+                      "failed to make connection to backend: %s",
+                      backend->hostname);
         status = HTTP_SERVICE_UNAVAILABLE;
         goto cleanup;
     }

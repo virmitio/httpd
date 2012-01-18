@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="EUC-KR" ?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.ko.xsl"?>
-<!-- English Revision: 105989:1095948 (outdated) -->
+<!-- English Revision: 105989:1208753 (outdated) -->
 
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
@@ -265,23 +265,6 @@
 <description>Buffer log entries in memory before writing to disk</description>
 <contextlist><context>server config</context></contextlist>
 <usage><p>Documentation not yet translated. Please see English version of document.</p></usage>
-</directivesynopsis>
-
-<directivesynopsis>
-<name>CookieLog</name>
-<description>쿠키를 로그에 남기기위해 사용할 파일명을 설정한다</description>
-<syntax>CookieLog <var>filename</var></syntax>
-<contextlist><context>server config</context><context>virtual host</context>
-</contextlist>
-<compatibility>이 지시어는 사용되지 않는다.</compatibility>
-
-<usage>
-    <p><directive>CookieLog</directive> 지시어는 쿠키를 로그에
-    남기기위해 사용할 파일명을 설정한다. 파일명은 <directive
-    module="core">ServerRoot</directive>에 상대경로이다. 이
-    지시어는 <code>mod_cookies</code>와 호환을 위해 포함했을뿐,
-    실제 사용되지 않는다.</p>
-</usage>
 </directivesynopsis>
 
 <directivesynopsis>

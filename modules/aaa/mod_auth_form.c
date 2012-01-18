@@ -35,17 +35,16 @@
 #include "mod_session.h"
 #include "mod_request.h"
 
-#define LOG_PREFIX "mod_auth_form: "
 #define FORM_LOGIN_HANDLER "form-login-handler"
 #define FORM_LOGOUT_HANDLER "form-logout-handler"
 #define FORM_REDIRECT_HANDLER "form-redirect-handler"
 #define MOD_AUTH_FORM_HASH "site"
 
 static int (*ap_session_load_fn) (request_rec * r, session_rec ** z) = NULL;
-static void (*ap_session_get_fn) (request_rec * r, session_rec * z,
-                                  const char *key, const char **value) = NULL;
-static void (*ap_session_set_fn) (request_rec * r, session_rec * z,
-                                  const char *key, const char *value) = NULL;
+static apr_status_t (*ap_session_get_fn)(request_rec * r, session_rec * z,
+        const char *key, const char **value) = NULL;
+static apr_status_t (*ap_session_set_fn)(request_rec * r, session_rec * z,
+        const char *key, const char *value) = NULL;
 static void (*ap_request_insert_filter_fn) (request_rec * r) = NULL;
 static void (*ap_request_remove_filter_fn) (request_rec * r) = NULL;
 
@@ -277,7 +276,7 @@ static const char *set_cookie_form_size(cmd_parms * cmd, void *config,
     auth_form_config_rec *conf = config;
     apr_off_t size;
 
-    if (APR_SUCCESS != apr_strtoff(&size, arg, NULL, 0)
+    if (APR_SUCCESS != apr_strtoff(&size, arg, NULL, 10)
         || size < 0 || size > APR_SIZE_MAX) {
         return "AuthCookieFormSize must be a size in bytes, or zero.";
     }
@@ -743,7 +742,7 @@ static int check_authn(request_rec * r, const char *sent_user, const char *sent_
                                           AUTHN_PROVIDER_VERSION);
 
             if (!provider || !provider->check_password) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, LOG_PREFIX
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01806)
                               "no authn provider configured");
                 auth_result = AUTH_GENERAL_ERROR;
                 break;
@@ -787,14 +786,14 @@ static int check_authn(request_rec * r, const char *sent_user, const char *sent_
 
         switch (auth_result) {
         case AUTH_DENIED:
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, LOG_PREFIX
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01807)
                           "user '%s': authentication failure for \"%s\": "
                           "password Mismatch",
                           sent_user, r->uri);
             return_code = HTTP_UNAUTHORIZED;
             break;
         case AUTH_USER_NOT_FOUND:
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, LOG_PREFIX
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01808)
                           "user '%s' not found: %s", sent_user, r->uri);
             return_code = HTTP_UNAUTHORIZED;
             break;
@@ -869,7 +868,7 @@ static int authenticate_form_authn(request_rec * r)
      */
     if (PROXYREQ_PROXY == r->proxyreq) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR,
-                      0, r, LOG_PREFIX "form auth cannot be used for proxy "
+                      0, r, APLOGNO(01809) "form auth cannot be used for proxy "
                       "requests due to XSS risk, access denied: %s", r->uri);
         return HTTP_INTERNAL_SERVER_ERROR;
     }
@@ -877,7 +876,7 @@ static int authenticate_form_authn(request_rec * r)
     /* We need an authentication realm. */
     if (!ap_auth_name(r)) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR,
-                      0, r, LOG_PREFIX "need AuthName: %s", r->uri);
+                      0, r, APLOGNO(01810) "need AuthName: %s", r->uri);
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -1069,7 +1068,7 @@ static int authenticate_form_login_handler(request_rec * r)
     }
 
     if (r->method_number != M_POST) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, LOG_PREFIX
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01811)
           "the " FORM_LOGIN_HANDLER " only supports the POST method for %s",
                       r->uri);
         return HTTP_METHOD_NOT_ALLOWED;
@@ -1171,7 +1170,7 @@ static int authenticate_form_redirect_handler(request_rec * r)
 
     if (r->kept_body && sent_method && sent_mimetype) {
 
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, LOG_PREFIX
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01812)
           "internal redirect to method '%s' and body mimetype '%s' for the "
                       "uri: %s", sent_method, sent_mimetype, r->uri);
 
@@ -1180,7 +1179,7 @@ static int authenticate_form_redirect_handler(request_rec * r)
 
     }
     else {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, LOG_PREFIX
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01813)
         "internal redirect requested but one or all of method, mimetype or "
                       "body are NULL: %s", r->uri);
         return HTTP_INTERNAL_SERVER_ERROR;

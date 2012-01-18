@@ -13,11 +13,11 @@
 <body>
 <div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p>
-<p class="apache">Serveur Apache HTTP Version 2.3</p>
+<p class="apache">Serveur Apache HTTP Version 2.5</p>
 <img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
-<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.3</a> &gt; <a href="./">Modules</a></div>
+<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.5</a> &gt; <a href="./">Modules</a></div>
 <div id="page-content">
 <div id="preamble"><h1>Module Apache mod_rewrite</h1>
 <div class="toplang">
@@ -155,7 +155,7 @@ répertoire</td></tr>
       <code>.htaccess</code>. On suppose que le contenu disponible à
       http://example.com/ se situe sur le disque à
       /home/www/exemple/.</p>
-      
+
 <div class="example"><pre>
 RewriteEngine On
 # Le chemin URL utilisé pour arriver dans ce contexte, et non le chemin
@@ -189,7 +189,7 @@ la réécriture soit effectuée
 
       <p><em>TestString</em> est une chaîne qui peut contenir les
       extensions suivantes en plus du texte simple :</p>
-      
+
       <ul>
         <li>
           <strong>références arrières de règle de réécriture</strong> :
@@ -291,7 +291,7 @@ la réécriture soit effectuée
               </td>
             </tr>
           </table>
-	
+
                 <p>Ces variables correspondent toutes aux en-têtes MIME
 		HTTP de mêmes noms, au variables C du serveur HTTP Apache, ou
 		aux champs <code>struct tm</code> du système Unix. La
@@ -300,7 +300,7 @@ la réécriture soit effectuée
 
 		<p>SERVER_NAME et SERVER_PORT dépendent respectivement
 		des valeurs des directives <code class="directive"><a href="../mod/core.html#usecanonicalname">UseCanonicalName</a></code> et <code class="directive"><a href="../mod/core.html#usecanonicalphysicalport">UseCanonicalPhysicalPort</a></code>.</p>
-		
+
 		<p>Parmi les variables
 		spécifiques à mod_rewrite, ou trouve les suivantes :</p>
         <div class="note">
@@ -337,8 +337,10 @@ la réécriture soit effectuée
 
                   <dt><code>REQUEST_URI</code></dt>
 
-                  <dd>La ressource demandée dans la ligne de requête
-		  HTTP ("/index.html" dans l'exemple ci-dessus).</dd>
+                  <dd>La partie chemin de l'URI de la requête, comme
+		  "/index.html". En particulier, ceci exclut la chaîne
+		  de paramètres qui est quant à elle disponible via sa
+		  propre variable <code>QUERY_STRING</code>.</dd>
 
                   <dt><code>REQUEST_FILENAME</code></dt>
 
@@ -418,7 +420,7 @@ la réécriture soit effectuée
 	chargé, cette variable contiendra toujours une chaîne vide.
 	Exemple : <code>%{SSL:SSL_CIPHER_USEKEYSIZE}</code> pourra
 	contenir la valeur <code>128</code>.</li>
-	
+
 	<li>
         On peut utiliser <code>%{HTTP:en-tête}</code>, où
 	<em>en-tête</em> peut correspondre à tout nom d'en-tête MIME
@@ -463,8 +465,8 @@ la réécriture soit effectuée
 	déterminer la valeur finale de <em>variable</em>. La plupart du
 	temps, elle est identique à LA-U (voir ci-dessus).</li>
       </ol>
-	
- 
+
+
       <p><em>expression de comparaison</em> est une expression
       rationnelle qui est appliquée à l'instance actuelle de
       <em>chaîne de test</em>. <em>chaîne de test</em> est d'abord
@@ -549,7 +551,7 @@ la réécriture soit effectuée
 	    comparaison</em>. Vrai si <em>chaîne de test</em> est
 	    numériquement
 	    supérieure ou égale à <em>expression de comparaison</em>.</li>
-            
+
              <li>'<strong>-gt</strong>' (est numériquement supérieur à)<br />
             La <em>chaîne de test</em> est considérée comme un entier,
 	    et est comparée numériquement à l'<em>expression de
@@ -567,7 +569,7 @@ la réécriture soit effectuée
 	    Attention à la confusion avec le drapeau <strong>-l</strong>
 	    en utilisant la variante the <strong>-L</strong> ou
 	    <strong>-h</strong>.</li>
-            
+
              <li>'<strong>-lt</strong>' (est numériquement inférieur à)<br />
             La <em>chaîne de test</em> est considérée comme un entier,
 	    et est comparée numériquement à l'<em>expression de
@@ -878,7 +880,7 @@ bases de données depuis la version 2.0.41 du serveur HTTP Apache</td></tr>
         <dd>Une commande SQL SELECT à exécuter pour rechercher la cible
 	de réécriture (<a href="../rewrite/rewritemap.html#int">Détails
 	...</a>).</dd>
-    </dl>    
+    </dl>
 
 <p>Vous trouverez plus de détails et de nombreux exemples dans le <a href="../rewrite/rewritemap.html">RewriteMap HowTo</a>.</p>
 
@@ -937,6 +939,29 @@ la version version 2.1</td></tr>
       Apache.</p>
       </dd>
 
+      <dt><code>AllowNoSlash</code></dt>
+      <dd>
+      <p>Par défaut, <code class="module"><a href="../mod/mod_rewrite.html">mod_rewrite</a></code> ignore les URLs qui
+      correspondent à un répertoire sur disque, mais ne comportent pas
+      de slash final, afin que le module <code class="module"><a href="../mod/mod_dir.html">mod_dir</a></code>
+      redirige le client vers l'URL canonique avec un slash final.</p>
+      
+      <p>Lorsque la directive <code class="directive"><a href="../mod/mod_dir.html#directoryslash">DirectorySlash</a></code> est définie à off, il
+      est possible de spécifier l'option <code>AllowNoSlash</code> pour
+      s'assurer que les règles de réécriture ne soient plus ignorées.
+      Si on le souhaite, cette option permet de faire s'appliquer des
+      règles de réécriture qui correspondent à un répertoire sans slash
+      final au sein de fichiers .htaccess. Elle est disponible à
+      partir de la version 2.4.0 du serveur HTTP Apache.
+      
+      When the <code class="directive"><a href="../mod/mod_dir.html#directoryslash">DirectorySlash</a></code> directive
++      is set to off, the <code>AllowNoSlash</code> option can be enabled to ensure
++      that rewrite rules are no longer ignored. This option makes it possible to
++      apply rewrite rules within .htaccess files that match the directory without
++      a trailing slash, if so desired. Available in Apache HTTP Server 2.4.0 and
++      later.</p>
++      </dd>
+
       </dl>
 
 </div>
@@ -967,8 +992,8 @@ la version version 2.1</td></tr>
       requête ; les expressions suivantes sont comparées à la sortie de
       la dernière règle de réécriture qui a été appliquée.</p>
 
-<div class="note"><h3>Qu'est-ce qui est comparé ?</h3>
-      
+<div class="note"><h3><a id="what_is_matched" name="what_is_matched">Qu'est-ce qui est comparé ?</a></h3>
+
       <p>Dans un contexte de serveur virtuel <code class="directive"><a href="../mod/core.html#virtualhost">VirtualHost</a></code>, le <em>modèle</em> est tout
       d'abord comparé à la portion de l'URL située entre le nom d'hôte
       éventuellement accompagné du port, et la chaîne de paramètres (par
@@ -980,7 +1005,7 @@ la version version 2.1</td></tr>
       ayant conduit à la règle <code class="directive">RewriteRule</code> (par
       exemple "app1/index.html" ou
       "index.html" selon l'endroit où les directives sont définies).</p>
-      
+
       <p>Si vous souhaitez faire une comparaison sur le nom
       d'hôte, le port, ou la chaîne de requête, utilisez une
       directive <code class="directive"><a href="#rewritecond">RewriteCond</a></code>
@@ -1066,7 +1091,12 @@ substitution !
         <dt>un chemin du système de fichiers</dt>
 
         <dd>Il indique alors la localisation dans le système de
-	fichiers de la ressource qui doit être envoyée au client.</dd>
+	fichiers de la ressource qui doit être envoyée au
+	client. Les substitutions ne sont traitées en tant que chemins du
+	système de fichiers que si la règle est configurée dans un
+	contexte de serveur (serveur virtuel), et si le premier
+	composant du chemin dans la substitution existe dans le système
+	de fichiers.</dd>
 
         <dt>chemin d'URL</dt>
 
@@ -1134,14 +1164,18 @@ substitution !
       section de laquelle elles sont décrites. Ces trois types de
       variables sont évaluées dans l'ordre ci-dessus.</p>
 
-      <p>Comme mentionné précédemment, toutes les règles de
-      réécriture sont appliquées à la chaîne de <em>Substitution</em>
-      (selon l'ordre dans lequel elles sont définies dans le fichier
-      de configuration). L'URL est <strong>intégralement
+       <p>Chaque règle de réécriture s'applique au résultat de la règle
+       précédente, selon l'ordre dans lequel elles ont été définies dans
+       le fichier de configuration. L'URI du chemin du fichier (voir
+       ci-dessus <a href="#what_is_matched">Qu'est-ce qui est
+       comparé ?</a>) est <strong>intégralement
       remplacée</strong> par la chaîne de <em>Substitution</em> et le
       processus de réécriture se poursuit jusqu'à ce que toutes les
       règles aient été appliquées, ou qu'il soit explicitement stoppé
-      par un drapeau <code><strong>L</strong></code>.</p>
+      par un drapeau <a href="../rewrite/flags.html#flag_l"><code><strong>L</strong></code></a>,
+      ou par un autre drapeau qui implique un arrêt immédiat, comme
+      <code><strong>END</strong></code> ou
+      <code><strong>F</strong></code>.</p>
 
      <div class="note"><h3>Modifier la chaîne de requête</h3>
       <p>Par défaut, la chaîne de requête est transmise sans
@@ -1192,7 +1226,7 @@ substitution !
     </tr>
     <tr>
         <td>discardpath|DPI</td>
-        <td>Supprime la partie PATH_INFO de l'URI réécrit. <em><a href="../rewrite/flags.html#flag_dpi">détails 
+        <td>Supprime la partie PATH_INFO de l'URI réécrit. <em><a href="../rewrite/flags.html#flag_dpi">détails
         ...</a></em></td>
     </tr>
     <tr>
@@ -1293,7 +1327,7 @@ substitution !
 	spécifié au fichier cible. <em><a href="../rewrite/flags.html#flag_t">détails ...</a></em></td>
     </tr>
     </table>
-        
+
 <div class="note"><h3>Développement du répertoire home</h3>
 <p> Quand la chaîne de substitution commence par quelque chose comme
 "/~user" (de manière explicite ou par références arrières), mod_rewrite
@@ -1379,7 +1413,7 @@ redondant)</td>
 <td>^/somepath(.*) http://otherhost/otherpath$1 [P]</td>
 <td>http://otherhost/otherpath/pathinfo via internal proxy</td>
 </tr>
-</table>      
+</table>
 
       <p><strong>Dans une configuration de niveau répertoire pour
       <code>/chemin</code><br />
@@ -1467,6 +1501,6 @@ externe</td>
 <p><span>Langues Disponibles: </span><a href="../en/mod/mod_rewrite.html" hreflang="en" rel="alternate" title="English">&nbsp;en&nbsp;</a> |
 <a href="../fr/mod/mod_rewrite.html" title="Français">&nbsp;fr&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2011 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2012 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p></div>
 </body></html>

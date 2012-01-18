@@ -41,6 +41,7 @@
 #include "http_log.h"
 #include "http_main.h"
 #include "mpm_common.h"
+#include "mod_core.h"
 #include "ap_mpm.h"
 #include "ap_listen.h"
 #include "util_mutex.h"
@@ -130,6 +131,7 @@ typedef struct mpm_gen_info_t {
     APR_RING_ENTRY(mpm_gen_info_t) link;
     int gen;          /* which gen? */
     int active;       /* number of active processes */
+    int done;         /* gen finished? (whether or not active processes) */
 } mpm_gen_info_t;
 
 APR_RING_HEAD(mpm_gen_info_head_t, mpm_gen_info_t);
@@ -142,8 +144,10 @@ int ap_max_requests_per_child;
 char ap_coredump_dir[MAX_STRING_LEN];
 int ap_coredumpdir_configured;
 int ap_graceful_shutdown_timeout;
-apr_uint32_t ap_max_mem_free;
+AP_DECLARE_DATA apr_uint32_t ap_max_mem_free;
 apr_size_t ap_thread_stacksize;
+
+#define ALLOCATOR_MAX_FREE_DEFAULT (2048*1024)
 
 /* Set defaults for config directives implemented here.  This is
  * called from core's pre-config hook, so MPMs which need to override
@@ -156,7 +160,7 @@ void mpm_common_pre_config(apr_pool_t *pconf)
     apr_cpystrn(ap_coredump_dir, ap_server_root, sizeof(ap_coredump_dir));
     ap_coredumpdir_configured = 0;
     ap_graceful_shutdown_timeout = 0; /* unlimited */
-    ap_max_mem_free = APR_ALLOCATOR_MAX_FREE_UNLIMITED;
+    ap_max_mem_free = ALLOCATOR_MAX_FREE_DEFAULT;
     ap_thread_stacksize = 0; /* use system default */
 }
 
@@ -207,7 +211,7 @@ void ap_sock_disable_nagle(apr_socket_t *s)
     apr_status_t status = apr_socket_opt_set(s, APR_TCP_NODELAY, 1);
 
     if (status != APR_SUCCESS) {
-        ap_log_error(APLOG_MARK, APLOG_WARNING, status, ap_server_conf,
+        ap_log_error(APLOG_MARK, APLOG_WARNING, status, ap_server_conf, APLOGNO(00542)
                      "apr_socket_opt_set: (TCP_NODELAY)");
     }
 }
@@ -222,7 +226,7 @@ AP_DECLARE(uid_t) ap_uname2id(const char *name)
         return (atoi(&name[1]));
 
     if (!(ent = getpwnam(name))) {
-        ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(00543)
                      "%s: bad user name %s", ap_server_argv0, name);
         exit(1);
     }
@@ -240,7 +244,7 @@ AP_DECLARE(gid_t) ap_gname2id(const char *name)
         return (atoi(&name[1]));
 
     if (!(ent = getgrnam(name))) {
-        ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(00544)
                      "%s: bad group name %s", ap_server_argv0, name);
         exit(1);
     }
@@ -299,6 +303,12 @@ const char *ap_mpm_set_pidfile(cmd_parms *cmd, void *dummy,
     return NULL;
 }
 
+void ap_mpm_dump_pidfile(apr_pool_t *p, apr_file_t *out)
+{
+    apr_file_printf(out, "PidFile: \"%s\"\n",
+                    ap_server_root_relative(p, ap_pid_fname));
+}
+
 const char *ap_mpm_set_max_requests(cmd_parms *cmd, void *dummy,
                                     const char *arg)
 {
@@ -308,7 +318,7 @@ const char *ap_mpm_set_max_requests(cmd_parms *cmd, void *dummy,
     }
 
     if (!strcasecmp(cmd->cmd->name, "MaxRequestsPerChild")) {
-        ap_log_error(APLOG_MARK, APLOG_INFO, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_INFO, 0, NULL, APLOGNO(00545)
                      "MaxRequestsPerChild is deprecated, use "
                      "MaxConnectionsPerChild instead.");
     }
@@ -366,7 +376,7 @@ const char *ap_mpm_set_max_mem_free(cmd_parms *cmd, void *dummy,
         return err;
     }
 
-    value = strtol(arg, NULL, 0);
+    value = strtol(arg, NULL, 10);
     if (value < 0 || errno == ERANGE)
         return apr_pstrcat(cmd->pool, "Invalid MaxMemFree value: ",
                            arg, NULL);
@@ -385,7 +395,7 @@ const char *ap_mpm_set_thread_stacksize(cmd_parms *cmd, void *dummy,
         return err;
     }
 
-    value = strtol(arg, NULL, 0);
+    value = strtol(arg, NULL, 10);
     if (value < 0 || errno == ERANGE)
         return apr_pstrcat(cmd->pool, "Invalid ThreadStackSize value: ",
                            arg, NULL);
@@ -406,9 +416,50 @@ AP_DECLARE(apr_status_t) ap_mpm_query(int query_code, int *result)
     return rv;
 }
 
+static void end_gen(mpm_gen_info_t *gi)
+{
+    ap_log_error(APLOG_MARK, APLOG_TRACE4, 0, ap_server_conf,
+                 "end of generation %d", gi->gen);
+    ap_run_end_generation(ap_server_conf, gi->gen);
+    APR_RING_REMOVE(gi, link);
+    APR_RING_INSERT_HEAD(unused_geninfo, gi, mpm_gen_info_t, link);
+}
+
+apr_status_t ap_mpm_end_gen_helper(void *unused) /* cleanup on pconf */
+{
+    int gen = ap_config_generation - 1; /* differs from MPM generation */
+    mpm_gen_info_t *cur;
+
+    if (geninfo == NULL) {
+        /* initial pconf teardown, MPM hasn't run */
+        return APR_SUCCESS;
+    }
+
+    cur = APR_RING_FIRST(geninfo);
+    while (cur != APR_RING_SENTINEL(geninfo, mpm_gen_info_t, link) &&
+           cur->gen != gen) {
+        cur = APR_RING_NEXT(cur, link);
+    }
+
+    if (cur == APR_RING_SENTINEL(geninfo, mpm_gen_info_t, link)) {
+        /* last child of generation already exited */
+        ap_log_error(APLOG_MARK, APLOG_TRACE4, 0, ap_server_conf,
+                     "no record of generation %d", gen);
+    }
+    else {
+        cur->done = 1;
+        if (cur->active == 0) {
+            end_gen(cur);
+        }
+    }
+
+    return APR_SUCCESS;
+}
+
 /* core's child-status hook
  * tracks number of remaining children per generation and
- * runs the end-generation hook when a generation finishes
+ * runs the end-generation hook when the last child of
+ * a generation exits
  */
 void ap_core_child_status(server_rec *s, pid_t pid,
                           ap_generation_t gen, int slot,
@@ -439,6 +490,7 @@ void ap_core_child_status(server_rec *s, pid_t pid,
             if (!APR_RING_EMPTY(unused_geninfo, mpm_gen_info_t, link)) {
                 cur = APR_RING_FIRST(unused_geninfo);
                 APR_RING_REMOVE(cur, link);
+                cur->active = cur->done = 0;
             }
             else {
                 cur = apr_pcalloc(s->process->pool, sizeof *cur);
@@ -447,23 +499,20 @@ void ap_core_child_status(server_rec *s, pid_t pid,
             APR_RING_ELEM_INIT(cur, link);
             APR_RING_INSERT_HEAD(geninfo, cur, mpm_gen_info_t, link);
         }
+        ap_random_parent_after_fork();
         ++cur->active;
         break;
     case MPM_CHILD_EXITED:
         status_msg = "exited";
         if (cur == APR_RING_SENTINEL(geninfo, mpm_gen_info_t, link)) {
-            ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0, s, APLOGNO(00546)
                          "no record of generation %d of exiting child %" APR_PID_T_FMT,
                          gen, pid);
         }
         else {
             --cur->active;
-            if (!cur->active) {
-                ap_log_error(APLOG_MARK, APLOG_TRACE4, 0, ap_server_conf,
-                             "end of generation %d", gen);
-                ap_run_end_generation(ap_server_conf, gen);
-                APR_RING_REMOVE(cur, link);
-                APR_RING_INSERT_HEAD(unused_geninfo, cur, mpm_gen_info_t, link);
+            if (!cur->active && cur->done) { /* no children, server has stopped/restarted */
+                end_gen(cur);
             }
         }
         break;

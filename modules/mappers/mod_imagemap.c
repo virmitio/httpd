@@ -374,7 +374,7 @@ static char *imap_url(request_rec *r, const char *base, const char *value)
     /* must be a relative URL to be combined with base */
     if (ap_strchr_c(base, '/') == NULL && (!strncmp(value, "../", 3)
         || !strcmp(value, ".."))) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00677)
                     "invalid base directive in map file: %s", r->uri);
         return NULL;
     }
@@ -434,7 +434,7 @@ static char *imap_url(request_rec *r, const char *base, const char *value)
                                    value */
         }
         else if (directory) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00678)
                         "invalid directory name in map file: %s", r->uri);
             return NULL;
         }
@@ -477,12 +477,12 @@ static void menu_header(request_rec *r, char *menu)
 {
     ap_set_content_type(r, "text/html; charset=ISO-8859-1");
 
-    ap_rvputs(r, DOCTYPE_HTML_3_2, "<html><head>\n<title>Menu for ", 
+    ap_rvputs(r, DOCTYPE_HTML_3_2, "<html><head>\n<title>Menu for ",
               ap_escape_html(r->pool, r->uri),
               "</title>\n</head><body>\n", NULL);
 
     if (!strcasecmp(menu, "formatted")) {
-        ap_rvputs(r, "<h1>Menu for ", 
+        ap_rvputs(r, "<h1>Menu for ",
                   ap_escape_html(r->pool, r->uri),
                   "</h1>\n<hr />\n\n", NULL);
     }
@@ -844,7 +844,7 @@ static int imap_handler_internal(request_rec *r)
                                                  we failed. They lose! */
 
 need_2_fields:
-    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00679)
                 "map file %s, line %d syntax error: requires at "
                 "least two fields", r->uri, imap->line_number);
     /* fall through */

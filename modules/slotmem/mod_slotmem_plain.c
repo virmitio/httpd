@@ -44,7 +44,7 @@ static apr_status_t slotmem_do(ap_slotmem_instance_t *mem, ap_slotmem_callback_f
     char *ptr;
     char *inuse;
     apr_status_t retval = APR_SUCCESS;
-    
+
 
     if (!mem)
         return APR_ENOSHMAVAIL;
@@ -300,7 +300,8 @@ static int pre_config(apr_pool_t *p, apr_pool_t *plog,
 static void ap_slotmem_plain_register_hook(apr_pool_t *p)
 {
     /* XXX: static const char * const prePos[] = { "mod_slotmem.c", NULL }; */
-    ap_register_provider(p, AP_SLOTMEM_PROVIDER_GROUP, "plain", "0", &storage);
+    ap_register_provider(p, AP_SLOTMEM_PROVIDER_GROUP, "plain",
+                         AP_SLOTMEM_PROVIDER_VERSION, &storage);
     ap_hook_pre_config(pre_config, NULL, NULL, APR_HOOK_MIDDLE);
 }
 

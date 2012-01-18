@@ -48,6 +48,9 @@ Package=<4>
     Project_Dep_Name BuildBin
     End Project Dependency
     Begin Project Dependency
+    Project_Dep_Name mod_authnz_ldap
+    End Project Dependency
+    Begin Project Dependency
     Project_Dep_Name mod_bucketeer
     End Project Dependency
     Begin Project Dependency
@@ -96,6 +99,9 @@ Package=<4>
     Project_Dep_Name mod_alias
     End Project Dependency
     Begin Project Dependency
+    Project_Dep_Name mod_allowmethods
+    End Project Dependency
+    Begin Project Dependency
     Project_Dep_Name mod_asis
     End Project Dependency
     Begin Project Dependency
@@ -123,7 +129,7 @@ Package=<4>
     Project_Dep_Name mod_authn_file
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name mod_authnz_ldap
+    Project_Dep_Name mod_authn_socache
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name mod_authz_core
@@ -163,6 +169,9 @@ Package=<4>
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name mod_charset_lite
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name mod_data
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name mod_dav_fs
@@ -231,6 +240,9 @@ Package=<4>
     Project_Dep_Name mod_log_config
     End Project Dependency
     Begin Project Dependency
+    Project_Dep_Name mod_log_debug
+    End Project Dependency
+    Begin Project Dependency
     Project_Dep_Name mod_log_forensic
     End Project Dependency
     Begin Project Dependency
@@ -253,6 +265,9 @@ Package=<4>
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name mod_proxy_connect
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name mod_proxy_express
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name mod_proxy_fcgi
@@ -774,6 +789,24 @@ Package=<4>
 
 ###############################################################################
 
+Project: "mod_allowmethods"=.\modules\aaa\mod_allowmethods.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libapr
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libhttpd
+    End Project Dependency
+}}}
+
+###############################################################################
+
 Project: "mod_asis"=.\modules\generators\mod_asis.dsp - Package Owner=<4>
 
 Package=<5>
@@ -968,6 +1001,24 @@ Package=<4>
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name mod_auth_basic
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "mod_authn_socache"=.\modules\aaa\mod_authn_socache.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libapr
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libhttpd
     End Project Dependency
 }}}
 
@@ -1289,6 +1340,24 @@ Package=<4>
 ###############################################################################
 
 Project: "mod_charset_lite"=.\modules\filters\mod_charset_lite.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libapr
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libhttpd
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "mod_data"=.\modules\filters\mod_data.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -1909,6 +1978,24 @@ Package=<4>
 
 ###############################################################################
 
+Project: "mod_log_debug"=.\modules\loggers\mod_log_debug.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libapr
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libhttpd
+    End Project Dependency
+}}}
+
+###############################################################################
+
 Project: "mod_log_forensic"=.\modules\loggers\mod_log_forensic.dsp - Package Owner=<4>
 
 Package=<5>
@@ -2098,6 +2185,27 @@ Package=<4>
 
 ###############################################################################
 
+Project: "mod_proxy_express"=.\modules\proxy\mod_proxy_express.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libapr
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libhttpd
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name mod_proxy
+    End Project Dependency
+}}}
+
+###############################################################################
+
 Project: "mod_proxy_fcgi"=.\modules\proxy\mod_proxy_fcgi.dsp - Package Owner=<4>
 
 Package=<5>
@@ -2136,6 +2244,24 @@ Package=<4>
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name mod_proxy
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "mod_proxy_html"=.\modules\filters\mod_proxy_html.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libapr
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libhttpd
     End Project Dependency
 }}}
 
@@ -2704,6 +2830,24 @@ Package=<4>
 ###############################################################################
 
 Project: "mod_watchdog"=.\modules\core\mod_watchdog.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libapr
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libhttpd
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "mod_xml2enc"=.\modules\filters\mod_xml2enc.dsp - Package Owner=<4>
 
 Package=<5>
 {{{

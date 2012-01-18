@@ -41,6 +41,8 @@ AP_DECLARE_DATA ap_filter_rec_t *ap_chunk_filter_handle;
 AP_DECLARE_DATA ap_filter_rec_t *ap_http_outerror_filter_handle;
 AP_DECLARE_DATA ap_filter_rec_t *ap_byterange_filter_handle;
 
+AP_DECLARE_DATA const char *ap_multipart_boundary;
+
 /* If we are using an MPM That Supports Async Connections,
  * use a different processing function
  */
@@ -99,14 +101,14 @@ static const command_rec http_cmds[] = {
 
 static const char *http_scheme(const request_rec *r)
 {
-    /* 
-     * The http module shouldn't return anything other than 
+    /*
+     * The http module shouldn't return anything other than
      * "http" (the default) or "https".
      */
     if (r->server->server_scheme &&
         (strcmp(r->server->server_scheme, "https") == 0))
         return "https";
-    
+
     return "http";
 }
 
@@ -115,7 +117,7 @@ static apr_port_t http_port(const request_rec *r)
     if (r->server->server_scheme &&
         (strcmp(r->server->server_scheme, "https") == 0))
         return DEFAULT_HTTPS_PORT;
-    
+
     return DEFAULT_HTTP_PORT;
 }
 
@@ -124,6 +126,7 @@ static int ap_process_http_async_connection(conn_rec *c)
     request_rec *r;
     conn_state_t *cs = c->cs;
 
+    AP_DEBUG_ASSERT(cs != NULL);
     AP_DEBUG_ASSERT(cs->state == CONN_STATE_READ_REQUEST_LINE);
 
     while (cs->state == CONN_STATE_READ_REQUEST_LINE) {
@@ -148,7 +151,7 @@ static int ap_process_http_async_connection(conn_rec *c)
                 r = NULL;
             }
 
-            if (cs->state != CONN_STATE_WRITE_COMPLETION && 
+            if (cs->state != CONN_STATE_WRITE_COMPLETION &&
                 cs->state != CONN_STATE_SUSPENDED) {
                 /* Something went wrong; close the connection */
                 cs->state = CONN_STATE_LINGER;
@@ -182,7 +185,8 @@ static int ap_process_http_sync_connection(conn_rec *c)
 
         ap_update_child_status(c->sbh, SERVER_BUSY_WRITE, r);
         if (r->status == HTTP_OK) {
-            cs->state = CONN_STATE_HANDLER;
+            if (cs)
+                cs->state = CONN_STATE_HANDLER;
             ap_process_request(r);
             /* After the call to ap_process_request, the
              * request pool will have been deleted.  We set
@@ -255,9 +259,13 @@ static int http_send_options(request_rec *r)
 
 static int http_post_config(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s)
 {
+    apr_uint64_t val;
     if (ap_mpm_query(AP_MPMQ_IS_ASYNC, &async_mpm) != APR_SUCCESS) {
         async_mpm = 0;
     }
+    ap_random_insecure_bytes(&val, sizeof(val));
+    ap_multipart_boundary = apr_psprintf(p, "%0" APR_UINT64_T_HEX_FMT, val);
+
     return OK;
 }
 

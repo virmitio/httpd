@@ -22,6 +22,9 @@
 
 module AP_MODULE_DECLARE_DATA lbmethod_bybusyness_module;
 
+static int (*ap_proxy_retry_worker_fn)(const char *proxy_function,
+        proxy_worker *worker, server_rec *s) = NULL;
+
 static proxy_worker *find_best_bybusyness(proxy_balancer *balancer,
                                 request_rec *r)
 {
@@ -35,10 +38,19 @@ static proxy_worker *find_best_bybusyness(proxy_balancer *balancer,
     int checked_standby;
 
     int total_factor = 0;
-    
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
+
+    if (!ap_proxy_retry_worker_fn) {
+        ap_proxy_retry_worker_fn =
+                APR_RETRIEVE_OPTIONAL_FN(ap_proxy_retry_worker);
+        if (!ap_proxy_retry_worker_fn) {
+            /* can only happen if mod_proxy isn't loaded */
+            return NULL;
+        }
+    }
+
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server, APLOGNO(01211)
                  "proxy: Entering bybusyness for BALANCER (%s)",
-                 balancer->name);
+                 balancer->s->name);
 
     /* First try to see if we have available candidate */
     do {
@@ -52,12 +64,13 @@ static proxy_worker *find_best_bybusyness(proxy_balancer *balancer,
                     if ((*worker)->s->lbset > max_lbset)
                         max_lbset = (*worker)->s->lbset;
                 }
-
-                if ((*worker)->s->lbset != cur_lbset)
+                if (
+                    ((*worker)->s->lbset != cur_lbset) ||
+                    (checking_standby ? !PROXY_WORKER_IS_STANDBY(*worker) : PROXY_WORKER_IS_STANDBY(*worker)) ||
+                    (PROXY_WORKER_IS_DRAINING(*worker))
+                    ) {
                     continue;
-
-                if ( (checking_standby ? !PROXY_WORKER_IS_STANDBY(*worker) : PROXY_WORKER_IS_STANDBY(*worker)) )
-                    continue;
+                }
 
                 /* If the worker is in error state run
                  * retry on that worker. It will be marked as
@@ -65,8 +78,9 @@ static proxy_worker *find_best_bybusyness(proxy_balancer *balancer,
                  * The worker might still be unusable, but we try
                  * anyway.
                  */
-                if (!PROXY_WORKER_IS_USABLE(*worker))
-                    ap_proxy_retry_worker("BALANCER", *worker, r->server);
+                if (!PROXY_WORKER_IS_USABLE(*worker)) {
+                    ap_proxy_retry_worker_fn("BALANCER", *worker, r->server);
+                }
 
                 /* Take into calculation only the workers that are
                  * not in error state or not disabled.
@@ -75,7 +89,7 @@ static proxy_worker *find_best_bybusyness(proxy_balancer *balancer,
 
                     (*worker)->s->lbstatus += (*worker)->s->lbfactor;
                     total_factor += (*worker)->s->lbfactor;
-                    
+
                     if (!mycandidate
                         || (*worker)->s->busy < mycandidate->s->busy
                         || ((*worker)->s->busy == mycandidate->s->busy && (*worker)->s->lbstatus > mycandidate->s->lbstatus))
@@ -95,7 +109,7 @@ static proxy_worker *find_best_bybusyness(proxy_balancer *balancer,
 
     if (mycandidate) {
         mycandidate->s->lbstatus -= total_factor;
-        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server,
+        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server, APLOGNO(01212)
                      "proxy: bybusyness selected worker \"%s\" : busy %" APR_SIZE_T_FMT " : lbstatus %d",
                      mycandidate->s->name, mycandidate->s->busy, mycandidate->s->lbstatus);
 

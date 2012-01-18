@@ -45,7 +45,7 @@
 
 #ifdef __MINGW32__
 #include <mswsock.h>
-#endif 
+#endif
 
 /*
  * The Windows MPM uses a queue of completion contexts that it passes
@@ -166,7 +166,7 @@ static winnt_conn_ctx_t *mpm_get_completion_context(int *timeout)
                 /* All workers are busy, need to wait for one */
                 static int reported = 0;
                 if (!reported) {
-                    ap_log_error(APLOG_MARK, APLOG_ERR, 0, ap_server_conf,
+                    ap_log_error(APLOG_MARK, APLOG_ERR, 0, ap_server_conf, APLOGNO(00326)
                                  "Server ran out of threads to serve "
                                  "requests. Consider raising the "
                                  "ThreadsPerChild setting");
@@ -184,7 +184,7 @@ static winnt_conn_ctx_t *mpm_get_completion_context(int *timeout)
                 else {
                     if (rv == WAIT_TIMEOUT) {
                         /* somewhat-normal condition where threads are busy */
-                        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, ap_server_conf,
+                        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, ap_server_conf, APLOGNO(00327)
                                      "mpm_get_completion_context: Failed to get a "
                                      "free context within 1 second");
                         *timeout = 1;
@@ -192,7 +192,7 @@ static winnt_conn_ctx_t *mpm_get_completion_context(int *timeout)
                     else {
                         /* should be the unexpected, generic WAIT_FAILED */
                         ap_log_error(APLOG_MARK, APLOG_WARNING, apr_get_os_error(),
-                                     ap_server_conf,
+                                     ap_server_conf, APLOGNO(00328)
                                      "mpm_get_completion_context: "
                                      "WaitForSingleObject failed to get free context");
                     }
@@ -216,7 +216,7 @@ static winnt_conn_ctx_t *mpm_get_completion_context(int *timeout)
                 if (context->overlapped.hEvent == NULL) {
                     /* Hopefully this is a temporary condition ... */
                     ap_log_error(APLOG_MARK, APLOG_WARNING, apr_get_os_error(),
-                                 ap_server_conf,
+                                 ap_server_conf, APLOGNO(00329)
                                  "mpm_get_completion_context: "
                                  "CreateEvent failed.");
 
@@ -227,10 +227,10 @@ static winnt_conn_ctx_t *mpm_get_completion_context(int *timeout)
                 /* Create the transaction pool */
                 apr_allocator_create(&allocator);
                 apr_allocator_max_free_set(allocator, ap_max_mem_free);
-                rv = apr_pool_create_ex(&context->ptrans, pchild, NULL, 
+                rv = apr_pool_create_ex(&context->ptrans, pchild, NULL,
                                         allocator);
                 if (rv != APR_SUCCESS) {
-                    ap_log_error(APLOG_MARK, APLOG_WARNING, rv, ap_server_conf,
+                    ap_log_error(APLOG_MARK, APLOG_WARNING, rv, ap_server_conf, APLOGNO(00330)
                                  "mpm_get_completion_context: Failed "
                                  "to create the transaction pool.");
                     CloseHandle(context->overlapped.hEvent);
@@ -305,8 +305,7 @@ static unsigned int __stdcall winnt_accept(void *lr_)
     else {
         accf = 0;
         accf_name = "none";
-        ap_log_error(APLOG_MARK, APLOG_WARNING, apr_get_netos_error(), 
-                     ap_server_conf,
+        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, ap_server_conf, APLOGNO(00331)
                      "winnt_accept: unrecognized AcceptFilter '%s', "
                      "only 'data', 'connect' or 'none' are valid. "
                      "Using 'none' instead", accf_name);
@@ -316,8 +315,8 @@ static unsigned int __stdcall winnt_accept(void *lr_)
 
 #if APR_HAVE_IPV6
     if (getsockname(nlsd, (struct sockaddr *)&ss_listen, &namelen) == SOCKET_ERROR) {
-        ap_log_error(APLOG_MARK, APLOG_ERR, apr_get_netos_error(), 
-                     ap_server_conf,
+        ap_log_error(APLOG_MARK, APLOG_ERR, apr_get_netos_error(),
+                     ap_server_conf, APLOGNO(00332)
                      "winnt_accept: getsockname error on listening socket, "
                      "is IPv6 available?");
         return 1;
@@ -345,14 +344,14 @@ reinit: /* target of data or connect upon too many AcceptEx failures */
         rv = WSAEventSelect(nlsd, events[2], FD_ACCEPT);
         if (rv) {
             ap_log_error(APLOG_MARK, APLOG_ERR,
-                         apr_get_netos_error(), ap_server_conf,
+                         apr_get_netos_error(), ap_server_conf, APLOGNO(00333)
                          "WSAEventSelect() failed.");
             CloseHandle(events[2]);
             return 1;
         }
     }
 
-    ap_log_error(APLOG_MARK, APLOG_INFO, 0, ap_server_conf,
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, ap_server_conf, APLOGNO(00334)
                  "Child: Accept thread listening on %s:%d using AcceptFilter %s",
                  lr->bind_addr->hostname ? lr->bind_addr->hostname : "*",
                  lr->bind_addr->port, accf_name);
@@ -367,7 +366,7 @@ reinit: /* target of data or connect upon too many AcceptEx failures */
                     /* Hopefully a temporary condition in the provider? */
                     ++err_count;
                     if (err_count > MAX_ACCEPTEX_ERR_COUNT) {
-                        ap_log_error(APLOG_MARK, APLOG_CRIT, 0, ap_server_conf,
+                        ap_log_error(APLOG_MARK, APLOG_CRIT, 0, ap_server_conf, APLOGNO(00335)
                                      "winnt_accept: Too many failures grabbing a "
                                      "connection ctx.  Aborting.");
                         break;
@@ -386,13 +385,13 @@ reinit: /* target of data or connect upon too many AcceptEx failures */
             /* Create and initialize the accept socket */
 #if APR_HAVE_IPV6
             if (context->accept_socket == INVALID_SOCKET) {
-                context->accept_socket = socket(ss_listen.ss_family, SOCK_STREAM, 
+                context->accept_socket = socket(ss_listen.ss_family, SOCK_STREAM,
                                                 IPPROTO_TCP);
                 context->socket_family = ss_listen.ss_family;
             }
             else if (context->socket_family != ss_listen.ss_family) {
                 closesocket(context->accept_socket);
-                context->accept_socket = socket(ss_listen.ss_family, SOCK_STREAM, 
+                context->accept_socket = socket(ss_listen.ss_family, SOCK_STREAM,
                                                 IPPROTO_TCP);
                 context->socket_family = ss_listen.ss_family;
             }
@@ -402,8 +401,8 @@ reinit: /* target of data or connect upon too many AcceptEx failures */
 #endif
 
             if (context->accept_socket == INVALID_SOCKET) {
-                ap_log_error(APLOG_MARK, APLOG_WARNING, apr_get_netos_error(), 
-                             ap_server_conf,
+                ap_log_error(APLOG_MARK, APLOG_WARNING, apr_get_netos_error(),
+                             ap_server_conf, APLOGNO(00336)
                              "winnt_accept: Failed to allocate an accept socket. "
                              "Temporary resource constraint? Try again.");
                 Sleep(100);
@@ -412,10 +411,10 @@ reinit: /* target of data or connect upon too many AcceptEx failures */
 
             if (accf == 2) { /* 'data' */
                 len = APR_BUCKET_BUFF_SIZE;
-                buf = apr_bucket_alloc(len, context->ba); /* XXX: check for failure? */
+                buf = apr_bucket_alloc(len, context->ba);
                 len -= PADDED_ADDR_SIZE * 2;
             }
-            else {
+            else /* (accf == 1) 'connect' */ {
                 len = 0;
                 buf = context->buff;
             }
@@ -444,7 +443,7 @@ reinit: /* target of data or connect upon too many AcceptEx failures */
                     /* We can get here when:
                      * 1) TransmitFile does not properly recycle the accept socket (typically
                      *    because the client disconnected)
-                     * 2) there is VPN or Firewall software installed with 
+                     * 2) there is VPN or Firewall software installed with
                      *    buggy WSAAccept or WSADuplicateSocket implementation
                      * 3) the dynamic address / adapter has changed
                      * Give five chances, then fall back on AcceptFilter 'none'
@@ -455,12 +454,12 @@ reinit: /* target of data or connect upon too many AcceptEx failures */
                     context->accept_socket = INVALID_SOCKET;
                     ++err_count;
                     if (err_count > MAX_ACCEPTEX_ERR_COUNT) {
-                        ap_log_error(APLOG_MARK, APLOG_ERR, rv, ap_server_conf,
+                        ap_log_error(APLOG_MARK, APLOG_ERR, rv, ap_server_conf, APLOGNO(00337)
                                      "Child: Encountered too many AcceptEx "
                                      "faults accepting client connections. "
                                      "Possible causes: dynamic address renewal, "
                                      "or incompatible VPN or firewall software. ");
-                        ap_log_error(APLOG_MARK, APLOG_NOTICE, rv, ap_server_conf,
+                        ap_log_error(APLOG_MARK, APLOG_NOTICE, rv, ap_server_conf, APLOGNO(00338)
                                      "winnt_mpm: falling back to "
                                      "'AcceptFilter none'.");
                         err_count = 0;
@@ -476,10 +475,10 @@ reinit: /* target of data or connect upon too many AcceptEx failures */
                     context->accept_socket = INVALID_SOCKET;
                     ++err_count;
                     if (err_count > MAX_ACCEPTEX_ERR_COUNT) {
-                        ap_log_error(APLOG_MARK, APLOG_ERR, rv, ap_server_conf,
+                        ap_log_error(APLOG_MARK, APLOG_ERR, rv, ap_server_conf, APLOGNO(00339)
                                      "Child: Encountered too many AcceptEx "
                                      "faults accepting client connections.");
-                        ap_log_error(APLOG_MARK, APLOG_NOTICE, rv, ap_server_conf,
+                        ap_log_error(APLOG_MARK, APLOG_NOTICE, rv, ap_server_conf, APLOGNO(00340)
                                      "winnt_mpm: falling back to "
                                      "'AcceptFilter none'.");
                         err_count = 0;
@@ -502,7 +501,7 @@ reinit: /* target of data or connect upon too many AcceptEx failures */
                                              &context->overlapped,
                                              &BytesRead, FALSE)) {
                         ap_log_error(APLOG_MARK, APLOG_WARNING,
-                                     apr_get_os_error(), ap_server_conf,
+                                     apr_get_os_error(), ap_server_conf, APLOGNO(00341)
                              "winnt_accept: Asynchronous AcceptEx failed.");
                         closesocket(context->accept_socket);
                         context->accept_socket = INVALID_SOCKET;
@@ -534,19 +533,19 @@ reinit: /* target of data or connect upon too many AcceptEx failures */
                            SO_UPDATE_ACCEPT_CONTEXT, (char *)&nlsd,
                            sizeof(nlsd))) {
                 ap_log_error(APLOG_MARK, APLOG_WARNING, apr_get_netos_error(),
-                             ap_server_conf,
+                             ap_server_conf, APLOGNO(00342)
                              "setsockopt(SO_UPDATE_ACCEPT_CONTEXT) failed.");
                 /* Not a failure condition. Keep running. */
             }
 
-            /* Get the local & remote address 
+            /* Get the local & remote address
              * TODO; error check
              */
             GetAcceptExSockaddrs(buf, len, PADDED_ADDR_SIZE, PADDED_ADDR_SIZE,
                                  &context->sa_server, &context->sa_server_len,
                                  &context->sa_client, &context->sa_client_len);
 
-            /* For 'data', craft a bucket for our data result 
+            /* For 'data', craft a bucket for our data result
              * and pass to worker_main as context->overlapped.Pointer
              */
             if (accf == 2 && BytesRead)
@@ -580,15 +579,18 @@ reinit: /* target of data or connect upon too many AcceptEx failures */
 
 
             if (rv != WAIT_OBJECT_0 + 2) {
-                /* not FD_ACCEPT; 
-                 * exit_event triggered or event handle was closed 
+                /* not FD_ACCEPT;
+                 * exit_event triggered or event handle was closed
                  */
                 break;
             }
 
-            context->sa_client = NULL;
             context->sa_server = (void *) context->buff;
-            context->sa_server_len = sizeof(context->buff);
+            context->sa_server_len = sizeof(context->buff) / 2;
+            context->sa_client_len = context->sa_server_len;
+            context->sa_client = (void *) (context->buff
+                                         + context->sa_server_len);
+
             context->accept_socket = accept(nlsd, context->sa_server,
                                             &context->sa_server_len);
 
@@ -599,14 +601,14 @@ reinit: /* target of data or connect upon too many AcceptEx failures */
                     || rv == APR_FROM_OS_ERROR(WSAEINPROGRESS)
                     || rv == APR_FROM_OS_ERROR(WSAEWOULDBLOCK) ) {
                     ap_log_error(APLOG_MARK, APLOG_DEBUG,
-                                 rv, ap_server_conf,
+                                 rv, ap_server_conf, APLOGNO(00343)
                                  "accept() failed, retrying.");
                     continue;
                 }
 
                 /* A more serious error than 'retry', log it */
                 ap_log_error(APLOG_MARK, APLOG_WARNING,
-                             rv, ap_server_conf,
+                             rv, ap_server_conf, APLOGNO(00344)
                              "accept() failed.");
 
                 if (   rv == APR_FROM_OS_ERROR(WSAEMFILE)
@@ -615,7 +617,7 @@ reinit: /* target of data or connect upon too many AcceptEx failures */
                     Sleep(100);
                     ++err_count;
                     if (err_count > MAX_ACCEPTEX_ERR_COUNT) {
-                        ap_log_error(APLOG_MARK, APLOG_ERR, rv, ap_server_conf,
+                        ap_log_error(APLOG_MARK, APLOG_ERR, rv, ap_server_conf, APLOGNO(00345)
                                      "Child: Encountered too many accept() "
                                      "resource faults, aborting.");
                         break;
@@ -624,7 +626,7 @@ reinit: /* target of data or connect upon too many AcceptEx failures */
                 }
                 break;
             }
-            /* Per MSDN, cancel the inherited association of this socket 
+            /* Per MSDN, cancel the inherited association of this socket
              * to the WSAEventSelect API, and restore the state corresponding
              * to apr_os_sock_make's default assumptions (really, a flaw within
              * os_sock_make and os_sock_put that it does not query).
@@ -632,6 +634,20 @@ reinit: /* target of data or connect upon too many AcceptEx failures */
             WSAEventSelect(context->accept_socket, 0, 0);
             context->overlapped.Pointer = NULL;
             err_count = 0;
+
+            context->sa_server_len = sizeof(context->buff) / 2;
+            if (getsockname(context->accept_socket, context->sa_server,
+                            &context->sa_server_len) == SOCKET_ERROR) {
+                ap_log_error(APLOG_MARK, APLOG_WARNING, apr_get_netos_error(), ap_server_conf, APLOGNO(00346)
+                             "getsockname failed");
+                continue;
+            }
+            if ((getpeername(context->accept_socket, context->sa_client,
+                             &context->sa_client_len)) == SOCKET_ERROR) {
+                ap_log_error(APLOG_MARK, APLOG_WARNING, apr_get_netos_error(), ap_server_conf, APLOGNO(00347)
+                             "getpeername failed");
+                memset(&context->sa_client, '\0', sizeof(context->sa_client));
+            }
         }
 
         sockinfo.os_sock = &context->accept_socket;
@@ -640,14 +656,14 @@ reinit: /* target of data or connect upon too many AcceptEx failures */
         sockinfo.family  = context->sa_server->sa_family;
         sockinfo.type    = SOCK_STREAM;
         /* Restore the state corresponding to apr_os_sock_make's default
-         * assumption of timeout -1 (really, a flaw of os_sock_make and 
+         * assumption of timeout -1 (really, a flaw of os_sock_make and
          * os_sock_put that it does not query to determine ->timeout).
          * XXX: Upon a fix to APR, these three statements should disappear.
          */
         ioctlsocket(context->accept_socket, FIONBIO, &zero);
-        setsockopt(context->accept_socket, SOL_SOCKET, SO_RCVTIMEO, 
+        setsockopt(context->accept_socket, SOL_SOCKET, SO_RCVTIMEO,
                    (char *) &zero, sizeof(zero));
-        setsockopt(context->accept_socket, SOL_SOCKET, SO_SNDTIMEO, 
+        setsockopt(context->accept_socket, SOL_SOCKET, SO_SNDTIMEO,
                    (char *) &zero, sizeof(zero));
         apr_os_sock_make(&context->sock, &sockinfo, context->ptrans);
 
@@ -667,7 +683,7 @@ reinit: /* target of data or connect upon too many AcceptEx failures */
         SetEvent(exit_event);
     }
 
-    ap_log_error(APLOG_MARK, APLOG_INFO, APR_SUCCESS, ap_server_conf,
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, APR_SUCCESS, ap_server_conf, APLOGNO(00348)
                  "Child: Accept thread exiting.");
     return 0;
 }
@@ -696,7 +712,7 @@ static winnt_conn_ctx_t *winnt_get_connection(winnt_conn_ctx_t *context)
                                        &CompKey, &pol, INFINITE);
         if (!rc) {
             rc = apr_get_os_error();
-            ap_log_error(APLOG_MARK, APLOG_DEBUG, rc, ap_server_conf,
+            ap_log_error(APLOG_MARK, APLOG_DEBUG, rc, ap_server_conf, APLOGNO(00349)
                          "Child: GetQueuedComplationStatus returned %d",
                          rc);
             continue;
@@ -847,7 +863,7 @@ static DWORD __stdcall worker_main(void *thread_num_val)
 }
 
 
-static void cleanup_thread(HANDLE *handles, int *thread_cnt, 
+static void cleanup_thread(HANDLE *handles, int *thread_cnt,
                            int thread_to_clean)
 {
     int i;
@@ -891,7 +907,7 @@ static void create_listener_thread(void)
     for (lr = ap_listeners; lr; lr = lr->next) {
         if (lr->sd != NULL) {
             /* A smaller stack is sufficient.
-             * To convert to CreateThread, the returned handle cannot be 
+             * To convert to CreateThread, the returned handle cannot be
              * ignored, it must be closed/joined.
              */
             _beginthreadex(NULL, 65536, winnt_accept,
@@ -926,7 +942,7 @@ void child_main(apr_pool_t *pconf)
     /* Initialize the child_events */
     max_requests_per_child_event = CreateEvent(NULL, TRUE, FALSE, NULL);
     if (!max_requests_per_child_event) {
-        ap_log_error(APLOG_MARK, APLOG_CRIT, apr_get_os_error(), ap_server_conf,
+        ap_log_error(APLOG_MARK, APLOG_CRIT, apr_get_os_error(), ap_server_conf, APLOGNO(00350)
                      "Child: Failed to create a max_requests event.");
         exit(APEXIT_CHILDINIT);
     }
@@ -940,12 +956,12 @@ void child_main(apr_pool_t *pconf)
      */
     status = apr_proc_mutex_lock(start_mutex);
     if (status != APR_SUCCESS) {
-        ap_log_error(APLOG_MARK, APLOG_ERR, status, ap_server_conf,
+        ap_log_error(APLOG_MARK, APLOG_ERR, status, ap_server_conf, APLOGNO(00351)
                      "Child: Failed to acquire the start_mutex. "
                      "Process will exit.");
         exit(APEXIT_CHILDINIT);
     }
-    ap_log_error(APLOG_MARK, APLOG_NOTICE, APR_SUCCESS, ap_server_conf,
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, APR_SUCCESS, ap_server_conf, APLOGNO(00352)
                  "Child: Acquired the start mutex.");
 
     /*
@@ -953,12 +969,12 @@ void child_main(apr_pool_t *pconf)
      */
     /* Create the worker thread dispatch IOCP */
     ThreadDispatchIOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE,
-                                                NULL, 0, 0); 
+                                                NULL, 0, 0);
     apr_thread_mutex_create(&qlock, APR_THREAD_MUTEX_DEFAULT, pchild);
     qwait_event = CreateEvent(NULL, TRUE, FALSE, NULL);
     if (!qwait_event) {
-        ap_log_error(APLOG_MARK, APLOG_CRIT, apr_get_os_error(), 
-                     ap_server_conf,
+        ap_log_error(APLOG_MARK, APLOG_CRIT, apr_get_os_error(),
+                     ap_server_conf, APLOGNO(00353)
                      "Child: Failed to create a qwait event.");
         exit(APEXIT_CHILDINIT);
     }
@@ -966,7 +982,7 @@ void child_main(apr_pool_t *pconf)
     /*
      * Create the pool of worker threads
      */
-    ap_log_error(APLOG_MARK, APLOG_NOTICE, APR_SUCCESS, ap_server_conf,
+    ap_log_error(APLOG_MARK, APLOG_NOTICE, APR_SUCCESS, ap_server_conf, APLOGNO(00354)
                  "Child: Starting %d worker threads.", ap_threads_per_child);
     child_handles = (HANDLE) apr_pcalloc(pchild, ap_threads_per_child
                                                   * sizeof(HANDLE));
@@ -980,13 +996,13 @@ void child_main(apr_pool_t *pconf)
                 continue;
             }
             ap_update_child_status_from_indexes(0, i, SERVER_STARTING, NULL);
-        
+
             child_handles[i] = CreateThread(NULL, ap_thread_stacksize,
                                             worker_main, (void *) i,
                                             stack_res_flag, &tid);
             if (child_handles[i] == 0) {
                 ap_log_error(APLOG_MARK, APLOG_CRIT, apr_get_os_error(),
-                             ap_server_conf,
+                             ap_server_conf, APLOGNO(00355)
                              "Child: CreateThread failed. Unable to "
                              "create all worker threads. Created %d of the %d "
                              "threads requested with the ThreadsPerChild "
@@ -996,7 +1012,7 @@ void child_main(apr_pool_t *pconf)
                 goto shutdown;
             }
             threads_created++;
-            /* Save the score board index in ht keyed to the thread handle. 
+            /* Save the score board index in ht keyed to the thread handle.
              * We need this when cleaning up threads down below...
              */
             apr_thread_mutex_lock(child_lock);
@@ -1062,13 +1078,13 @@ void child_main(apr_pool_t *pconf)
             if (rv == WAIT_FAILED) {
             /* Something serious is wrong */
             ap_log_error(APLOG_MARK, APLOG_CRIT, apr_get_os_error(),
-                         ap_server_conf,
+                         ap_server_conf, APLOGNO(00356)
                          "Child: WAIT_FAILED -- shutting down server");
             break;
         }
         else if (cld == 0) {
             /* Exit event was signaled */
-            ap_log_error(APLOG_MARK, APLOG_NOTICE, APR_SUCCESS, ap_server_conf,
+            ap_log_error(APLOG_MARK, APLOG_DEBUG, APR_SUCCESS, ap_server_conf, APLOGNO(00357)
                          "Child: Exit event signaled. Child process is "
                          "ending.");
             break;
@@ -1077,7 +1093,7 @@ void child_main(apr_pool_t *pconf)
             /* MaxConnectionsPerChild event set by the worker threads.
              * Signal the parent to restart
              */
-            ap_log_error(APLOG_MARK, APLOG_NOTICE, APR_SUCCESS, ap_server_conf,
+            ap_log_error(APLOG_MARK, APLOG_NOTICE, APR_SUCCESS, ap_server_conf, APLOGNO(00358)
                          "Child: Process exiting because it reached "
                          "MaxConnectionsPerChild. Signaling the parent to "
                          "restart a new child process.");
@@ -1118,11 +1134,11 @@ void child_main(apr_pool_t *pconf)
      */
     rv = apr_proc_mutex_unlock(start_mutex);
     if (rv == APR_SUCCESS) {
-        ap_log_error(APLOG_MARK, APLOG_NOTICE, rv, ap_server_conf,
+        ap_log_error(APLOG_MARK, APLOG_DEBUG, rv, ap_server_conf, APLOGNO(00359)
                      "Child: Released the start mutex");
     }
     else {
-        ap_log_error(APLOG_MARK, APLOG_ERR, rv, ap_server_conf,
+        ap_log_error(APLOG_MARK, APLOG_ERR, rv, ap_server_conf, APLOGNO(00360)
                      "Child: Failure releasing the start mutex");
     }
 
@@ -1130,11 +1146,11 @@ void child_main(apr_pool_t *pconf)
      * Post worker threads blocked on the ThreadDispatch IOCompletion port
      */
     while (g_blocked_threads > 0) {
-        ap_log_error(APLOG_MARK, APLOG_INFO, APR_SUCCESS, ap_server_conf,
+        ap_log_error(APLOG_MARK, APLOG_DEBUG, APR_SUCCESS, ap_server_conf, APLOGNO(00361)
                      "Child: %d threads blocked on the completion port",
                      g_blocked_threads);
         for (i=g_blocked_threads; i > 0; i--) {
-            PostQueuedCompletionStatus(ThreadDispatchIOCP, 0, 
+            PostQueuedCompletionStatus(ThreadDispatchIOCP, 0,
                                        IOCP_SHUTDOWN, NULL);
         }
         Sleep(1000);
@@ -1149,7 +1165,7 @@ void child_main(apr_pool_t *pconf)
     apr_thread_mutex_unlock(qlock);
 
     /* Give busy threads a chance to service their connections
-     * (no more than the global server timeout period which 
+     * (no more than the global server timeout period which
      * we track in msec remaining).
      */
     watch_thread = 0;
@@ -1170,10 +1186,10 @@ void child_main(apr_pool_t *pconf)
 
             /* Every 30 seconds give an update */
             if ((time_remains % 30000) == 0) {
-                ap_log_error(APLOG_MARK, APLOG_NOTICE, APR_SUCCESS, 
-                             ap_server_conf,
+                ap_log_error(APLOG_MARK, APLOG_NOTICE, APR_SUCCESS,
+                             ap_server_conf, APLOGNO(00362)
                              "Child: Waiting %d more seconds "
-                             "for %d worker threads to finish.", 
+                             "for %d worker threads to finish.",
                              time_remains / 1000, threads_created);
             }
             /* We'll poll from the top, 10 times per second */
@@ -1215,7 +1231,7 @@ void child_main(apr_pool_t *pconf)
 
     /* Kill remaining threads off the hard way */
     if (threads_created) {
-        ap_log_error(APLOG_MARK, APLOG_NOTICE, APR_SUCCESS, ap_server_conf,
+        ap_log_error(APLOG_MARK, APLOG_NOTICE, APR_SUCCESS, ap_server_conf, APLOGNO(00363)
                      "Child: Terminating %d threads that failed to exit.",
                      threads_created);
     }
@@ -1229,7 +1245,7 @@ void child_main(apr_pool_t *pconf)
             ap_update_child_status_from_indexes(0, *score_idx, SERVER_DEAD, NULL);
         }
     }
-    ap_log_error(APLOG_MARK, APLOG_NOTICE, APR_SUCCESS, ap_server_conf,
+    ap_log_error(APLOG_MARK, APLOG_NOTICE, APR_SUCCESS, ap_server_conf, APLOGNO(00364)
                  "Child: All worker threads have exited.");
 
     apr_thread_mutex_destroy(child_lock);

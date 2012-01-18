@@ -16,7 +16,7 @@
 
 /**
  * @file  unixd.h
- * @brief common stuff that unix MPMs will want 
+ * @brief common stuff that unix MPMs will want
  *
  * @addtogroup APACHE_OS_UNIX
  * @{
@@ -73,6 +73,7 @@ AP_DECLARE_HOOK(ap_unix_identity_t *, get_suexec_identity,(const request_rec *r)
 
 typedef struct {
     const char *user_name;
+    const char *group_name;
     uid_t user_id;
     gid_t group_id;
     int suexec_enabled;
@@ -83,13 +84,13 @@ AP_DECLARE_DATA extern unixd_config_rec ap_unixd_config;
 
 #if defined(RLIMIT_CPU) || defined(RLIMIT_DATA) || defined(RLIMIT_VMEM) || defined(RLIMIT_NPROC) || defined(RLIMIT_AS)
 AP_DECLARE(void) ap_unixd_set_rlimit(cmd_parms *cmd, struct rlimit **plimit,
-                                     const char *arg, 
+                                     const char *arg,
                                      const char * arg2, int type);
 #endif
 
 /**
  * One of the functions to set mutex permissions should be called in
- * the parent process on platforms that switch identity when the 
+ * the parent process on platforms that switch identity when the
  * server is started as root.
  * If the child init logic is performed before switching identity
  * (e.g., MPM setup for an accept mutex), it should only be called
@@ -101,10 +102,10 @@ AP_DECLARE(apr_status_t) ap_unixd_set_global_mutex_perms(apr_global_mutex_t *gmu
 AP_DECLARE(apr_status_t) ap_unixd_accept(void **accepted, ap_listen_rec *lr, apr_pool_t *ptrans);
 
 #ifdef HAVE_KILLPG
-#define ap_unixd_killpg(x, y)	(killpg ((x), (y)))
+#define ap_unixd_killpg(x, y)   (killpg ((x), (y)))
 #define ap_os_killpg(x, y)      (killpg ((x), (y)))
 #else /* HAVE_KILLPG */
-#define ap_unixd_killpg(x, y)	(kill (-(x), (y)))
+#define ap_unixd_killpg(x, y)   (kill (-(x), (y)))
 #define ap_os_killpg(x, y)      (kill (-(x), (y)))
 #endif /* HAVE_KILLPG */
 

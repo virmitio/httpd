@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.en.xsl"?>
-<!-- $LastChangedRevision: 1040494 $ -->
+<!-- English Revision: 1040494:1231607 (outdated) -->
 
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
@@ -3785,7 +3785,7 @@ server</description>
 <description>Amount of time the server will wait for
 certain events before failing a request</description>
 <syntax>TimeOut <var>seconds</var></syntax>
-<default>TimeOut 300</default>
+<default>TimeOut 60</default>
 <contextlist><context>server config</context><context>virtual host</context></contextlist>
 
 <usage>

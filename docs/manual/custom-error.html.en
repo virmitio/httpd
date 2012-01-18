@@ -12,11 +12,11 @@
 <link href="./images/favicon.ico" rel="shortcut icon" /></head>
 <body id="manual-page"><div id="page-header">
 <p class="menu"><a href="./mod/">Modules</a> | <a href="./mod/directives.html">Directives</a> | <a href="./faq/">FAQ</a> | <a href="./glossary.html">Glossary</a> | <a href="./sitemap.html">Sitemap</a></p>
-<p class="apache">Apache HTTP Server Version 2.3</p>
+<p class="apache">Apache HTTP Server Version 2.5</p>
 <img alt="" src="./images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="./images/left.gif" /></a></div>
 <div id="path">
-<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="./">Version 2.3</a></div><div id="page-content"><div id="preamble"><h1>Custom Error Responses</h1>
+<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="./">Version 2.5</a></div><div id="page-content"><div id="preamble"><h1>Custom Error Responses</h1>
 <div class="toplang">
 <p><span>Available Languages: </span><a href="./en/custom-error.html" title="English">&nbsp;en&nbsp;</a> |
 <a href="./es/custom-error.html" hreflang="es" rel="alternate" title="Español">&nbsp;es&nbsp;</a> |
@@ -30,7 +30,7 @@
     <p>Although the Apache HTTP Server provides generic error responses
     in the event of 4xx or 5xx HTTP status codes, these responses are
     rather stark, uninformative, and can be intimidating to site users.
-    You may wish to provide custom error responses which are either 
+    You may wish to provide custom error responses which are either
     friendlier, or in some language other than English, or perhaps which
     are styled more in line with your site layout.</p>
 
@@ -58,7 +58,7 @@
     <p>Custom error documents are configured using the <code class="directive"><a href="./mod/core.html#errordocument">ErrorDocument</a></code> directive,
     which may be used in global,
     virtualhost, or directory context. It may be used in .htaccess files
-    if <code class="directive"><a href="./mod/core.html#allowoverride">AllowOverride</a></code> is set to 
+    if <code class="directive"><a href="./mod/core.html#allowoverride">AllowOverride</a></code> is set to
     FileInfo.</p>
 
     <div class="example"><p><code>
@@ -75,12 +75,13 @@
       ErrorDocument &lt;3-digit-code&gt; &lt;action&gt;
     </code></p></div>
 
-    <p>where the action can be one of:</p>
+    <p>where the action will be treated as:</p>
 
     <ol>
-      <li>Text to be displayed. Wrap the text with quotes (").</li>
-      <li>A local URL to redirect to.</li>
-      <li>An external URL to redirect to.</li>
+      <li>A local URL to redirect to (if the action begins with a "/").</li>
+      <li>An external URL to redirect to (if the action is a valid URL).</li>
+      <li>Text to be displayed (if none of the above). The text must be
+          wrapped in quotes (") if it consists of more than one word.</li>
     </ol>
 
     <p>When redirecting to a local URL, additional environment variables
@@ -163,8 +164,8 @@
 
       <p>Note that if the response contains <code>Location:</code>
       header (in order to issue a client-side redirect), the script
-      <em>must</em> emit an appropriate <code>Status:</code> header 
-      (such as <code>302&nbsp;Found</code>). Otherwise the 
+      <em>must</em> emit an appropriate <code>Status:</code> header
+      (such as <code>302&nbsp;Found</code>). Otherwise the
       <code>Location:</code> header may have no effect.</p>
 
   </div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
@@ -197,7 +198,7 @@
     provide more useful information to users about your site, and what
     they can expect to find there.</p>
 
-    <p><code class="module"><a href="./mod/mod_include.html">mod_include</a></code> and <code class="module"><a href="./mod/mod_negotiation.html">mod_negotiation</a></code> 
+    <p><code class="module"><a href="./mod/mod_include.html">mod_include</a></code> and <code class="module"><a href="./mod/mod_negotiation.html">mod_negotiation</a></code>
     must be enabled to use this feature.</p>
 
  </div></div>
@@ -209,6 +210,6 @@
 <a href="./ko/custom-error.html" hreflang="ko" rel="alternate" title="Korean">&nbsp;ko&nbsp;</a> |
 <a href="./tr/custom-error.html" hreflang="tr" rel="alternate" title="Türkçe">&nbsp;tr&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2011 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2012 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="./mod/">Modules</a> | <a href="./mod/directives.html">Directives</a> | <a href="./faq/">FAQ</a> | <a href="./glossary.html">Glossary</a> | <a href="./sitemap.html">Sitemap</a></p></div>
 </body></html>

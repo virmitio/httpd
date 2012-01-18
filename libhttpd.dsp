@@ -595,6 +595,10 @@ SOURCE=.\server\util_pcre.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\server\util_regex.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\server\util_script.c
 # End Source File
 # Begin Source File
@@ -604,6 +608,10 @@ SOURCE=.\include\util_script.h
 # Begin Source File
 
 SOURCE=.\server\util_time.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\include\util_varbuf.h
 # End Source File
 # Begin Source File
 

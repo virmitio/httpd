@@ -29,6 +29,8 @@
 #include "apr_lib.h"
 #include "apr_fnmatch.h"
 
+#include <limits.h>     /* for INT_MAX */
+
 /* we know core's module_index is 0 */
 #undef APLOG_MODULE_INDEX
 #define APLOG_MODULE_INDEX AP_CORE_MODULE_INDEX
@@ -45,9 +47,10 @@ AP_IMPLEMENT_HOOK_RUN_FIRST(int, expr_lookup, (ap_expr_lookup_parms *parms),
 static const char *ap_expr_eval_string_func(ap_expr_eval_ctx_t *ctx,
                                             const ap_expr_t *info,
                                             const ap_expr_t *args);
-static const char *ap_expr_eval_re_backref(ap_expr_eval_ctx_t *ctx, int n);
+static const char *ap_expr_eval_re_backref(ap_expr_eval_ctx_t *ctx,
+                                           unsigned int n);
 static const char *ap_expr_eval_var(ap_expr_eval_ctx_t *ctx,
-                                    const ap_expr_var_func_t *func,
+                                    ap_expr_var_func_t *func,
                                     const void *data);
 
 /* define AP_EXPR_DEBUG to log the parse tree when parsing an expression */
@@ -56,29 +59,74 @@ static void expr_dump_tree(const ap_expr_t *e, const server_rec *s,
                            int loglevel, int indent);
 #endif
 
+/*
+ * To reduce counting overhead, we only count calls to
+ * ap_expr_eval_word() and ap_expr_eval(). The max number of
+ * stack frames is larger by some factor.
+ */
+#define AP_EXPR_MAX_RECURSION   20
+static int inc_rec(ap_expr_eval_ctx_t *ctx)
+{
+    if (ctx->reclvl < AP_EXPR_MAX_RECURSION) {
+        ctx->reclvl++;
+        return 0;
+    }
+    *ctx->err = "Recursion limit reached";
+    /* short circuit further evaluation */
+    ctx->reclvl = INT_MAX;
+    return 1;
+}
+
 static const char *ap_expr_eval_word(ap_expr_eval_ctx_t *ctx,
                                      const ap_expr_t *node)
 {
     const char *result = "";
+    if (inc_rec(ctx))
+        return result;
     switch (node->node_op) {
     case op_Digit:
     case op_String:
         result = node->node_arg1;
         break;
     case op_Var:
-        result = ap_expr_eval_var(ctx, node->node_arg1, node->node_arg2);
+        result = ap_expr_eval_var(ctx, (ap_expr_var_func_t *)node->node_arg1,
+                                  node->node_arg2);
         break;
-    case op_Concat: {
-        const char *s1 = ap_expr_eval_word(ctx, node->node_arg1);
-        const char *s2 = ap_expr_eval_word(ctx, node->node_arg2);
-        if (!*s1)
-            result = s2;
-        else if (!*s2)
-            result = s1;
-        else
-            result = apr_pstrcat(ctx->p, s1, s2, NULL);
+    case op_Concat:
+        if (((ap_expr_t *)node->node_arg2)->node_op != op_Concat) {
+            const char *s1 = ap_expr_eval_word(ctx, node->node_arg1);
+            const char *s2 = ap_expr_eval_word(ctx, node->node_arg2);
+            if (!*s1)
+                result = s2;
+            else if (!*s2)
+                result = s1;
+            else
+                result = apr_pstrcat(ctx->p, s1, s2, NULL);
+        }
+        else {
+            const ap_expr_t *nodep = node;
+            int i = 1;
+            struct iovec *vec;
+            do {
+                nodep = nodep->node_arg2;
+                i++;
+            } while (nodep->node_op == op_Concat);
+            vec = apr_palloc(ctx->p, i * sizeof(struct iovec));
+            nodep = node;
+            i = 0;
+            do {
+                vec[i].iov_base = (void *)ap_expr_eval_word(ctx,
+                                                            nodep->node_arg1);
+                vec[i].iov_len = strlen(vec[i].iov_base);
+                i++;
+                nodep = nodep->node_arg2;
+            } while (nodep->node_op == op_Concat);
+            vec[i].iov_base = (void *)ap_expr_eval_word(ctx, nodep);
+            vec[i].iov_len = strlen(vec[i].iov_base);
+            i++;
+            result = apr_pstrcatv(ctx->p, vec, i, NULL);
+        }
         break;
-    }
     case op_StringFuncCall: {
         const ap_expr_t *info = node->node_arg1;
         const ap_expr_t *args = node->node_arg2;
@@ -86,7 +134,7 @@ static const char *ap_expr_eval_word(ap_expr_eval_ctx_t *ctx,
         break;
     }
     case op_RegexBackref: {
-        const int *np = node->node_arg1;
+        const unsigned int *np = node->node_arg1;
         result = ap_expr_eval_re_backref(ctx, *np);
         break;
     }
@@ -96,11 +144,12 @@ static const char *ap_expr_eval_word(ap_expr_eval_ctx_t *ctx,
     }
     if (!result)
         result = "";
+    ctx->reclvl--;
     return result;
 }
 
-static const char *ap_expr_eval_var(ap_expr_eval_ctx_t *ctx, 
-                                    const ap_expr_var_func_t *func,
+static const char *ap_expr_eval_var(ap_expr_eval_ctx_t *ctx,
+                                    ap_expr_var_func_t *func,
                                     const void *data)
 {
     AP_DEBUG_ASSERT(func != NULL);
@@ -108,7 +157,7 @@ static const char *ap_expr_eval_var(ap_expr_eval_ctx_t *ctx,
     return (*func)(ctx, data);
 }
 
-static const char *ap_expr_eval_re_backref(ap_expr_eval_ctx_t *ctx, int n)
+static const char *ap_expr_eval_re_backref(ap_expr_eval_ctx_t *ctx, unsigned int n)
 {
     int len;
 
@@ -317,15 +366,6 @@ AP_DECLARE(const char *) ap_expr_parse(apr_pool_t *pool, apr_pool_t *ptemp,
     ctx.scan_ptr    = ctx.scan_buf;
     ctx.lookup_fn   = lookup_fn ? lookup_fn : ap_expr_lookup_default;
     ctx.at_start    = 1;
-
-
-    /*
-     * Be sure to avoid overflows in the scanner. In practice the input length
-     * will be limited by the config file parser, anyway.
-     * XXX: The scanner really should do proper buffer overflow checks
-     */
-    if (ctx.inputlen >= MAX_STRING_LEN)
-        return "Expression too long";
 
     ap_expr_yylex_init(&ctx.scanner);
     ap_expr_yyset_extra(&ctx, ctx.scanner);
@@ -635,7 +675,7 @@ static void expr_dump_tree(const ap_expr_t *e, const server_rec *s,
 static int ap_expr_eval_unary_op(ap_expr_eval_ctx_t *ctx, const ap_expr_t *info,
                                  const ap_expr_t *arg)
 {
-    const ap_expr_op_unary_t *op_func = info->node_arg1;
+    ap_expr_op_unary_t *op_func = (ap_expr_op_unary_t *)info->node_arg1;
     const void *data = info->node_arg2;
 
     AP_DEBUG_ASSERT(info->node_op == op_UnaryOpInfo);
@@ -648,7 +688,7 @@ static int ap_expr_eval_binary_op(ap_expr_eval_ctx_t *ctx,
                                   const ap_expr_t *info,
                                   const ap_expr_t *args)
 {
-    const ap_expr_op_binary_t *op_func = info->node_arg1;
+    ap_expr_op_binary_t *op_func = (ap_expr_op_binary_t *)info->node_arg1;
     const void *data = info->node_arg2;
     const ap_expr_t *a1 = args->node_arg1;
     const ap_expr_t *a2 = args->node_arg2;
@@ -666,30 +706,79 @@ static int ap_expr_eval(ap_expr_eval_ctx_t *ctx, const ap_expr_t *node)
 {
     const ap_expr_t *e1 = node->node_arg1;
     const ap_expr_t *e2 = node->node_arg2;
-    switch (node->node_op) {
-    case op_True:
-        return 1;
-    case op_False:
-        return 0;
-    case op_Not:
-        return (!ap_expr_eval(ctx, e1));
-    case op_Or:
-        return (ap_expr_eval(ctx, e1) || ap_expr_eval(ctx, e2));
-    case op_And:
-        return (ap_expr_eval(ctx, e1) && ap_expr_eval(ctx, e2));
-    case op_UnaryOpCall:
-        return ap_expr_eval_unary_op(ctx, e1, e2);
-    case op_BinaryOpCall:
-        return ap_expr_eval_binary_op(ctx, e1, e2);
-    case op_Comp:
-        if (ctx->info->flags & AP_EXPR_FLAG_SSL_EXPR_COMPAT)
-            return ssl_expr_eval_comp(ctx, e1);
-        else
-            return ap_expr_eval_comp(ctx, e1);
-    default:
-        *ctx->err = "Internal evaluation error: Unknown expression node";
-        return FALSE;
+    int result = FALSE;
+    if (inc_rec(ctx))
+        return result;
+    while (1) {
+        switch (node->node_op) {
+        case op_True:
+            result ^= TRUE;
+            goto out;
+        case op_False:
+            result ^= FALSE;
+            goto out;
+        case op_Not:
+            result = !result;
+            node = e1;
+            break;
+        case op_Or:
+            do {
+                if (e1->node_op == op_Not) {
+                    if (!ap_expr_eval(ctx, e1->node_arg1)) {
+                        result ^= TRUE;
+                        goto out;
+                    }
+                }
+                else {
+                    if (ap_expr_eval(ctx, e1)) {
+                        result ^= TRUE;
+                        goto out;
+                    }
+                }
+                node = node->node_arg2;
+                e1 = node->node_arg1;
+            } while (node->node_op == op_Or);
+            break;
+        case op_And:
+            do {
+                if (e1->node_op == op_Not) {
+                    if (ap_expr_eval(ctx, e1->node_arg1)) {
+                        result ^= FALSE;
+                        goto out;
+                    }
+                }
+                else {
+                    if (!ap_expr_eval(ctx, e1)) {
+                        result ^= FALSE;
+                        goto out;
+                    }
+                }
+                node = node->node_arg2;
+                e1 = node->node_arg1;
+            } while (node->node_op == op_And);
+            break;
+        case op_UnaryOpCall:
+            result ^= ap_expr_eval_unary_op(ctx, e1, e2);
+            goto out;
+        case op_BinaryOpCall:
+            result ^= ap_expr_eval_binary_op(ctx, e1, e2);
+            goto out;
+        case op_Comp:
+            if (ctx->info->flags & AP_EXPR_FLAG_SSL_EXPR_COMPAT)
+                result ^= ssl_expr_eval_comp(ctx, e1);
+            else
+                result ^= ap_expr_eval_comp(ctx, e1);
+            goto out;
+        default:
+            *ctx->err = "Internal evaluation error: Unknown expression node";
+            goto out;
+        }
+        e1 = node->node_arg1;
+        e2 = node->node_arg2;
     }
+out:
+    ctx->reclvl--;
+    return result;
 }
 
 AP_DECLARE(int) ap_expr_exec(request_rec *r, const ap_expr_info_t *info,
@@ -713,6 +802,7 @@ AP_DECLARE(int) ap_expr_exec_ctx(ap_expr_eval_ctx_t *ctx)
         AP_DEBUG_ASSERT(ctx->re_source != NULL);
         AP_DEBUG_ASSERT(ctx->re_nmatch > 0);
     }
+    ctx->reclvl = 0;
 
     *ctx->err = NULL;
     if (ctx->info->flags & AP_EXPR_FLAG_STRING_RESULT) {
@@ -728,7 +818,7 @@ AP_DECLARE(int) ap_expr_exec_ctx(ap_expr_eval_ctx_t *ctx)
                           ctx->info->filename, ctx->info->line_number,
                           *ctx->result_string);
             return 1;
-	}
+        }
     }
     else {
         rc = ap_expr_eval(ctx, ctx->info->root_node);
@@ -758,7 +848,7 @@ AP_DECLARE(int) ap_expr_exec_re(request_rec *r, const ap_expr_info_t *info,
     ap_expr_eval_ctx_t ctx;
     int dont_vary = (info->flags & AP_EXPR_FLAG_DONT_VARY);
     const char *tmp_source = NULL, *vary_this = NULL;
-    ap_regmatch_t tmp_pmatch[10];
+    ap_regmatch_t tmp_pmatch[AP_MAX_REG_MATCH];
 
     AP_DEBUG_ASSERT((info->flags & AP_EXPR_FLAG_STRING_RESULT) == 0);
 
@@ -775,7 +865,7 @@ AP_DECLARE(int) ap_expr_exec_re(request_rec *r, const ap_expr_info_t *info,
     ctx.data = NULL;
 
     if (!pmatch) {
-        ctx.re_nmatch = 10;
+        ctx.re_nmatch = AP_MAX_REG_MATCH;
         ctx.re_pmatch = tmp_pmatch;
         ctx.re_source = &tmp_source;
     }
@@ -793,7 +883,7 @@ AP_DECLARE(const char *) ap_expr_str_exec_re(request_rec *r,
     ap_expr_eval_ctx_t ctx;
     int dont_vary, rc;
     const char *tmp_source = NULL, *vary_this = NULL;
-    ap_regmatch_t tmp_pmatch[10];
+    ap_regmatch_t tmp_pmatch[AP_MAX_REG_MATCH];
     const char *result;
 
     AP_DEBUG_ASSERT(info->flags & AP_EXPR_FLAG_STRING_RESULT);
@@ -820,7 +910,7 @@ AP_DECLARE(const char *) ap_expr_str_exec_re(request_rec *r,
     ctx.result_string = &result;
 
     if (!pmatch) {
-        ctx.re_nmatch = 10;
+        ctx.re_nmatch = AP_MAX_REG_MATCH;
         ctx.re_pmatch = tmp_pmatch;
         ctx.re_source = &tmp_source;
     }
@@ -832,6 +922,8 @@ AP_DECLARE(const char *) ap_expr_str_exec_re(request_rec *r,
         return NULL;
     else
         ap_assert(0);
+    /* Not reached */
+    return NULL;
 }
 
 AP_DECLARE(const char *) ap_expr_str_exec(request_rec *r,
@@ -871,7 +963,7 @@ static const char *req_table_func(ap_expr_eval_ctx_t *ctx, const void *data,
             return v;
         }
         t = ctx->r->err_headers_out;
-    }        
+    }
     else if (name[0] == 'n')        /* notes */
         t = ctx->r->notes;
     else if (name[3] == 'e')        /* reqenv */
@@ -985,11 +1077,14 @@ static const char *unescape_func(ap_expr_eval_ctx_t *ctx, const void *data,
                                  const char *arg)
 {
     char *result = apr_pstrdup(ctx->p, arg);
-    if (ap_unescape_url(result))
-        return "";
-    else
+    int ret = ap_unescape_url_keep2f(result, 0);
+    if (ret == OK)
         return result;
-
+    ap_log_rerror(LOG_MARK(ctx->info), APLOG_DEBUG, 0, ctx->r, APLOGNO(00538)
+                  "%s %% escape in unescape('%s') at %s:%d",
+                  ret == HTTP_BAD_REQUEST ? "Bad" : "Forbidden", arg,
+                  ctx->info->filename, ctx->info->line_number);
+    return "";
 }
 
 static int op_nz(ap_expr_eval_ctx_t *ctx, const void *data, const char *arg)
@@ -1024,8 +1119,8 @@ static int op_file_min(ap_expr_eval_ctx_t *ctx, const void *data, const char *ar
 
 static int op_file_link(ap_expr_eval_ctx_t *ctx, const void *data, const char *arg)
 {
-    apr_finfo_t sb;
 #if !defined(OS2)
+    apr_finfo_t sb;
     if (apr_stat(&sb, arg, APR_FINFO_MIN | APR_FINFO_LINK, ctx->p) == APR_SUCCESS
         && sb.filetype == APR_LNK) {
         return TRUE;
@@ -1061,7 +1156,7 @@ static int op_url_subr(ap_expr_eval_ctx_t *ctx, const void *data, const char *ar
     ap_log_rerror(LOG_MARK(ctx->info), APLOG_TRACE5, 0, r,
                   "Subrequest for -U %s at %s:%d gave status: %d",
                   arg, ctx->info->filename, ctx->info->line_number,
-		  rsub->status);
+                  rsub->status);
     ap_destroy_sub_req(rsub);
     return rc;
 }
@@ -1082,7 +1177,7 @@ static int op_file_subr(ap_expr_eval_ctx_t *ctx, const void *data, const char *a
     ap_log_rerror(LOG_MARK(ctx->info), APLOG_TRACE5, 0, r,
                   "Subrequest for -F %s at %s:%d gave status: %d",
                   arg, ctx->info->filename, ctx->info->line_number,
-		  rsub->status);
+                  rsub->status);
     ap_destroy_sub_req(rsub);
     return rc;
 }
@@ -1092,10 +1187,10 @@ APR_DECLARE_OPTIONAL_FN(int, ssl_is_https, (conn_rec *));
 static APR_OPTIONAL_FN_TYPE(ssl_is_https) *is_https = NULL;
 
 static const char *conn_var_names[] = {
-    "REMOTE_ADDR",              /*  0 */
-    "HTTPS",                    /*  1 */
-    "IPV6",                     /*  2 */
-    "CONN_LOG_ID",              /*  3 */
+    "HTTPS",                    /*  0 */
+    "IPV6",                     /*  1 */
+    "CONN_LOG_ID",              /*  2 */
+    "CONN_REMOTE_ADDR",         /*  3 */
     NULL
 };
 
@@ -1108,16 +1203,14 @@ static const char *conn_var_fn(ap_expr_eval_ctx_t *ctx, const void *data)
 
     switch (index) {
     case 0:
-        return c->remote_ip;
-    case 1:
         if (is_https && is_https(c))
             return "on";
         else
             return "off";
-    case 2:
+    case 1:
 #if APR_HAVE_IPV6
         {
-            apr_sockaddr_t *addr = c->remote_addr;
+            apr_sockaddr_t *addr = c->client_addr;
             if (addr->family == AF_INET6
                 && !IN6_IS_ADDR_V4MAPPED((struct in6_addr *)addr->ipaddr_ptr))
                 return "on";
@@ -1127,8 +1220,10 @@ static const char *conn_var_fn(ap_expr_eval_ctx_t *ctx, const void *data)
 #else
         return "off";
 #endif
-    case 3:
+    case 2:
         return c->log_id;
+    case 3:
+        return c->client_ip;
     default:
         ap_assert(0);
         return NULL;
@@ -1164,6 +1259,7 @@ static const char *request_var_names[] = {
     "CONTEXT_PREFIX",           /* 25 */
     "CONTEXT_DOCUMENT_ROOT",    /* 26 */
     "REQUEST_STATUS",           /* 27 */
+    "REMOTE_ADDR",              /* 28 */
     NULL
 };
 
@@ -1193,7 +1289,7 @@ static const char *request_var_fn(ap_expr_eval_ctx_t *ctx, const void *data)
     case 7:
         return r->server->server_admin;
     case 8:
-        return ap_get_server_name(r);
+        return ap_get_server_name_for_url(r);
     case 9:
         return apr_psprintf(ctx->p, "%u", ap_get_server_port(r));
     case 10:
@@ -1249,6 +1345,8 @@ static const char *request_var_fn(ap_expr_eval_ctx_t *ctx, const void *data)
         return ap_context_document_root(r);
     case 27:
         return r->status ? apr_psprintf(ctx->p, "%d", r->status) : "";
+    case 28:
+        return r->useragent_ip;
     default:
         ap_assert(0);
         return NULL;
@@ -1394,10 +1492,10 @@ static int op_R(ap_expr_eval_ctx_t *ctx, const void *data, const char *arg1)
 
     AP_DEBUG_ASSERT(subnet != NULL);
 
-    if (!ctx->c)
+    if (!ctx->r)
         return FALSE;
 
-    return apr_ipsubnet_test(subnet, ctx->c->remote_addr);
+    return apr_ipsubnet_test(subnet, ctx->r->useragent_addr);
 }
 
 static int op_T(ap_expr_eval_ctx_t *ctx, const void *data, const char *arg)
@@ -1541,7 +1639,12 @@ static int core_expr_lookup(ap_expr_lookup_parms *parms)
                 ap_assert(0);
             }
             while (prov->func) {
-                if (strcasecmp(prov->name, parms->name) == 0) {
+                int match;
+                if (parms->type == AP_EXPR_FUNC_OP_UNARY)
+                    match = !strcmp(prov->name, parms->name);
+                else
+                    match = !strcasecmp(prov->name, parms->name);
+                if (match) {
                     if ((parms->flags & AP_EXPR_FLAG_RESTRICTED)
                         && prov->restricted) {
                         *parms->err =
@@ -1573,6 +1676,7 @@ static int core_expr_lookup(ap_expr_lookup_parms *parms)
 static int expr_lookup_not_found(ap_expr_lookup_parms *parms)
 {
     const char *type;
+    const char *prefix = "";
 
     switch (parms->type) {
     case AP_EXPR_FUNC_VAR:
@@ -1594,8 +1698,12 @@ static int expr_lookup_not_found(ap_expr_lookup_parms *parms)
         *parms->err = "Inavalid expression type in expr_lookup";
         return !OK;
     }
-    *parms->err = apr_psprintf(parms->ptemp, "%s '%s' does not exist", type,
-                               parms->name);
+    if (   parms->type == AP_EXPR_FUNC_OP_UNARY
+        || parms->type == AP_EXPR_FUNC_OP_BINARY) {
+        prefix = "-";
+    }
+    *parms->err = apr_psprintf(parms->ptemp, "%s '%s%s' does not exist", type,
+                               prefix, parms->name);
     return !OK;
 }
 

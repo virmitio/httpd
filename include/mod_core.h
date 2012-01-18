@@ -71,7 +71,7 @@ char *ap_response_code_string(request_rec *r, int error_index);
  * @fn void ap_basic_http_header(request_rec *r, apr_bucket_brigade *bb)
  */
 AP_DECLARE(void) ap_basic_http_header(request_rec *r, apr_bucket_brigade *bb);
- 
+
 /**
  * Send an appropriate response to an http TRACE request.
  * @param r The current request
@@ -87,9 +87,17 @@ AP_DECLARE_NONSTD(int) ap_send_http_trace(request_rec *r);
  */
 AP_DECLARE(int) ap_send_http_options(request_rec *r);
 
+/* Used for multipart/byteranges boundary string */
+extern AP_DECLARE_DATA const char *ap_multipart_boundary;
+
+/* Init RNG at startup */
+AP_CORE_DECLARE(void) ap_init_rng(apr_pool_t *p);
+/* Update RNG state in parent after fork */
+AP_CORE_DECLARE(void) ap_random_parent_after_fork(void);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif	/* !MOD_CORE_H */
+#endif  /* !MOD_CORE_H */
 /** @} */

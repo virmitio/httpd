@@ -120,8 +120,8 @@ static void *merge_authz_core_dir_config(apr_pool_t *p,
     authz_core_dir_conf *conf;
 
     if (new->op == AUTHZ_LOGIC_UNSET && !new->section && base->section ) {
-	/* Only authz_forbidden_on_fail has been set in new. Don't treat
-	 * it as a new auth config w.r.t. AuthMerging */
+        /* Only authz_forbidden_on_fail has been set in new. Don't treat
+         * it as a new auth config w.r.t. AuthMerging */
         conf = apr_pmemdup(p, base, sizeof(*base));
     }
     else if (new->op == AUTHZ_LOGIC_OFF || new->op == AUTHZ_LOGIC_UNSET ||
@@ -606,7 +606,7 @@ static int authz_core_check_section(apr_pool_t *p, server_rec *s,
     }
 
     if (ret != OK) {
-        ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_STARTUP, APR_SUCCESS, s,
+        ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_STARTUP, APR_SUCCESS, s, APLOGNO(01624)
                      "%s",
                      apr_pstrcat(p, (is_conf
                                      ? "<Directory>, <Location>, or similar"
@@ -695,7 +695,7 @@ static authz_status apply_authz_sections(request_rec *r,
         auth_result =
             (parent_op == AUTHZ_LOGIC_AND) ? AUTHZ_GRANTED : AUTHZ_NEUTRAL;
 
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, APR_SUCCESS, r,
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, APR_SUCCESS, r, APLOGNO(01625)
                       "authorization result of %s: %s "
                       "(directive limited to other methods)",
                       format_authz_command(r->pool, section),
@@ -777,7 +777,7 @@ static authz_status apply_authz_sections(request_rec *r,
         }
     }
 
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, APR_SUCCESS, r,
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, APR_SUCCESS, r, APLOGNO(01626)
                   "authorization result of %s: %s",
                   format_authz_command(r->pool, section),
                   format_authz_result(auth_result));
@@ -798,14 +798,14 @@ static int authorize_user_core(request_rec *r, int after_authn)
              * directives applied to support it
              */
 
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, APR_SUCCESS, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, APR_SUCCESS, r, APLOGNO(01627)
                           "AuthType configured with no corresponding "
                           "authorization directives");
 
             return HTTP_INTERNAL_SERVER_ERROR;
         }
 
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, APR_SUCCESS, r,
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, APR_SUCCESS, r, APLOGNO(01628)
                       "authorization result: granted (no directives)");
 
         return OK;
@@ -818,7 +818,7 @@ static int authorize_user_core(request_rec *r, int after_authn)
     }
     else if (auth_result == AUTHZ_DENIED_NO_USER) {
         if (after_authn) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, APR_SUCCESS, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, APR_SUCCESS, r, APLOGNO(01629)
                           "authorization failure (no authenticated user): %s",
                           r->uri);
             /*
@@ -841,7 +841,7 @@ static int authorize_user_core(request_rec *r, int after_authn)
     }
     else if (auth_result == AUTHZ_DENIED || auth_result == AUTHZ_NEUTRAL) {
         if (!after_authn || ap_auth_type(r) == NULL) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, APR_SUCCESS, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, APR_SUCCESS, r, APLOGNO(01630)
                           "client denied by server configuration: %s%s",
                           r->filename ? "" : "uri ",
                           r->filename ? r->filename : r->uri);
@@ -849,7 +849,7 @@ static int authorize_user_core(request_rec *r, int after_authn)
             return HTTP_FORBIDDEN;
         }
         else {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, APR_SUCCESS, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, APR_SUCCESS, r, APLOGNO(01631)
                           "user %s: authorization failure for \"%s\": ",
                           r->user, r->uri);
 
@@ -948,7 +948,7 @@ static const char *all_parse_config(cmd_parms *cmd, const char *require_line,
                                     const void **parsed_require_line)
 {
     /*
-     * If the argument to the 'all' provider is 'granted' then just let 
+     * If the argument to the 'all' provider is 'granted' then just let
      * everybody in. This would be equivalent to the previous syntax of
      * 'allow from all'. If the argument is 'denied' we reject everbody,
      * which is equivalent to 'deny from all'.
@@ -1024,7 +1024,7 @@ static authz_status expr_check_authorization(request_rec *r,
     int rc = ap_expr_exec(r, expr, &err);
 
     if (rc <= 0)
-	    /* XXX: real error handling? */
+        /* XXX: real error handling? */
         return AUTHZ_DENIED;
     else
         return AUTHZ_GRANTED;

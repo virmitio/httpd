@@ -31,9 +31,6 @@
  *                        Log to file fn with format given by the format
  *                        argument
  *
- *    CookieLog fn        For backwards compatability with old Cookie
- *                        logging module - now deprecated.
- *
  * There can be any number of TransferLog and CustomLog
  * commands. Each request will be logged to _ALL_ the
  * named files, in the appropriate format.
@@ -313,7 +310,12 @@ static const char *log_remote_host(request_rec *r, char *a)
 
 static const char *log_remote_address(request_rec *r, char *a)
 {
-    return r->connection->remote_ip;
+    if (a && !strcmp(a, "c")) {
+        return r->connection->client_ip;
+    }
+    else {
+        return r->useragent_ip;
+    }
 }
 
 static const char *log_local_address(request_rec *r, char *a)
@@ -539,19 +541,21 @@ static const char *log_cookie(request_rec *r, char *a)
 
         while ((cookie = apr_strtok(cookies, ";", &last1))) {
             char *name = apr_strtok(cookie, "=", &last2);
-            char *value;
-            apr_collapse_spaces(name, name);
+            if (name) {
+                char *value;
+                apr_collapse_spaces(name, name);
 
-            if (!strcasecmp(name, a) && (value = apr_strtok(NULL, "=", &last2))) {
-                char *last;
-                value += strspn(value, " \t");  /* Move past leading WS */
-                last = value + strlen(value) - 1;
-                while (last >= value && apr_isspace(*last)) {
-                   *last = '\0';
-                   --last;
+                if (!strcasecmp(name, a) && (value = apr_strtok(NULL, "=", &last2))) {
+                    char *last;
+                    value += strspn(value, " \t");  /* Move past leading WS */
+                    last = value + strlen(value) - 1;
+                    while (last >= value && apr_isspace(*last)) {
+                       *last = '\0';
+                       --last;
+                    }
+
+                    return ap_escape_logitem(r->pool, value);
                 }
-
-                return ap_escape_logitem(r->pool, value);
             }
             cookies = NULL;
         }
@@ -761,7 +765,7 @@ static const char *log_server_port(request_rec *r, char *a)
         port = r->server->port ? r->server->port : ap_default_port(r);
     }
     else if (!strcasecmp(a, "remote")) {
-        port = r->connection->remote_addr->port;
+        port = r->useragent_addr->port;
     }
     else if (!strcasecmp(a, "local")) {
         port = r->connection->local_addr->port;
@@ -1085,8 +1089,8 @@ static int config_log_transaction(request_rec *r, config_log_state *cls,
     else if (cls->condition_expr != NULL) {
         const char *err;
         int rc = ap_expr_exec(r, cls->condition_expr, &err);
-        if (rc < 0) 
-            ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r,
+        if (rc < 0)
+            ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, APLOGNO(00644)
                            "Error evaluating log condition: %s", err);
         if (rc <= 0)
             return DECLINED;
@@ -1114,13 +1118,13 @@ static int config_log_transaction(request_rec *r, config_log_state *cls,
         len += strl[i] = strlen(strs[i]);
     }
     if (!log_writer) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00645)
                 "log writer isn't correctly setup");
          return HTTP_INTERNAL_SERVER_ERROR;
     }
     rv = log_writer(r, cls->log_writer, strs, strl, format->nelts, len);
     if (rv != APR_SUCCESS)
-        ap_log_rerror(APLOG_MARK, APLOG_WARNING, rv, r, "Error writing to %s",
+        ap_log_rerror(APLOG_MARK, APLOG_WARNING, rv, r, APLOGNO(00646) "Error writing to %s",
                       cls->fname);
     return OK;
 }
@@ -1284,11 +1288,6 @@ static const char *set_transfer_log(cmd_parms *cmd, void *dummy,
     return add_custom_log(cmd, dummy, fn, NULL, NULL);
 }
 
-static const char *set_cookie_log(cmd_parms *cmd, void *dummy, const char *fn)
-{
-    return add_custom_log(cmd, dummy, fn, "%{Cookie}n \"%r\" %t", NULL);
-}
-
 static const char *set_buffered_logs_on(cmd_parms *parms, void *dummy, int flag)
 {
     buffered_logs = flag;
@@ -1311,8 +1310,6 @@ AP_INIT_TAKE1("TransferLog", set_transfer_log, NULL, RSRC_CONF,
      "the filename of the access log"),
 AP_INIT_TAKE12("LogFormat", log_format, NULL, RSRC_CONF,
      "a log format string (see docs) and an optional format name"),
-AP_INIT_TAKE1("CookieLog", set_cookie_log, NULL, RSRC_CONF,
-     "the filename of the cookie log"),
 AP_INIT_FLAG("BufferedLogs", set_buffered_logs_on, NULL, RSRC_CONF,
                  "Enable Buffered Logging (experimental)"),
     {NULL}
@@ -1479,7 +1476,7 @@ static void init_child(apr_pool_t *p, server_rec *s)
                                              APR_THREAD_MUTEX_DEFAULT,
                                              p);
                 if (rv != APR_SUCCESS) {
-                    ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s,
+                    ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s, APLOGNO(00647)
                                  "could not initialize buffered log mutex, "
                                  "transfer log may become corrupted");
                     this->mutex.type = apr_anylock_none;
@@ -1561,13 +1558,13 @@ static void *ap_default_log_writer_init(apr_pool_t *p, server_rec *s,
         apr_status_t rv;
 
         if (!fname) {
-            ap_log_error(APLOG_MARK, APLOG_ERR, APR_EBADPATH, s,
+            ap_log_error(APLOG_MARK, APLOG_ERR, APR_EBADPATH, s, APLOGNO(00648)
                             "invalid transfer log path %s.", name);
             return NULL;
         }
         rv = apr_file_open(&fd, fname, xfer_flags, xfer_perms, p);
         if (rv != APR_SUCCESS) {
-            ap_log_error(APLOG_MARK, APLOG_ERR, rv, s,
+            ap_log_error(APLOG_MARK, APLOG_ERR, rv, s, APLOGNO(00649)
                             "could not open transfer log file %s.", fname);
             return NULL;
         }

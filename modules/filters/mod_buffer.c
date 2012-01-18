@@ -66,7 +66,7 @@ static apr_status_t buffer_out_filter(ap_filter_t *f, apr_bucket_brigade *bb) {
          * it did. Within subrequests, we have no EOS to check for,
          * so we don't know when to flush the buffer to the network
          */
-        if (!ap_is_initial_req(f->r)) {
+        if (f->r->main) {
             ap_remove_output_filter(f);
             return ap_pass_brigade(f->next, bb);
         }
@@ -141,7 +141,7 @@ static apr_status_t buffer_out_filter(ap_filter_t *f, apr_bucket_brigade *bb) {
             /* pass what we have down the chain */
             rv = ap_pass_brigade(f->next, ctx->bb);
             if (rv) {
-                /* should break out of the loop, since our write to the client 
+                /* should break out of the loop, since our write to the client
                  * failed in some way. */
                 continue;
             }
@@ -311,7 +311,7 @@ static void *merge_buffer_config(apr_pool_t *p, void *basev, void *addv) {
 static const char *set_buffer_size(cmd_parms *cmd, void *dconf, const char *arg) {
     buffer_conf *conf = dconf;
 
-    if (APR_SUCCESS != apr_strtoff(&(conf->size), arg, NULL, 0) || conf->size
+    if (APR_SUCCESS != apr_strtoff(&(conf->size), arg, NULL, 10) || conf->size
             <= 0) {
         return "BufferSize must be a size in bytes, and greater than zero";
     }

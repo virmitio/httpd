@@ -112,6 +112,7 @@ ServerAdmin you@example.com
 # <Directory> blocks below.
 #
 <Directory />
+    AllowOverride none
     Require all denied
 </Directory>
 
@@ -333,6 +334,13 @@ LogLevel warn
 #
 
 #
+# MaxRanges: Maximum number of Ranges in a request before
+# returning the entire resource, or one of the special
+# values 'default', 'none' or 'unlimited'.
+# Default setting is to accept 200 Ranges.
+#MaxRanges unlimited
+
+#
 # EnableMMAP and EnableSendfile: On systems that support it, 
 # memory-mapping or the sendfile syscall may be used to deliver
 # files.  This usually improves server performance, but must
@@ -380,6 +388,14 @@ LogLevel warn
 
 # Various default settings
 #Include @rel_sysconfdir@/extra/httpd-default.conf
+
+# Policy enforcement
+#Include @rel_sysconfdir@/extra/httpd-policy.conf
+
+# Configure mod_proxy_html to understand HTML4/XHTML1
+<IfModule proxy_html_module>
+Include @rel_sysconfdir@/extra/proxy-html.conf
+</IfModule>
 
 # Secure (SSL/TLS) connections
 #Include @rel_sysconfdir@/extra/httpd-ssl.conf

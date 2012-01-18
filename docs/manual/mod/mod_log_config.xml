@@ -68,13 +68,17 @@
         <th>Description</th></tr>
 
     <tr><td><code>%%</code></td>
-        <td>The percent sign</td></tr>
+        <td>The percent sign.</td></tr>
 
     <tr><td><code>%a</code></td>
-        <td>Remote IP-address</td></tr>
+        <td>Client IP address and port of the request.</td></tr>
+
+    <tr><td><code>%{c}a</code></td>
+        <td>Underlying peer IP address and port of the connection (see the
+        <module>mod_remoteip</module> module).</td></tr>
 
     <tr><td><code>%A</code></td>
-        <td>Local IP-address</td></tr>
+        <td>Local IP-address.</td></tr>
 
     <tr><td><code>%B</code></td>
         <td>Size of response in bytes, excluding HTTP headers.</td></tr>
@@ -92,16 +96,22 @@
 
     <tr><td><code>%{<var>VARNAME</var>}e</code></td>
         <td>The contents of the environment variable
-        <var>VARNAME</var></td></tr>
+        <var>VARNAME</var>.</td></tr>
 
     <tr><td><code>%f</code></td>
-        <td>Filename</td></tr>
+        <td>Filename.</td></tr>
 
     <tr><td><code>%h</code></td>
-        <td>Remote host</td></tr>
+        <td>Remote hostname. Will log the IP address if <directive
+        module="core">HostnameLookups</directive> is set to
+        <code>Off</code>, which is the default. If it logs the hostname
+        for only a few hosts, you probably have access control
+        directives mentioning them by name. See <a
+        href="mod_authz_host.html#reqhost">the Require host
+        documentation</a>.</td></tr>
 
     <tr><td><code>%H</code></td>
-        <td>The request protocol</td></tr>
+        <td>The request protocol.</td></tr>
 
     <tr><td><code>%{<var>VARNAME</var>}i</code></td>
         <td>The contents of <code><var>VARNAME</var>:</code> header line(s)
@@ -124,10 +134,11 @@
 
     <tr><td><code>%L</code></td>
         <td>The request log ID from the error log (or '-' if nothing has been
-            logged to the error log for this request)</td></tr>
+            logged to the error log for this request). Look for the
+            matching error log line to see what request caused what error.</td></tr>
 
     <tr><td><code>%m</code></td>
-        <td>The request method</td></tr>
+        <td>The request method.</td></tr>
 
     <tr><td><code>%{<var>VARNAME</var>}n</code></td>
         <td>The contents of note <var>VARNAME</var> from another
@@ -138,11 +149,11 @@
         in the reply.</td></tr>
 
     <tr><td><code>%p</code></td>
-        <td>The canonical port of the server serving the request</td></tr>
+        <td>The canonical port of the server serving the request.</td></tr>
 
     <tr><td><code>%{<var>format</var>}p</code></td>
-        <td>The canonical port of the server serving the request or the
-        server's actual port or the client's actual port.  Valid formats
+        <td>The canonical port of the server serving the request, or the
+        server's actual port, or the client's actual port. Valid formats
         are <code>canonical</code>, <code>local</code>, or <code>remote</code>.
         </td></tr>
 
@@ -150,37 +161,37 @@
         <td>The process ID of the child that serviced the request.</td></tr>
 
     <tr><td><code>%{<var>format</var>}P</code></td>
-        <td>The process ID or thread id of the child that serviced the 
+        <td>The process ID or thread ID of the child that serviced the
         request.  Valid formats are <code>pid</code>, <code>tid</code>,
-        and <code>hextid</code>.  <code>hextid</code> requires APR 1.2.0 or 
+        and <code>hextid</code>.  <code>hextid</code> requires APR 1.2.0 or
         higher.
         </td></tr>
 
     <tr><td><code>%q</code></td>
         <td>The query string (prepended with a <code>?</code> if a query
-        string exists, otherwise an empty string)</td></tr>
+        string exists, otherwise an empty string).</td></tr>
 
     <tr><td><code>%r</code></td>
-        <td>First line of request</td></tr>
+        <td>First line of request.</td></tr>
 
     <tr><td><code>%R</code></td>
         <td>The handler generating the response (if any).</td></tr>
 
     <tr><td><code>%s</code></td>
-        <td>Status. For requests that got internally redirected, this is
-        the status of the *original* request --- <code>%&gt;s</code>
-        for the last.</td></tr>
+        <td>Status. For requests that have been internally redirected, this is
+        the status of the <em>original</em> request. Use <code>%&gt;s</code>
+        for the final status.</td></tr>
 
     <tr><td><code>%t</code></td>
-        <td>Time the request was received (standard english
-        format)</td></tr>
+        <td>Time the request was received, in the format <code>[18/Sep/2011:19:18:28 -0400]</code>.
+        The last number indicates the timezone offset from GMT</td></tr>
 
     <tr><td><code>%{<var>format</var>}t</code></td>
         <td>The time, in the form given by format, which should be in
         an extended <code>strftime(3)</code> format (potentially localized).
         If the format starts with <code>begin:</code> (default) the time is taken
-        at the beginning of the request processing, if it starts with
-        <code>end:</code> it is the time when the log entry gets written, so
+        at the beginning of the request processing. If it starts with
+        <code>end:</code> it is the time when the log entry gets written,
         close to the end of the request processing. In addition to the formats
         supported by <code>strftime(3)</code>, the following format tokens are
         supported:
@@ -200,8 +211,8 @@
         <td>The time taken to serve the request, in seconds.</td></tr>
 
     <tr><td><code>%u</code></td>
-        <td>Remote user (from auth; may be bogus if return status
-        (<code>%s</code>) is 401)</td></tr>
+        <td>Remote user if the request was authenticated. May be bogus if return status
+        (<code>%s</code>) is 401 (unauthorized).</td></tr>
 
     <tr><td><code>%U</code></td>
         <td>The URL path requested, not including any query string.</td></tr>
@@ -220,23 +231,23 @@
         <table>
         <columnspec><column width=".2"/><column width=".6"/></columnspec>
         <tr><td><code>X</code> =</td>
-            <td>connection aborted before the response completed.</td></tr>
+            <td>Connection aborted before the response completed.</td></tr>
         <tr><td><code>+</code> =</td>
-            <td>connection may be kept alive after the response is
+            <td>Connection may be kept alive after the response is
             sent.</td></tr>
         <tr><td><code>-</code> = </td>
-            <td>connection will be closed after the response is
+            <td>Connection will be closed after the response is
             sent.</td></tr>
         </table>
 
         </td></tr>
 
     <tr><td><code>%I</code></td>
-        <td>Bytes received, including request and headers, cannot be zero.
+        <td>Bytes received, including request and headers. Cannot be zero.
         You need to enable <module>mod_logio</module> to use this.</td></tr>
 
     <tr><td><code>%O</code></td>
-        <td>Bytes sent, including headers, cannot be zero. You need to
+        <td>Bytes sent, including headers. Cannot be zero. You need to
         enable <module>mod_logio</module> to use this.</td></tr>
     </table>
 
@@ -245,14 +256,28 @@
       <p>Particular items can be restricted to print only for
       responses with specific HTTP status codes by placing a
       comma-separated list of status codes immediately following the
-      "%".  For example, <code>"%400,501{User-agent}i"</code> logs
-      <code>User-agent</code> on 400 errors and 501 errors only.  For
+      "%". The status code list may be peceded by a "<code>!</code>" to
+      indicate negation.</p>
+
+    <table border="1" style="zebra">
+    <columnspec><column width=".2"/><column width=".8"/></columnspec>
+
+    <tr><th>Format String</th>
+    <th>Meaning</th></tr>
+
+    <tr>
+    <td><code>%400,501{User-agent}i</code></td>
+    <td>Logs <code>User-agent</code> on 400 errors and 501 errors only. For
       other status codes, the literal string <code>"-"</code> will be
-      logged.  The status code list may be preceded by a
-      "<code>!</code>" to indicate negation:
-      <code>"%!200,304,302{Referer}i"</code> logs <code>Referer</code>
-      on all requests that do <em>not</em> return one of the three
-      specified codes.</p>
+      logged.</td></tr>
+
+    <tr><td><code>%!200,304,302{Referer}i</code></td>
+    <td>Logs <code>Referer</code> on all requests that do
+    <em>not</em> return one of the three specified codes,
+    "<code>-</code>" otherwise.
+    </td></tr>
+
+    </table>
 
       <p>The modifiers "&lt;" and "&gt;" can be used for requests that
       have been internally redirected to choose whether the original
@@ -267,7 +292,7 @@
 
     </section>
 
-    <section id="format-notes"><title>Some Notes</title>
+    <section id="format-notes"><title>Format Notes</title>
 
       <p>For security reasons, starting with version 2.0.46,
       non-printable and other special characters in <code>%r</code>,
@@ -289,10 +314,12 @@
       format provided by <module>mod_logio</module> will log the
       actual number of bytes sent over the network.</p>
 
+      <note>
       <p>Note: <module>mod_cache</module> is implemented as a
       quick-handler and not as a standard handler. Therefore, the
       <code>%R</code> format string will not return any handler
       information when content caching is involved.</p>
+      </note>
 
     </section>
 
@@ -361,28 +388,12 @@
 </directivesynopsis>
 
 <directivesynopsis>
-<name>CookieLog</name>
-<description>Sets filename for the logging of cookies</description>
-<syntax>CookieLog <var>filename</var></syntax>
-<contextlist><context>server config</context><context>virtual host</context>
-</contextlist>
-<compatibility>This directive is deprecated.</compatibility>
-
-<usage>
-    <p>The <directive>CookieLog</directive> directive sets the 
-    filename for logging of cookies. The filename is relative to the
-    <directive module="core">ServerRoot</directive>. This directive is
-    included only for compatibility with <code>mod_cookies</code>,
-    and is deprecated.</p>
-</usage>
-</directivesynopsis>
-
-<directivesynopsis>
 <name>CustomLog</name>
 <description>Sets filename and format of log file</description>
 <syntax>CustomLog  <var>file</var>|<var>pipe</var>
 <var>format</var>|<var>nickname</var>
-[env=[!]<var>environment-variable</var>]</syntax>
+[env=[!]<var>environment-variable</var>|
+expr=<var>expression</var>]</syntax>
 <contextlist><context>server config</context><context>virtual host</context>
 </contextlist>
 
@@ -415,7 +426,7 @@
       <note type="warning"><title>Note</title>
         <p>When entering a file path on non-Unix platforms, care should be taken
         to make sure that only forward slashed are used even though the platform
-        may allow the use of back slashes. In general it is a good idea to always 
+        may allow the use of back slashes. In general it is a good idea to always
         use forward slashes throughout the configuration files.</p>
       </note></dd>
     </dl>
@@ -439,12 +450,13 @@
     </example>
 
     <p>The third argument is optional and controls whether or
-    not to log a particular request based on the
-    presence or absence of a particular variable in the server
-    environment. If the specified <a href="../env.html">environment
-    variable</a> is set for the request (or is not set, in the case
-    of a '<code>env=!<var>name</var></code>' clause), then the
-    request will be logged.</p>
+    not to log a particular request. The condition can be the
+    presence or absence (in the case of a '<code>env=!<var>name</var></code>'
+    clause) of a particular variable in the server
+    <a href="../env.html">environment</a>. Alternatively, the condition
+    can be expressed as arbitrary boolean <a href="../expr.html"
+    >expression</a>. If the condition is not satisfied, the request
+    will not be logged.</p>
 
     <p>Environment variables can be set on a per-request
     basis using the <module>mod_setenvif</module>
@@ -452,7 +464,7 @@
     example, if you want to record requests for all GIF
     images on your server in a separate logfile but not in your main
     log, you can use:</p>
-    
+
     <example>
       SetEnvIf Request_URI \.gif$ gif-image<br />
       CustomLog gif-requests.log common env=gif-image<br />
@@ -493,7 +505,7 @@
     previous <directive>LogFormat</directive> directive as described
     below.</p>
 
-    <p>The second form of the <directive>LogFormat</directive> 
+    <p>The second form of the <directive>LogFormat</directive>
     directive associates an explicit <var>format</var> with a
     <var>nickname</var>. This <var>nickname</var> can then be used in
     subsequent <directive>LogFormat</directive> or

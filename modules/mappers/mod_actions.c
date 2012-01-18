@@ -111,11 +111,17 @@ static const char *set_script(cmd_parms *cmd, void *m_v,
                               const char *method, const char *script)
 {
     action_dir_config *m = (action_dir_config *)m_v;
-
-    /* ap_method_register recognizes already registered methods,
-     * so don't bother to check its previous existence explicitely.
-     */
-    int methnum = ap_method_register(cmd->pool, method);
+    int methnum;
+    if (cmd->pool == cmd->temp_pool) {
+        /* In .htaccess, we can't globally register new methods. */
+        methnum = ap_method_number_of(method);
+    }
+    else {
+        /* ap_method_register recognizes already registered methods,
+         * so don't bother to check its previous existence explicitely.
+         */
+        methnum = ap_method_register(cmd->pool, method);
+    }
 
     if (methnum == M_TRACE) {
         return "TRACE not allowed for Script";
@@ -181,7 +187,7 @@ static int action_handler(request_rec *r)
 
     if (action && (t = apr_table_get(conf->action_types, action))) {
         if (*t++ == '0' && r->finfo.filetype == APR_NOFILE) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(00652)
                           "File does not exist: %s", r->filename);
             return HTTP_NOT_FOUND;
         }

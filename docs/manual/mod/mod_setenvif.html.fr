@@ -13,11 +13,11 @@
 <body>
 <div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p>
-<p class="apache">Serveur Apache HTTP Version 2.3</p>
+<p class="apache">Serveur Apache HTTP Version 2.5</p>
 <img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
-<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.3</a> &gt; <a href="./">Modules</a></div>
+<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.5</a> &gt; <a href="./">Modules</a></div>
 <div id="page-content">
 <div id="preamble"><h1>Module Apache mod_setenvif</h1>
 <div class="toplang">
@@ -200,14 +200,6 @@ en compte que si aucune correspondance n'a été trouvée parmi les
 caractéristiques de la requête, et si <em>attribut</em> n'a pas été
 spécifié sous la forme d'une expression rationnelle.</li>
 
-<li>La référence à une extension d'un certificat client SSL, localisé
-par son identifiant objet <em>oid</em>. Dans le cas d'une requête non
-SSL, ou en l'absence d'<em>oid</em> configuré, aucune variable ne sera
-définie. Si l'<em>oid</em> est trouvé plusieurs fois, les chaînes
-individuelles seront concaténées, en les séparant par des virgules
-<code>','</code>. L'<em>oid</em> doit faire référence à une extension
-sous forme de chaîne.
-</li>
 </ol>
 
 <p>Le second argument (<em>regex</em>) est une <a class="glossarylink" href="../glossary.html#regex" title="voir glossaire">expression rationnelle</a>. Si  <em>regex</em>
@@ -245,8 +237,6 @@ peuvent se présenter sous les formes suivantes :</p>
         :<br />
    SetEnvIf objet_est_une_image xbm XBIT_PROCESSING=1<br />
         :<br />
-   SetEnvIf OID("2.16.840.1.113730.1.13") "(.*)" commentaire-netscape=$1<br />
-        :<br />
    SetEnvIf ^TS  ^[a-z]  HAVE_TS<br />
 </code></p></div>
 
@@ -256,10 +246,6 @@ peuvent se présenter sous les formes suivantes :</p>
     <code>référant_intra_site</code> si la page référante se trouve
     quelque part dans le site web
     <code>www.mon-domaine.example.com</code>.</p>
-
-    <p>La sixième ligne définit la variable d'environnement
-    <code>commentaire-netscape</code> avec la chaîne trouvée dans le
-    champ du certificat client SSL correspondant.</p>
 
     <p>La dernière ligne définit la variable d'environnement
     <code>HAVE_TS</code> si la requête contient un en-tête dont le nom
@@ -354,6 +340,6 @@ attributs de la requête sans tenir compte de la casse</td></tr>
 <a href="../ko/mod/mod_setenvif.html" hreflang="ko" rel="alternate" title="Korean">&nbsp;ko&nbsp;</a> |
 <a href="../tr/mod/mod_setenvif.html" hreflang="tr" rel="alternate" title="Türkçe">&nbsp;tr&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2011 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2012 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p></div>
 </body></html>

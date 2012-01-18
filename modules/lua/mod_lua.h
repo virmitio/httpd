@@ -44,7 +44,14 @@
 #include "lauxlib.h"
 #include "lualib.h"
 
-/* Create a set of AP_LUA_DECLARE(type), AP_LUA_DECLARE_NONSTD(type) and 
+#if LUA_VERSION_NUM > 501
+/* Load mode for lua_load() */
+#define DFLT_LUA_LOAD_MODE "bt"
+#define lua_load(a,b,c,d) lua_load(a,b,c,d,DFLT_LUA_LOAD_MODE)
+#define luaL_reg luaL_Reg
+#endif
+
+/* Create a set of AP_LUA_DECLARE(type), AP_LUA_DECLARE_NONSTD(type) and
  * AP_LUA_DECLARE_DATA with appropriate export and import tags for the platform
  */
 #if !defined(WIN32)
@@ -69,6 +76,12 @@
 #include "lua_request.h"
 #include "lua_vmprep.h"
 
+typedef enum {
+    AP_LUA_INHERIT_UNSET        = -1,
+    AP_LUA_INHERIT_NONE         =  0,
+    AP_LUA_INHERIT_PARENT_FIRST =  1,
+    AP_LUA_INHERIT_PARENT_LAST  =  2,
+} ap_lua_inherit_t;
 
 /**
  * make a userdata out of a C pointer, and vice versa
@@ -76,7 +89,7 @@
  */
 #ifndef lua_boxpointer
 #define lua_boxpointer(L,u) (*(void **)(lua_newuserdata(L, sizeof(void *))) = (u))
-#define lua_unboxpointer(L,i)	(*(void **)(lua_touserdata(L, i)))
+#define lua_unboxpointer(L,i)   (*(void **)(lua_touserdata(L, i)))
 #endif
 
 void ap_lua_rstack_dump(lua_State *L, request_rec *r, const char *msg);
@@ -94,27 +107,23 @@ typedef struct
     apr_pool_t *pool;
 
     /**
-     * CODE_CACHE_STAT | CODE_CACHE_FOREVER | CODE_CACHE_NEVER
-     */
-    unsigned int code_cache_style;
-
-    /** 
-     * APL_SCOPE_ONCE | APL_SCOPE_REQUEST | APL_SCOPE_CONN | APL_SCOPE_SERVER
+     * AP_LUA_SCOPE_ONCE | AP_LUA_SCOPE_REQUEST | AP_LUA_SCOPE_CONN | AP_LUA_SCOPE_SERVER
      */
     unsigned int vm_scope;
-    unsigned int vm_server_pool_min;
-    unsigned int vm_server_pool_max;
 
     /* info for the hook harnesses */
     apr_hash_t *hooks;          /* <wombat_hook_info> */
 
     /* the actual directory being configured */
     char *dir;
+  
+    /* Whether Lua scripts in a sub-dir are run before parents */
+    ap_lua_inherit_t inherit;
+
 } ap_lua_dir_cfg;
 
 typedef struct
 {
-    ap_lua_code_cache *code_cache;
     apr_hash_t *vm_reslists;
     apr_thread_rwlock_t *vm_reslists_lock;
 
@@ -147,5 +156,9 @@ APR_DECLARE_EXTERNAL_HOOK(ap_lua, AP_LUA, int, lua_open,
 
 APR_DECLARE_EXTERNAL_HOOK(ap_lua, AP_LUA, int, lua_request,
                           (lua_State *L, request_rec *r))
+
+AP_LUA_DECLARE(const char *) ap_lua_ssl_val(apr_pool_t *p, server_rec *s, conn_rec *c, request_rec *r, const char *var);
+
+AP_LUA_DECLARE(int) ap_lua_ssl_is_https(conn_rec *c);
 
 #endif /* !_MOD_LUA_H_ */

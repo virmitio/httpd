@@ -72,8 +72,10 @@ static int uri_meets_conditions(const apr_uri_t *filter, const int pathlen,
                 const size_t fhostlen = strlen(filter->hostname);
                 const size_t uhostlen = url->hostname ? strlen(url->hostname) : 0;
 
-                if (fhostlen > uhostlen || strcasecmp(filter->hostname,
-                        url->hostname + uhostlen - fhostlen)) {
+                if (fhostlen > uhostlen
+                    || (url->hostname
+                        && strcasecmp(filter->hostname,
+                                      url->hostname + uhostlen - fhostlen))) {
                     return 0;
                 }
             }
@@ -81,8 +83,10 @@ static int uri_meets_conditions(const apr_uri_t *filter, const int pathlen,
                 const size_t fhostlen = strlen(filter->hostname + 1);
                 const size_t uhostlen = url->hostname ? strlen(url->hostname) : 0;
 
-                if (fhostlen > uhostlen || strcasecmp(filter->hostname + 1,
-                        url->hostname + uhostlen - fhostlen)) {
+                if (fhostlen > uhostlen
+                    || (url->hostname
+                        && strcasecmp(filter->hostname + 1,
+                                      url->hostname + uhostlen - fhostlen))) {
                     return 0;
                 }
             }
@@ -301,7 +305,7 @@ apr_status_t cache_try_lock(cache_server_conf *conf, cache_request_rec *cache,
     path = apr_pstrcat(r->pool, conf->lockpath, dir, NULL);
     if (APR_SUCCESS != (status = apr_dir_make_recursive(path,
             APR_UREAD|APR_UWRITE|APR_UEXECUTE, r->pool))) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, status, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, status, r, APLOGNO(00778)
                 "Could not create a cache lock directory: %s",
                 path);
         return status;
@@ -313,14 +317,14 @@ apr_status_t cache_try_lock(cache_server_conf *conf, cache_request_rec *cache,
     status = apr_stat(&finfo, lockname,
                 APR_FINFO_MTIME | APR_FINFO_NLINK, r->pool);
     if (!(APR_STATUS_IS_ENOENT(status)) && APR_SUCCESS != status) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, APR_EEXIST, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, APR_EEXIST, r, APLOGNO(00779)
                 "Could not stat a cache lock file: %s",
                 lockname);
         return status;
     }
     if ((status == APR_SUCCESS) && (((now - finfo.mtime) > conf->lockmaxage)
                                   || (now < finfo.mtime))) {
-        ap_log_rerror(APLOG_MARK, APLOG_INFO, status, r,
+        ap_log_rerror(APLOG_MARK, APLOG_INFO, status, r, APLOGNO(00780)
                 "Cache lock file for '%s' too old, removing: %s",
                 r->uri, lockname);
         apr_file_remove(lockname, r->pool);
@@ -530,7 +534,7 @@ int cache_check_freshness(cache_handle_t *h, cache_request_rec *cache,
             return 0;
         }
 
-        ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(00781)
                 "Incoming request is asking for a uncached version of "
                 "%s, but we have been configured to ignore it and "
                 "serve a cached response anyway",
@@ -703,7 +707,7 @@ int cache_check_freshness(cache_handle_t *h, cache_request_rec *cache,
     status = cache_try_lock(conf, cache, r);
     if (APR_SUCCESS == status) {
         /* we obtained a lock, follow the stale path */
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(00782)
                 "Cache lock obtained for stale cached URL, "
                 "revalidating entry: %s",
                 r->unparsed_uri);
@@ -711,7 +715,7 @@ int cache_check_freshness(cache_handle_t *h, cache_request_rec *cache,
     }
     else if (APR_EEXIST == status) {
         /* lock already exists, return stale data anyway, with a warning */
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(00783)
                 "Cache already locked for stale cached URL, "
                 "pretend it is fresh: %s",
                 r->unparsed_uri);
@@ -728,116 +732,13 @@ int cache_check_freshness(cache_handle_t *h, cache_request_rec *cache,
     }
     else {
         /* some other error occurred, just treat the object as stale */
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, status, r,
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, status, r, APLOGNO(00784)
                 "Attempt to obtain a cache lock for stale "
                 "cached URL failed, revalidating entry anyway: %s",
                 r->unparsed_uri);
         return 0;
     }
 
-}
-
-/*
- * list is a comma-separated list of case-insensitive tokens, with
- * optional whitespace around the tokens.
- * The return returns 1 if the token val is found in the list, or 0
- * otherwise.
- */
-CACHE_DECLARE(int) ap_cache_liststr(apr_pool_t *p, const char *list,
-                                    const char *key, char **val)
-{
-    apr_size_t key_len;
-    const char *next;
-
-    if (!list) {
-        return 0;
-    }
-
-    key_len = strlen(key);
-    next = list;
-
-    for (;;) {
-
-        /* skip whitespace and commas to find the start of the next key */
-        while (*next && (apr_isspace(*next) || (*next == ','))) {
-            next++;
-        }
-
-        if (!*next) {
-            return 0;
-        }
-
-        if (!strncasecmp(next, key, key_len)) {
-            /* this field matches the key (though it might just be
-             * a prefix match, so make sure the match is followed
-             * by either a space or an equals sign)
-             */
-            next += key_len;
-            if (!*next || (*next == '=') || apr_isspace(*next) ||
-                (*next == ',')) {
-                /* valid match */
-                if (val) {
-                    while (*next && (*next != '=') && (*next != ',')) {
-                        next++;
-                    }
-                    if (*next == '=') {
-                        next++;
-                        while (*next && apr_isspace(*next )) {
-                            next++;
-                        }
-                        if (!*next) {
-                            *val = NULL;
-                        }
-                        else {
-                            const char *val_start = next;
-                            while (*next && !apr_isspace(*next) &&
-                                   (*next != ',')) {
-                                /* EAT QUOTED STRING */
-                                if (*next == '"' || *next == '\'') {
-                                    char delim = *next;
-                                    while (*++next != delim) {
-                                        if (!*next) {
-                                            return 0;
-                                        }
-                                        else if (*next == '\\') {
-                                            ++next;
-                                        }
-                                    }
-                                }
-                                next++;
-                            }
-                            *val = apr_pstrmemdup(p, val_start,
-                                                  next - val_start);
-                        }
-                    }
-                    else {
-                        *val = NULL;
-                    }
-                }
-                return 1;
-            }
-        }
-
-        /* skip to the next field */
-        do {
-            /* EAT QUOTED STRING */
-            if (*next == '"' || *next == '\'') {
-                char delim = *next;
-                while (*++next != delim) {
-                    if (!*next) {
-                        return 0;
-                    }
-                    else if (*next == '\\') {
-                        ++next;
-                    }
-                }
-            }
-            next++;
-            if (!*next) {
-                return 0;
-            }
-        } while (*next != ',');
-    }
 }
 
 /* return each comma separated token, one at a time */

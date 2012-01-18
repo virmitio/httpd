@@ -13,12 +13,6 @@ dnl WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 dnl See the License for the specific language governing permissions and
 dnl limitations under the License.
 
-AC_DEFUN([CHECK_OCSP], [
-AC_CHECK_HEADERS(openssl/ocsp.h, 
-  [AC_DEFINE([HAVE_OCSP], 1, [Define if OCSP is supported by OpenSSL])]
-)
-])
-
 dnl #  start of module specific part
 APACHE_MODPATH_INIT(ssl)
 
@@ -43,14 +37,17 @@ ssl_engine_ocsp.lo dnl
 ssl_util_ocsp.lo dnl
 "
 dnl #  hook module into the Autoconf mechanism (--enable-ssl option)
-APACHE_MODULE(ssl, [SSL/TLS support (mod_ssl)], $ssl_objs, , no, [
-    APACHE_CHECK_SSL_TOOLKIT
-    APR_ADDTO(MOD_SSL_LDADD, [\$(SSL_LIBS)])
-    CHECK_OCSP
-    if test "x$enable_ssl" = "xshared"; then
-       # The only symbol which needs to be exported is the module
-       # structure, so ask libtool to hide everything else:
-       APR_ADDTO(MOD_SSL_LDADD, [-export-symbols-regex ssl_module])
+APACHE_MODULE(ssl, [SSL/TLS support (mod_ssl)], $ssl_objs, , most, [
+    APACHE_CHECK_OPENSSL
+    if test "$ac_cv_openssl" = "yes" ; then
+        APR_ADDTO(MOD_SSL_LDADD, [\$(SSL_LIBS)])
+        if test "x$enable_ssl" = "xshared"; then
+           # The only symbol which needs to be exported is the module
+           # structure, so ask libtool to hide everything else:
+           APR_ADDTO(MOD_SSL_LDADD, [-export-symbols-regex ssl_module])
+        fi
+    else
+        enable_ssl=no
     fi
 ])
 

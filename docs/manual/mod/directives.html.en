@@ -12,11 +12,11 @@
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
 <body id="directive-index"><div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p>
-<p class="apache">Apache HTTP Server Version 2.3</p>
+<p class="apache">Apache HTTP Server Version 2.5</p>
 <img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
-<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.3</a> &gt; <a href="./">Modules</a></div><div id="preamble"><h1>Directive Index</h1>
+<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.5</a> &gt; <a href="./">Modules</a></div><div id="preamble"><h1>Directive Index</h1>
 <div class="toplang">
 <p><span>Available Languages: </span><a href="../de/mod/directives.html" hreflang="de" rel="alternate" title="Deutsch">&nbsp;de&nbsp;</a> |
 <a href="../en/mod/directives.html" title="English">&nbsp;en&nbsp;</a> |
@@ -40,7 +40,7 @@
       summary form.
     </p>
   
-<p class="letters"><a href="#A">&nbsp;A&nbsp;</a> | <a href="#B">&nbsp;B&nbsp;</a> | <a href="#C">&nbsp;C&nbsp;</a> | <a href="#D">&nbsp;D&nbsp;</a> | <a href="#E">&nbsp;E&nbsp;</a> | <a href="#F">&nbsp;F&nbsp;</a> | <a href="#G">&nbsp;G&nbsp;</a> | <a href="#H">&nbsp;H&nbsp;</a> | <a href="#I">&nbsp;I&nbsp;</a> | <a href="#K">&nbsp;K&nbsp;</a> | <a href="#L">&nbsp;L&nbsp;</a> | <a href="#M">&nbsp;M&nbsp;</a> | <a href="#N">&nbsp;N&nbsp;</a> | <a href="#O">&nbsp;O&nbsp;</a> | <a href="#P">&nbsp;P&nbsp;</a> | <a href="#R">&nbsp;R&nbsp;</a> | <a href="#S">&nbsp;S&nbsp;</a> | <a href="#T">&nbsp;T&nbsp;</a> | <a href="#U">&nbsp;U&nbsp;</a> | <a href="#V">&nbsp;V&nbsp;</a> | <a href="#X">&nbsp;X&nbsp;</a></p>
+<p class="letters"><a href="#A">&nbsp;A&nbsp;</a> | <a href="#B">&nbsp;B&nbsp;</a> | <a href="#C">&nbsp;C&nbsp;</a> | <a href="#D">&nbsp;D&nbsp;</a> | <a href="#E">&nbsp;E&nbsp;</a> | <a href="#F">&nbsp;F&nbsp;</a> | <a href="#G">&nbsp;G&nbsp;</a> | <a href="#H">&nbsp;H&nbsp;</a> | <a href="#I">&nbsp;I&nbsp;</a> | <a href="#K">&nbsp;K&nbsp;</a> | <a href="#L">&nbsp;L&nbsp;</a> | <a href="#M">&nbsp;M&nbsp;</a> | <a href="#N">&nbsp;N&nbsp;</a> | <a href="#O">&nbsp;O&nbsp;</a> | <a href="#P">&nbsp;P&nbsp;</a> | <a href="#R">&nbsp;R&nbsp;</a> | <a href="#S">&nbsp;S&nbsp;</a> | <a href="#T">&nbsp;T&nbsp;</a> | <a href="#U">&nbsp;U&nbsp;</a> | <a href="#V">&nbsp;V&nbsp;</a> | <a href="#W">&nbsp;W&nbsp;</a> | <a href="#X">&nbsp;X&nbsp;</a></p>
 </div>
 <div id="directive-list"><ul>
 <li><a href="core.html#acceptfilter" id="A" name="A">AcceptFilter</a></li>
@@ -71,6 +71,7 @@
 <li><a href="core.html#allowencodedslashes">AllowEncodedSlashes</a></li>
 <li><a href="mod_allowmethods.html#allowmethods">AllowMethods</a></li>
 <li><a href="core.html#allowoverride">AllowOverride</a></li>
+<li><a href="core.html#allowoverridelist">AllowOverrideList</a></li>
 <li><a href="mod_authn_anon.html#anonymous">Anonymous</a></li>
 <li><a href="mod_authn_anon.html#anonymous_logemail">Anonymous_LogEmail</a></li>
 <li><a href="mod_authn_anon.html#anonymous_mustgiveemail">Anonymous_MustGiveEmail</a></li>
@@ -130,6 +131,7 @@
 <li><a href="mod_authz_core.html#authmerging">AuthMerging</a></li>
 <li><a href="mod_authn_core.html#authname">AuthName</a></li>
 <li><a href="mod_authn_socache.html#authncachecontext">AuthnCacheContext</a></li>
+<li><a href="mod_authn_socache.html#authncacheenable">AuthnCacheEnable</a></li>
 <li><a href="mod_authn_socache.html#authncacheprovidefor">AuthnCacheProvideFor</a></li>
 <li><a href="mod_authn_socache.html#authncachesocache">AuthnCacheSOCache</a></li>
 <li><a href="mod_authn_socache.html#authncachetimeout">AuthnCacheTimeout</a></li>
@@ -189,7 +191,6 @@
 <li><a href="core.html#contentdigest">ContentDigest</a></li>
 <li><a href="mod_usertrack.html#cookiedomain">CookieDomain</a></li>
 <li><a href="mod_usertrack.html#cookieexpires">CookieExpires</a></li>
-<li><a href="mod_log_config.html#cookielog">CookieLog</a></li>
 <li><a href="mod_usertrack.html#cookiename">CookieName</a></li>
 <li><a href="mod_usertrack.html#cookiestyle">CookieStyle</a></li>
 <li><a href="mod_usertrack.html#cookietracking">CookieTracking</a></li>
@@ -220,6 +221,7 @@
 <li><a href="mod_access_compat.html#deny">Deny</a></li>
 <li><a href="core.html#directory">&lt;Directory&gt;</a></li>
 <li><a href="mod_dir.html#directoryindex">DirectoryIndex</a></li>
+<li><a href="mod_dir.html#directoryindexredirect">DirectoryIndexRedirect</a></li>
 <li><a href="core.html#directorymatch">&lt;DirectoryMatch&gt;</a></li>
 <li><a href="mod_dir.html#directoryslash">DirectorySlash</a></li>
 <li><a href="core.html#documentroot">DocumentRoot</a></li>
@@ -251,6 +253,12 @@
 <li><a href="mod_filter.html#filterprotocol">FilterProtocol</a></li>
 <li><a href="mod_filter.html#filterprovider">FilterProvider</a></li>
 <li><a href="mod_filter.html#filtertrace">FilterTrace</a></li>
+<li><a href="mod_firehose.html#firehoseconnectioninput">FirehoseConnectionInput</a></li>
+<li><a href="mod_firehose.html#firehoseconnectionoutput">FirehoseConnectionOutput</a></li>
+<li><a href="mod_firehose.html#firehoseproxyconnectioninput">FirehoseProxyConnectionInput</a></li>
+<li><a href="mod_firehose.html#firehoseproxyconnectionoutput">FirehoseProxyConnectionOutput</a></li>
+<li><a href="mod_firehose.html#firehoserequestinput">FirehoseRequestInput</a></li>
+<li><a href="mod_firehose.html#firehoserequestoutput">FirehoseRequestOutput</a></li>
 <li><a href="mod_negotiation.html#forcelanguagepriority">ForceLanguagePriority</a></li>
 <li><a href="core.html#forcetype">ForceType</a></li>
 <li><a href="mod_log_forensic.html#forensiclog">ForensicLog</a></li>
@@ -261,6 +269,7 @@
 <li><a href="mod_autoindex.html#headername">HeaderName</a></li>
 <li><a href="mod_heartbeat.html#heartbeataddress">HeartbeatAddress</a></li>
 <li><a href="mod_heartmonitor.html#heartbeatlisten">HeartbeatListen</a></li>
+<li><a href="mod_heartmonitor.html#heartbeatmaxservers">HeartbeatMaxServers</a></li>
 <li><a href="mod_heartmonitor.html#heartbeatstorage">HeartbeatStorage</a></li>
 <li><a href="mod_lbmethod_heartbeat.html#heartbeatstorage">HeartbeatStorage</a></li>
 <li><a href="core.html#hostnamelookups">HostnameLookups</a></li>
@@ -333,6 +342,7 @@
 <li><a href="mod_lua.html#luahookmaptostorage">LuaHookMapToStorage</a></li>
 <li><a href="mod_lua.html#luahooktranslatename">LuaHookTranslateName</a></li>
 <li><a href="mod_lua.html#luahooktypechecker">LuaHookTypeChecker</a></li>
+<li><a href="mod_lua.html#luainherit">LuaInherit</a></li>
 <li><a href="mod_lua.html#luamaphandler">LuaMapHandler</a></li>
 <li><a href="mod_lua.html#luapackagecpath">LuaPackageCPath</a></li>
 <li><a href="mod_lua.html#luapackagepath">LuaPackagePath</a></li>
@@ -342,6 +352,9 @@
 <li><a href="mpm_common.html#maxconnectionsperchild" id="M" name="M">MaxConnectionsPerChild</a></li>
 <li><a href="core.html#maxkeepaliverequests">MaxKeepAliveRequests</a></li>
 <li><a href="mpm_common.html#maxmemfree">MaxMemFree</a></li>
+<li><a href="core.html#maxrangeoverlaps">MaxRangeOverlaps</a></li>
+<li><a href="core.html#maxrangereversals">MaxRangeReversals</a></li>
+<li><a href="core.html#maxranges">MaxRanges</a></li>
 <li><a href="mpm_common.html#maxrequestworkers">MaxRequestWorkers</a></li>
 <li><a href="prefork.html#maxspareservers">MaxSpareServers</a></li>
 <li><a href="mpm_common.html#maxsparethreads">MaxSpareThreads</a></li>
@@ -366,6 +379,26 @@
 <li><a href="mod_sed.html#outputsed">OutputSed</a></li>
 <li><a href="mod_env.html#passenv" id="P" name="P">PassEnv</a></li>
 <li><a href="mpm_common.html#pidfile">PidFile</a></li>
+<li><a href="mod_policy.html#policyconditional">PolicyConditional</a></li>
+<li><a href="mod_policy.html#policyconditionalurl">PolicyConditionalURL</a></li>
+<li><a href="mod_policy.html#policyenvironment">PolicyEnvironment</a></li>
+<li><a href="mod_policy.html#policyfilter">PolicyFilter</a></li>
+<li><a href="mod_policy.html#policykeepalive">PolicyKeepalive</a></li>
+<li><a href="mod_policy.html#policykeepaliveurl">PolicyKeepaliveURL</a></li>
+<li><a href="mod_policy.html#policylength">PolicyLength</a></li>
+<li><a href="mod_policy.html#policylengthurl">PolicyLengthURL</a></li>
+<li><a href="mod_policy.html#policymaxage">PolicyMaxage</a></li>
+<li><a href="mod_policy.html#policymaxageurl">PolicyMaxageURL</a></li>
+<li><a href="mod_policy.html#policynocache">PolicyNocache</a></li>
+<li><a href="mod_policy.html#policynocacheurl">PolicyNocacheURL</a></li>
+<li><a href="mod_policy.html#policytype">PolicyType</a></li>
+<li><a href="mod_policy.html#policytypeurl">PolicyTypeURL</a></li>
+<li><a href="mod_policy.html#policyvalidation">PolicyValidation</a></li>
+<li><a href="mod_policy.html#policyvalidationurl">PolicyValidationURL</a></li>
+<li><a href="mod_policy.html#policyvary">PolicyVary</a></li>
+<li><a href="mod_policy.html#policyvaryurl">PolicyVaryURL</a></li>
+<li><a href="mod_policy.html#policyversion">PolicyVersion</a></li>
+<li><a href="mod_policy.html#policyversionurl">PolicyVersionURL</a></li>
 <li><a href="mod_privileges.html#privilegesmode">PrivilegesMode</a></li>
 <li><a href="core.html#protocol">Protocol</a></li>
 <li><a href="mod_echo.html#protocolecho">ProtocolEcho</a></li>
@@ -381,6 +414,17 @@
 <li><a href="mod_proxy_ftp.html#proxyftpdircharset">ProxyFtpDirCharset</a></li>
 <li><a href="mod_proxy_ftp.html#proxyftpescapewildcards">ProxyFtpEscapeWildcards</a></li>
 <li><a href="mod_proxy_ftp.html#proxyftplistonwildcard">ProxyFtpListOnWildcard</a></li>
+<li><a href="mod_proxy_html.html#proxyhtmlbufsize">ProxyHTMLBufSize</a></li>
+<li><a href="mod_proxy_html.html#proxyhtmlcharsetout">ProxyHTMLCharsetOut</a></li>
+<li><a href="mod_proxy_html.html#proxyhtmldoctype">ProxyHTMLDocType</a></li>
+<li><a href="mod_proxy_html.html#proxyhtmlenable">ProxyHTMLEnable</a></li>
+<li><a href="mod_proxy_html.html#proxyhtmlevents">ProxyHTMLEvents</a></li>
+<li><a href="mod_proxy_html.html#proxyhtmlextended">ProxyHTMLExtended</a></li>
+<li><a href="mod_proxy_html.html#proxyhtmlfixups">ProxyHTMLFixups</a></li>
+<li><a href="mod_proxy_html.html#proxyhtmlinterp">ProxyHTMLInterp</a></li>
+<li><a href="mod_proxy_html.html#proxyhtmllinks">ProxyHTMLLinks</a></li>
+<li><a href="mod_proxy_html.html#proxyhtmlstripcomments">ProxyHTMLStripComments</a></li>
+<li><a href="mod_proxy_html.html#proxyhtmlurlmap">ProxyHTMLURLMap</a></li>
 <li><a href="mod_proxy.html#proxyiobuffersize">ProxyIOBufferSize</a></li>
 <li><a href="mod_proxy.html#proxymatch">&lt;ProxyMatch&gt;</a></li>
 <li><a href="mod_proxy.html#proxymaxforwards">ProxyMaxForwards</a></li>
@@ -398,6 +442,7 @@
 <li><a href="mod_proxy_scgi.html#proxyscgiinternalredirect">ProxySCGIInternalRedirect</a></li>
 <li><a href="mod_proxy_scgi.html#proxyscgisendfile">ProxySCGISendfile</a></li>
 <li><a href="mod_proxy.html#proxyset">ProxySet</a></li>
+<li><a href="mod_proxy.html#proxysourceaddress">ProxySourceAddress</a></li>
 <li><a href="mod_proxy.html#proxystatus">ProxyStatus</a></li>
 <li><a href="mod_proxy.html#proxytimeout">ProxyTimeout</a></li>
 <li><a href="mod_proxy.html#proxyvia">ProxyVia</a></li>
@@ -461,8 +506,10 @@
 <li><a href="mod_session_cookie.html#sessioncookiename">SessionCookieName</a></li>
 <li><a href="mod_session_cookie.html#sessioncookiename2">SessionCookieName2</a></li>
 <li><a href="mod_session_cookie.html#sessioncookieremove">SessionCookieRemove</a></li>
+<li><a href="mod_session_crypto.html#sessioncryptocipher">SessionCryptoCipher</a></li>
 <li><a href="mod_session_crypto.html#sessioncryptodriver">SessionCryptoDriver</a></li>
 <li><a href="mod_session_crypto.html#sessioncryptopassphrase">SessionCryptoPassphrase</a></li>
+<li><a href="mod_session_crypto.html#sessioncryptopassphrasefile">SessionCryptoPassphraseFile</a></li>
 <li><a href="mod_session_dbd.html#sessiondbdcookiename">SessionDBDCookieName</a></li>
 <li><a href="mod_session_dbd.html#sessiondbdcookiename2">SessionDBDCookieName2</a></li>
 <li><a href="mod_session_dbd.html#sessiondbdcookieremove">SessionDBDCookieRemove</a></li>
@@ -483,7 +530,6 @@
 <li><a href="core.html#sethandler">SetHandler</a></li>
 <li><a href="core.html#setinputfilter">SetInputFilter</a></li>
 <li><a href="core.html#setoutputfilter">SetOutputFilter</a></li>
-<li><a href="mod_include.html#ssiaccessenable">SSIAccessEnable</a></li>
 <li><a href="mod_include.html#ssiendtag">SSIEndTag</a></li>
 <li><a href="mod_include.html#ssierrormsg">SSIErrorMsg</a></li>
 <li><a href="mod_include.html#ssietag">SSIETag</a></li>
@@ -496,6 +542,7 @@
 <li><a href="mod_ssl.html#sslcacertificatepath">SSLCACertificatePath</a></li>
 <li><a href="mod_ssl.html#sslcadnrequestfile">SSLCADNRequestFile</a></li>
 <li><a href="mod_ssl.html#sslcadnrequestpath">SSLCADNRequestPath</a></li>
+<li><a href="mod_ssl.html#sslcarevocationcheck">SSLCARevocationCheck</a></li>
 <li><a href="mod_ssl.html#sslcarevocationfile">SSLCARevocationFile</a></li>
 <li><a href="mod_ssl.html#sslcarevocationpath">SSLCARevocationPath</a></li>
 <li><a href="mod_ssl.html#sslcertificatechainfile">SSLCertificateChainFile</a></li>
@@ -518,12 +565,14 @@
 <li><a href="mod_ssl.html#sslprotocol">SSLProtocol</a></li>
 <li><a href="mod_ssl.html#sslproxycacertificatefile">SSLProxyCACertificateFile</a></li>
 <li><a href="mod_ssl.html#sslproxycacertificatepath">SSLProxyCACertificatePath</a></li>
+<li><a href="mod_ssl.html#sslproxycarevocationcheck">SSLProxyCARevocationCheck</a></li>
 <li><a href="mod_ssl.html#sslproxycarevocationfile">SSLProxyCARevocationFile</a></li>
 <li><a href="mod_ssl.html#sslproxycarevocationpath">SSLProxyCARevocationPath</a></li>
 <li><a href="mod_ssl.html#sslproxycheckpeercn">SSLProxyCheckPeerCN</a></li>
 <li><a href="mod_ssl.html#sslproxycheckpeerexpire">SSLProxyCheckPeerExpire</a></li>
 <li><a href="mod_ssl.html#sslproxyciphersuite">SSLProxyCipherSuite</a></li>
 <li><a href="mod_ssl.html#sslproxyengine">SSLProxyEngine</a></li>
+<li><a href="mod_ssl.html#sslproxymachinecertificatechainfile">SSLProxyMachineCertificateChainFile</a></li>
 <li><a href="mod_ssl.html#sslproxymachinecertificatefile">SSLProxyMachineCertificateFile</a></li>
 <li><a href="mod_ssl.html#sslproxymachinecertificatepath">SSLProxyMachineCertificatePath</a></li>
 <li><a href="mod_ssl.html#sslproxyprotocol">SSLProxyProtocol</a></li>
@@ -535,8 +584,19 @@
 <li><a href="mod_ssl.html#sslrequiressl">SSLRequireSSL</a></li>
 <li><a href="mod_ssl.html#sslsessioncache">SSLSessionCache</a></li>
 <li><a href="mod_ssl.html#sslsessioncachetimeout">SSLSessionCacheTimeout</a></li>
+<li><a href="mod_ssl.html#sslsessionticketkeyfile">SSLSessionTicketKeyFile</a></li>
+<li><a href="mod_ssl.html#sslstaplingcache">SSLStaplingCache</a></li>
+<li><a href="mod_ssl.html#sslstaplingerrorcachetimeout">SSLStaplingErrorCacheTimeout</a></li>
+<li><a href="mod_ssl.html#sslstaplingfaketrylater">SSLStaplingFakeTryLater</a></li>
+<li><a href="mod_ssl.html#sslstaplingforceurl">SSLStaplingForceURL</a></li>
+<li><a href="mod_ssl.html#sslstaplingrespondertimeout">SSLStaplingResponderTimeout</a></li>
+<li><a href="mod_ssl.html#sslstaplingresponsemaxage">SSLStaplingResponseMaxAge</a></li>
+<li><a href="mod_ssl.html#sslstaplingresponsetimeskew">SSLStaplingResponseTimeSkew</a></li>
+<li><a href="mod_ssl.html#sslstaplingreturnrespondererrors">SSLStaplingReturnResponderErrors</a></li>
+<li><a href="mod_ssl.html#sslstaplingstandardcachetimeout">SSLStaplingStandardCacheTimeout</a></li>
 <li><a href="mod_ssl.html#sslstrictsnivhostcheck">SSLStrictSNIVHostCheck</a></li>
 <li><a href="mod_ssl.html#sslusername">SSLUserName</a></li>
+<li><a href="mod_ssl.html#sslusestapling">SSLUseStapling</a></li>
 <li><a href="mod_ssl.html#sslverifyclient">SSLVerifyClient</a></li>
 <li><a href="mod_ssl.html#sslverifydepth">SSLVerifyDepth</a></li>
 <li><a href="mpm_common.html#startservers">StartServers</a></li>
@@ -568,7 +628,11 @@
 <li><a href="core.html#virtualhost">&lt;VirtualHost&gt;</a></li>
 <li><a href="mod_vhost_alias.html#virtualscriptalias">VirtualScriptAlias</a></li>
 <li><a href="mod_vhost_alias.html#virtualscriptaliasip">VirtualScriptAliasIP</a></li>
+<li><a href="mod_watchdog.html#watchdoginterval" id="W" name="W">WatchdogInterval</a></li>
 <li><a href="mod_include.html#xbithack" id="X" name="X">XBitHack</a></li>
+<li><a href="mod_xml2enc.html#xml2encalias">xml2EncAlias</a></li>
+<li><a href="mod_xml2enc.html#xml2encdefault">xml2EncDefault</a></li>
+<li><a href="mod_xml2enc.html#xml2startparse">xml2StartParse</a></li>
 </ul></div>
 <div class="bottomlang">
 <p><span>Available Languages: </span><a href="../de/mod/directives.html" hreflang="de" rel="alternate" title="Deutsch">&nbsp;de&nbsp;</a> |
@@ -579,6 +643,6 @@
 <a href="../tr/mod/directives.html" hreflang="tr" rel="alternate" title="Türkçe">&nbsp;tr&nbsp;</a> |
 <a href="../zh-cn/mod/directives.html" hreflang="zh-cn" rel="alternate" title="Simplified Chinese">&nbsp;zh-cn&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2011 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2012 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div>
 </body></html>

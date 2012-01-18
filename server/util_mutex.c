@@ -181,7 +181,7 @@ AP_DECLARE_NONSTD(const char *)ap_set_mutex(cmd_parms *cmd, void *dummy,
 
     mechdir = ap_getword_conf(cmd->pool, &arg);
     if (*mechdir == '\0') {
-        return "Mutex requires at least a mechanism argument (" 
+        return "Mutex requires at least a mechanism argument ("
                AP_ALL_AVAILABLE_MUTEXES_STRING ")";
     }
 
@@ -372,21 +372,21 @@ static mutex_cfg_t *mxcfg_lookup(apr_pool_t *p, const char *type)
 
 static void log_bad_create_options(server_rec *s, const char *type)
 {
-    ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+    ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(00021)
                  "Invalid options were specified when creating the %s mutex",
                  type);
 }
 
 static void log_unknown_type(server_rec *s, const char *type)
 {
-    ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+    ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(00022)
                  "Can't create mutex of unknown type %s", type);
 }
 
 static void log_create_failure(apr_status_t rv, server_rec *s, const char *type,
                                const char *fname)
 {
-    ap_log_error(APLOG_MARK, APLOG_EMERG, rv, s,
+    ap_log_error(APLOG_MARK, APLOG_EMERG, rv, s, APLOGNO(00023)
                  "Couldn't create the %s mutex %s%s%s", type,
                  fname ? "(file " : "",
                  fname ? fname : "",
@@ -396,7 +396,7 @@ static void log_create_failure(apr_status_t rv, server_rec *s, const char *type,
 #ifdef AP_NEED_SET_MUTEX_PERMS
 static void log_perms_failure(apr_status_t rv, server_rec *s, const char *type)
 {
-    ap_log_error(APLOG_MARK, APLOG_EMERG, rv, s,
+    ap_log_error(APLOG_MARK, APLOG_EMERG, rv, s, APLOGNO(00024)
                  "Couldn't set permissions on the %s mutex; "
                  "check User and Group directives",
                  type);
@@ -495,4 +495,66 @@ AP_DECLARE(apr_status_t) ap_proc_mutex_create(apr_proc_mutex_t **mutex,
 #endif
 
     return rv;
+}
+
+AP_CORE_DECLARE(void) ap_dump_mutexes(apr_pool_t *p, server_rec *s, apr_file_t *out)
+{
+    apr_hash_index_t *idx;
+    mutex_cfg_t *defcfg = apr_hash_get(mxcfg_by_type, "default", APR_HASH_KEY_STRING);
+    for (idx = apr_hash_first(p, mxcfg_by_type); idx; idx = apr_hash_next(idx))
+    {
+        mutex_cfg_t *mxcfg;
+        const char *name, *mech;
+        const void *name_;
+        const char *dir = "";
+        apr_hash_this(idx, &name_, NULL, NULL);
+        name = name_;
+        mxcfg = mxcfg_lookup(p, name);
+        if (mxcfg == defcfg && strcmp(name, "default") != 0) {
+            apr_file_printf(out, "Mutex %s: using_defaults\n", name);
+            continue;
+        }
+        if (mxcfg->none) {
+            apr_file_printf(out, "Mutex %s: none\n", name);
+            continue;
+        }
+        switch (mxcfg->mech) {
+        case APR_LOCK_DEFAULT:
+            mech = "default";
+            break;
+#if APR_HAS_FCNTL_SERIALIZE
+        case APR_LOCK_FCNTL:
+            mech = "fcntl";
+            break;
+#endif
+#if APR_HAS_FLOCK_SERIALIZE
+        case APR_LOCK_FLOCK:
+            mech = "flock";
+            break;
+#endif
+#if APR_HAS_POSIXSEM_SERIALIZE
+        case APR_LOCK_POSIXSEM:
+            mech = "posixsem";
+            break;
+#endif
+#if APR_HAS_SYSVSEM_SERIALIZE
+        case APR_LOCK_SYSVSEM:
+            mech = "sysvsem";
+            break;
+#endif
+#if APR_HAS_PROC_PTHREAD_SERIALIZE
+        case APR_LOCK_PROC_PTHREAD:
+            mech = "pthread";
+            break;
+#endif
+        default:
+            ap_assert(0);
+        }
+
+        if (mxcfg->dir)
+            dir = ap_server_root_relative(p, mxcfg->dir);
+
+        apr_file_printf(out, "Mutex %s: dir=\"%s\" mechanism=%s %s\n", name, dir, mech,
+                        mxcfg->omit_pid ? "[OmitPid]" : "");
+    }
 }

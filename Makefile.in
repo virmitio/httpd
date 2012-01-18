@@ -12,14 +12,14 @@ PROGRAM_DEPENDENCIES = \
   $(MPM_LIB) \
   os/$(OS_DIR)/libos.la
 
-PROGRAMS        = $(PROGRAM_NAME)
-TARGETS         = $(PROGRAMS) $(shared_build) $(other_targets)
+sbin_PROGRAMS   = $(PROGRAM_NAME)
+TARGETS         = $(sbin_PROGRAMS) $(shared_build) $(other_targets)
 INSTALL_TARGETS = install-conf install-htdocs install-error install-icons \
 	install-other install-cgi install-include install-suexec install-build \
 	install-man
 
 DISTCLEAN_TARGETS  = include/ap_config_auto.h include/ap_config_layout.h \
-	include/apache_probes.h include/ap_ldap.h \
+	include/apache_probes.h \
 	modules.c config.cache config.log config.status build/config_vars.mk \
 	build/rules.mk docs/conf/httpd.conf docs/conf/extra/*.conf shlibtool \
 	build/pkg/pkginfo build/config_vars.sh
@@ -41,7 +41,7 @@ install-conf:
 	done; \
 	for j in $(top_srcdir)/docs/conf $(top_builddir)/docs/conf ; do \
 	    cd $$j ; \
-	    for i in httpd.conf extra/httpd-*.conf; do \
+	    for i in httpd.conf extra/*.conf; do \
 	    	if [ -f $$i ] ; then \
 	    	( \
 	    		n_lm=`awk 'BEGIN {n=0} /@@LoadModule@@/ {n+=1} END {print n}' < $$i`; \
@@ -60,7 +60,15 @@ install-conf:
 	    				< $$i; \
 	    			for j in $(DSO_MODULES) "^EOL^"; do \
 	    				if test $$j != "^EOL^"; then \
-	    					echo "LoadModule $${j}_module $(rel_libexecdir)/mod_$${j}.so"; \
+	    					if echo ",$(ENABLED_DSO_MODULES),"|$(EGREP) ",$$j," > /dev/null ; then \
+	    						loading_disabled=""; \
+	    					else \
+	    						loading_disabled="#"; \
+	    					fi; \
+	    					if test "$(LOAD_ALL_MODULES)" = "yes"; then \
+	    						loading_disabled=""; \
+	    					fi; \
+    						echo "$${loading_disabled}LoadModule $${j}_module $(rel_libexecdir)/mod_$${j}.so"; \
 	    				fi; \
 	    			done; \
 	    			sed -e '1,/@@LoadModule@@/d' \
@@ -195,7 +203,7 @@ INSTALL_HEADERS = \
 	$(srcdir)/modules/mappers/mod_rewrite.h \
 	$(srcdir)/modules/proxy/mod_proxy.h \
 	$(srcdir)/modules/proxy/mod_serf.h \
-        ${srcdir}/modules/session/mod_session.h \
+        $(srcdir)/modules/session/mod_session.h \
 	$(srcdir)/modules/ssl/mod_ssl.h \
 	$(srcdir)/os/$(OS_DIR)/*.h
 
@@ -233,6 +241,10 @@ suexec:
 
 x-local-distclean:
 	@rm -rf autom4te.cache
+
+update-log-tags update-log-msg-tags:
+	find server modules os -name \*.c|xargs perl \
+		docs/log-message-tags/update-log-msg-tags
 
 # XXX: This looks awfully platform-specific [read: bad form and style]
 include $(top_srcdir)/os/os2/core.mk

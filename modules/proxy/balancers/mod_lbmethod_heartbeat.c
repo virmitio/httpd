@@ -31,6 +31,9 @@
 
 module AP_MODULE_DECLARE_DATA lbmethod_heartbeat_module;
 
+static int (*ap_proxy_retry_worker_fn)(const char *proxy_function,
+        proxy_worker *worker, server_rec *s) = NULL;
+
 static const ap_slotmem_provider_t *storage = NULL;
 static ap_slotmem_instance_t *hm_serversmem = NULL;
 
@@ -64,7 +67,7 @@ argstr_to_table(apr_pool_t *p, char *str, apr_table_t *parms)
     char *key;
     char *value;
     char *strtok_state;
-    
+
     key = apr_strtok(str, "&", &strtok_state);
     while (key) {
         value = strchr(key, '=');
@@ -158,12 +161,12 @@ static apr_status_t readfile_heartbeats(const char *path, apr_hash_t *servers,
             if (!t) {
                 continue;
             }
-            
+
             ip = apr_pstrndup(pool, buf, t - buf);
             t++;
 
             server = apr_hash_get(servers, ip, APR_HASH_KEY_STRING);
-            
+
             if (server == NULL) {
                 server = apr_pcalloc(pool, sizeof(hb_server_t));
                 server->ip = ip;
@@ -172,7 +175,7 @@ static apr_status_t readfile_heartbeats(const char *path, apr_hash_t *servers,
 
                 apr_hash_set(servers, server->ip, APR_HASH_KEY_STRING, server);
             }
-            
+
             apr_table_clear(hbt);
 
             argstr_to_table(pool, apr_pstrdup(pool, t), hbt);
@@ -194,9 +197,9 @@ static apr_status_t readfile_heartbeats(const char *path, apr_hash_t *servers,
             }
 
             if (server->busy == 0 && server->ready != 0) {
-                /* Server has zero threads active, but lots of them ready, 
-                 * it likely just started up, so lets /4 the number ready, 
-                 * to prevent us from completely flooding it with all new 
+                /* Server has zero threads active, but lots of them ready,
+                 * it likely just started up, so lets /4 the number ready,
+                 * to prevent us from completely flooding it with all new
                  * requests.
                  */
                 server->ready = server->ready / 4;
@@ -253,36 +256,6 @@ static apr_status_t read_heartbeats(const char *path, apr_hash_t *servers,
     return rv;
 }
 
-/*
- * Finding a random number in a range. 
- *      n' = a + n(b-a+1)/(M+1)
- * where:
- *      n' = random number in range
- *      a  = low end of range
- *      b  = high end of range
- *      n  = random number of 0..M
- *      M  = maxint
- * Algorithm 'borrowed' from PHP's rand() function.
- */
-#define RAND_RANGE(__n, __min, __max, __tmax) \
-(__n) = (__min) + (long) ((double) ((__max) - (__min) + 1.0) * ((__n) / ((__tmax) + 1.0)))
-
-static apr_status_t random_pick(apr_uint32_t *number,
-                                apr_uint32_t min,
-                                apr_uint32_t max)
-{
-    apr_status_t rv = 
-        apr_generate_random_bytes((void*)number, sizeof(apr_uint32_t));
-
-    if (rv) {
-        return rv;
-    }
-
-    RAND_RANGE(*number, min, max, APR_UINT32_MAX);
-
-    return APR_SUCCESS;
-}
-
 static proxy_worker *find_best_hb(proxy_balancer *balancer,
                                   request_rec *r)
 {
@@ -296,9 +269,18 @@ static proxy_worker *find_best_hb(proxy_balancer *balancer,
     apr_pool_t *tpool;
     apr_hash_t *servers;
 
-    lb_hb_ctx_t *ctx = 
+    lb_hb_ctx_t *ctx =
         ap_get_module_config(r->server->module_config,
                              &lbmethod_heartbeat_module);
+
+    if (!ap_proxy_retry_worker_fn) {
+        ap_proxy_retry_worker_fn =
+                APR_RETRIEVE_OPTIONAL_FN(ap_proxy_retry_worker);
+        if (!ap_proxy_retry_worker_fn) {
+            /* can only happen if mod_proxy isn't loaded */
+            return NULL;
+        }
+    }
 
     apr_pool_create(&tpool, r->pool);
 
@@ -307,7 +289,7 @@ static proxy_worker *find_best_hb(proxy_balancer *balancer,
     rv = read_heartbeats(ctx->path, servers, tpool);
 
     if (rv) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01213)
                       "lb_heartbeat: Unable to read heartbeats at '%s'",
                       ctx->path);
         apr_pool_destroy(tpool);
@@ -321,13 +303,13 @@ static proxy_worker *find_best_hb(proxy_balancer *balancer,
         server = apr_hash_get(servers, (*worker)->s->hostname, APR_HASH_KEY_STRING);
 
         if (!server) {
-            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, rv, r,
+            ap_log_rerror(APLOG_MARK, APLOG_DEBUG, rv, r, APLOGNO(01214)
                       "lb_heartbeat: No server for worker %s", (*worker)->s->name);
             continue;
         }
 
         if (!PROXY_WORKER_IS_USABLE(*worker)) {
-            ap_proxy_retry_worker("BALANCER", *worker, r->server);
+            ap_proxy_retry_worker_fn("BALANCER", *worker, r->server);
         }
 
         if (PROXY_WORKER_IS_USABLE(*worker)) {
@@ -343,14 +325,7 @@ static proxy_worker *find_best_hb(proxy_balancer *balancer,
         apr_uint32_t c = 0;
         apr_uint32_t pick = 0;
 
-        rv = random_pick(&pick, 0, openslots);
-
-        if (rv) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
-                          "lb_heartbeat: failed picking a random number. how random.");
-            apr_pool_destroy(tpool);
-            return NULL;
-        }
+        pick = ap_random_pick(0, openslots);
 
         for (i = 0; i < up_servers->nelts; i++) {
             server = APR_ARRAY_IDX(up_servers, i, hb_server_t *);
@@ -391,23 +366,29 @@ static int lb_hb_init(apr_pool_t *p, apr_pool_t *plog,
     unsigned int num;
     lb_hb_ctx_t *ctx = ap_get_module_config(s->module_config,
                                             &lbmethod_heartbeat_module);
-    
+
     /* do nothing on first call */
     if (ap_state_query(AP_SQ_MAIN_STATE) == AP_SQ_MS_CREATE_PRE_CONFIG)
         return OK;
 
-    storage = ap_lookup_provider(AP_SLOTMEM_PROVIDER_GROUP, "shared", "0");
+    storage = ap_lookup_provider(AP_SLOTMEM_PROVIDER_GROUP, "shm",
+                                 AP_SLOTMEM_PROVIDER_VERSION);
     if (!storage) {
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, s, "ap_lookup_provider %s failed", AP_SLOTMEM_PROVIDER_GROUP);
+        ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, s, APLOGNO(02281)
+                     "Failed to lookup provider 'shm' for '%s'. Maybe you "
+                     "need to load mod_slotmem_shm?",
+                     AP_SLOTMEM_PROVIDER_GROUP);
         return OK;
     }
 
     /* Try to use a slotmem created by mod_heartmonitor */
     storage->attach(&hm_serversmem, "mod_heartmonitor", &size, &num, p);
-    if (!hm_serversmem) {
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, s, "No slotmem from mod_heartmonitor");
-    } else
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, s, "Using slotmem from mod_heartmonitor");
+    if (!hm_serversmem)
+        ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, s, APLOGNO(02282)
+                     "No slotmem from mod_heartmonitor");
+    else
+        ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, s, APLOGNO(02283)
+                     "Using slotmem from mod_heartmonitor");
 
     if (hm_serversmem)
         ctx->path = "(slotmem)";
@@ -425,9 +406,9 @@ static void register_hooks(apr_pool_t *p)
 static void *lb_hb_create_config(apr_pool_t *p, server_rec *s)
 {
     lb_hb_ctx_t *ctx = (lb_hb_ctx_t *) apr_palloc(p, sizeof(lb_hb_ctx_t));
-    
+
     ctx->path = ap_server_root_relative(p, "logs/hb.dat");
-    
+
     return ctx;
 }
 
@@ -456,7 +437,7 @@ static const char *cmd_lb_hb_storage(cmd_parms *cmd,
                                          &lbmethod_heartbeat_module);
 
     const char *err = ap_check_cmd_context(cmd, GLOBAL_ONLY);
-    
+
     if (err != NULL) {
         return err;
     }

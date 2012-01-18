@@ -12,11 +12,11 @@
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
 <body id="manual-page"><div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p>
-<p class="apache">Apache HTTP Server Version 2.3</p>
+<p class="apache">Apache HTTP Server Version 2.5</p>
 <img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
-<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.3</a> &gt; <a href="./">Virtual Hosts</a></div><div id="page-content"><div id="preamble"><h1>Dynamically Configured Mass Virtual Hosting</h1>
+<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.5</a> &gt; <a href="./">Virtual Hosts</a></div><div id="page-content"><div id="preamble"><h1>Dynamically Configured Mass Virtual Hosting</h1>
 <div class="toplang">
 <p><span>Available Languages: </span><a href="../en/vhosts/mass.html" title="English">&nbsp;en&nbsp;</a> |
 <a href="../fr/vhosts/mass.html" hreflang="fr" rel="alternate" title="Français">&nbsp;fr&nbsp;</a> |
@@ -90,7 +90,7 @@ mod_rewrite</a></li>
 
     <p>The main disadvantage is that you cannot have a different log file for
     each virtual host; however, if you have many virtual hosts, doing
-    this can be a bad idea anyway, because of the <a href="fd-limits.html">number of file descriptors needed</a>. 
+    this can be a bad idea anyway, because of the <a href="fd-limits.html">number of file descriptors needed</a>.
     It is better to <a href="../logs.html#piped">log to a pipe or a fifo</a>,
     and arrange for the process at the other end to split up the log
     files into one per virtual host. One example of such a process can
@@ -106,9 +106,9 @@ mod_rewrite</a></li>
     in the HTTP request. The dynamic mass virtual hosting technique
     used here is based on automatically inserting this information into the
     pathname of the file that is used to satisfy the request. This
-    can be most easily done by using <code class="module"><a href="../mod/mod_vhost_alias.html">mod_vhost_alias</a></code> 
-    with Apache httpd. Alternatively, 
-    <a href="../rewrite/vhosts.html">mod_rewrite can 
+    can be most easily done by using <code class="module"><a href="../mod/mod_vhost_alias.html">mod_vhost_alias</a></code>
+    with Apache httpd. Alternatively,
+    <a href="../rewrite/vhosts.html">mod_rewrite can
     be used</a>.</p>
     <p>Both of these modules are disabled by default; you must enable
     one of them when configuring and building Apache httpd if you want to
@@ -268,7 +268,7 @@ LogFormat "%V %h %l %u %t \"%r\" %s %b" vcommon<br />
     <h3>Note</h3>
     <p>If the first VirtualHost block does <em>not</em> include a
     <code class="directive"><a href="../mod/core.html#servername">ServerName</a></code> directive, the reverse
-    DNS of the relevant IP will be used instead. 
+    DNS of the relevant IP will be used instead.
     If this is not the server name you
     wish to use, a bogus entry (eg. <code>ServerName
     none.example.com</code>) can be added to get around this
@@ -319,6 +319,6 @@ documentation</a>.</p>
 <a href="../ko/vhosts/mass.html" hreflang="ko" rel="alternate" title="Korean">&nbsp;ko&nbsp;</a> |
 <a href="../tr/vhosts/mass.html" hreflang="tr" rel="alternate" title="Türkçe">&nbsp;tr&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2011 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2012 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div>
 </body></html>

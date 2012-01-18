@@ -27,7 +27,7 @@
 
 <summary>
 
-<p>This document supplements the <module>mod_rewrite</module> 
+<p>This document supplements the <module>mod_rewrite</module>
 <a href="../mod/mod_rewrite.html">reference documentation</a>. It describes
 how to use the RewriteRule's [P] flag to proxy content to another server.
 A number of recipes are provided that describe common scenarios.</p>
@@ -40,7 +40,7 @@ A number of recipes are provided that describe common scenarios.</p>
 <seealso><a href="vhosts.html">Virtual hosts</a></seealso>
 <!--<seealso><a href="proxy.html">Proxying</a></seealso>-->
 <seealso><a href="rewritemap.html">Using RewriteMap</a></seealso>
-<seealso><a href="advanced.html">Advanced techniques and tricks</a></seealso>
+<seealso><a href="advanced.html">Advanced techniques</a></seealso>
 <seealso><a href="avoid.html">When not to use mod_rewrite</a></seealso>
 
 <section id="dynamic-proxy">
@@ -91,7 +91,7 @@ ProxyPassReverse / http://old.example.com/
     module="mod_proxy">ProxyPassReverse</directive> directive to ensure
     that any redirects issued by the backend are correctly passed on to
     the client.</p>
-    
+
     <p>Consider using either <directive
     module="mod_proxy">ProxyPass</directive> or <directive
     module="mod_rewrite">ProxyPassMatch</directive> whenever possible in
@@ -101,4 +101,4 @@ ProxyPassReverse / http://old.example.com/
 
 </section>
 
-</manualpage> 
+</manualpage>

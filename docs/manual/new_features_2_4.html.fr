@@ -13,15 +13,16 @@ serveur HTTP Apache - Serveur Apache HTTP</title>
 <link href="./images/favicon.ico" rel="shortcut icon" /></head>
 <body id="manual-page"><div id="page-header">
 <p class="menu"><a href="./mod/">Modules</a> | <a href="./mod/directives.html">Directives</a> | <a href="./faq/">FAQ</a> | <a href="./glossary.html">Glossaire</a> | <a href="./sitemap.html">Plan du site</a></p>
-<p class="apache">Serveur Apache HTTP Version 2.3</p>
+<p class="apache">Serveur Apache HTTP Version 2.5</p>
 <img alt="" src="./images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="./images/left.gif" /></a></div>
 <div id="path">
-<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="./">Version 2.3</a></div><div id="page-content"><div id="preamble"><h1>Vue d'ensemble des nouvelles fonctionnalités de la version 2.4 du
+<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="./">Version 2.5</a></div><div id="page-content"><div id="preamble"><h1>Vue d'ensemble des nouvelles fonctionnalités de la version 2.4 du
 serveur HTTP Apache</h1>
 <div class="toplang">
 <p><span>Langues Disponibles: </span><a href="./en/new_features_2_4.html" hreflang="en" rel="alternate" title="English">&nbsp;en&nbsp;</a> |
-<a href="./fr/new_features_2_4.html" title="Français">&nbsp;fr&nbsp;</a></p>
+<a href="./fr/new_features_2_4.html" title="Français">&nbsp;fr&nbsp;</a> |
+<a href="./tr/new_features_2_4.html" hreflang="tr" rel="alternate" title="Türkçe">&nbsp;tr&nbsp;</a></p>
 </div>
 
   <p>Ce document décrit les modifications majeures apportées par
@@ -42,11 +43,10 @@ serveur HTTP Apache</h1>
     
     <dl>
       <dt>KeepAliveTimeout en millisecondes</dt>
-
       <dd>La directive <code class="directive"><a href="./mod/core.html#keepalivetimeout">KeepAliveTimeout</a></code> permet dorénavant de
       préciser une durée de vie en millisecondes.
       </dd>
- 
+
       <dt>Modules multiprocessus (MPMs) chargeables</dt>
       <dd>On peut maintenant compiler plusieurs MPMs en tant que modules
       chargeables. Le choix du MPM à utiliser s'effectue à
@@ -60,9 +60,9 @@ serveur HTTP Apache</h1>
       ajoutés au dessus du niveau de journalisation <code>debug</code>.</dd>
 
       <dt>MPM Event</dt>
-      <dd>Le MPM Event est sorti du stade expérimental pour être
-      pleinement supporté.</dd>
- 
+      <dd>Le MPM Event est sorti du stade expérimental et est
+      maintenant pleinement supporté.</dd>
+
       <dt>Support du mode asynchrone</dt>
       <dd>Le support des lectures/écritures asynchrones pour les MPMs et
       les plateformes qui l'implémentent a été amélioré.</dd>
@@ -71,7 +71,21 @@ serveur HTTP Apache</h1>
       <dd>Les sections &lt;<code class="directive"><a href="./mod/core.html#if">If</a></code>&gt;
       permettent de définir une configuration en fonction de critères
       liés à la requête.</dd>
- 
+
+      <dt>Interpréteur d'expressions à usage général</dt>
+      <dd>Un nouvel interpréteur d'expressions permet de spécifier des
+      <a href="expr.html">conditions complexes</a> via des directives à
+      syntaxe commune comme <code class="directive"><a href="./mod/mod_setenvif.html#setenvifexpr">SetEnvIfExpr</a></code>, <code class="directive"><a href="./mod/mod_rewrite.html#rewritecond">RewriteCond</a></code>, <code class="directive"><a href="./mod/mod_headers.html#header">Header</a></code>, <code class="directive"><a href="./mod/mod_headers.html#if">&lt;If&gt;</a></code>, etc...
+      </dd>
+
+      <dt>Utilisation de la mémoire en baisse</dt>
+      <dd>Malgré l'ajout de nombreuses nouvelles fonctionnalités, la
+      version 2.4.x tend à utiliser moins de mémoire que la version
+      2.2.x.</dd>
+
+      <dt>NameVirtualHost directive</dt>
+      <dd>Cette directive obsolète n'est plus utile.</dd>
+
     </dl>
   </div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section">
@@ -93,6 +107,10 @@ serveur HTTP Apache</h1>
       <dt><code class="module"><a href="./mod/mod_lua.html">mod_lua</a></code></dt>
       <dd>Embarque le langage <a href="http://www.lua.org/">Lua</a> dans
       httpd pour la configuration et les fonctions logiques courantes.</dd>
+
+      <dt><code class="module"><a href="./mod/mod_proxy_express.html">mod_proxy_express</a></code></dt>
+      <dd>Ajoute à <code class="module"><a href="./mod/mod_proxy.html">mod_proxy</a></code> la configuration dynamique
+      de mandataires inverses en masse.</dd>
 
       <dt><code class="module"><a href="./mod/mod_proxy_fcgi.html">mod_proxy_fcgi</a></code></dt>
       <dd>Mise à disposition du protocole FastCGI pour
@@ -128,6 +146,22 @@ serveur HTTP Apache</h1>
       <dd>Met à disposition un fournisseur de mémoire partagée à base de
       slots (du style tableau de bord).</dd>
 
+      <dt><code class="module"><a href="./mod/mod_log_debug.html">mod_log_debug</a></code></dt>
+      <dd>Permet d'introduire une journalisation personnalisée à
+      différentes phases du traitement de la requête.</dd>
+
+      <dt><code class="module"><a href="./mod/mod_xml2enc.html">mod_xml2enc</a></code></dt>
+      <dd>Anciennement module tiers, il supporte l'internationalisation
+      dans les modules de filtrage basés sur libxml2 (support du
+      markup)</dd>
+      
+
+      <dt><code class="module"><a href="./mod/mod_proxy_html.html">mod_proxy_html</a></code></dt>
+      <dd>Anciennement module tiers, il supporte la correction des liens
+      HTML dans une situation de mandat inverse, où le serveur
+      d'arrière-plan génère des URLs qui ne sont pas valides du point de
+      vue des clients du mandataire.</dd>
+
     </dl>
   </div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section">
@@ -147,18 +181,18 @@ serveur HTTP Apache</h1>
 	l'estampillage OCSP (OCSP stapling), qui permet au serveur
 	d'attester la validité de son certificat auprès du client au
 	cours de la phase de négociation de la connexion.</dd>
-      
+
       <dd>Enfin, <code class="module"><a href="./mod/mod_ssl.html">mod_ssl</a></code> peut maintenant être configuré pour
       que celui-ci partage les données de session SSL entre les serveurs
       via memcached.</dd>
- 
+
       <dt><code class="module"><a href="./mod/mod_proxy.html">mod_proxy</a></code></dt>
 
       <dd>La directive <code class="directive"><a href="./mod/mod_proxy.html#proxypass">ProxyPass</a></code> est maintenant configurée
       de manière optimale dans les sections <code class="directive"><a href="./mod/core.html#location">Location</a></code> ou <code class="directive"><a href="./mod/core.html#locationmatch">LocationMatch</a></code>, et offre un gain de
       performances important par rapport à la syntaxe traditionnelle à
       deux paramètres lorsqu'elle est présente en grand nombre.</dd>
- 
+
       <dt><code class="module"><a href="./mod/mod_proxy_balancer.html">mod_proxy_balancer</a></code></dt>
 
       <dd>Le gestionnaire de répartition de charge propose de nouvelles
@@ -168,6 +202,14 @@ serveur HTTP Apache</h1>
 
       <dd>Configuration à l'exécution d'un sous-ensemble de paramètres
       de répartition de charge.</dd>
+
+      <dd>Les membres du groupe de répartition peuvent être définis à
+      'Drain' de façon à ce qu'ils ne répondent qu'aux sessions
+      persistantes existantes, ce qui permet de les mettre hors ligne en
+      douceur.</dd>
+
+      <dd>Les règlages du répartiteur de charge peuvent être rendus
+      persistants après redémarrage.</dd>
 
       <dt><code class="module"><a href="./mod/mod_cache.html">mod_cache</a></code></dt>
 
@@ -222,7 +264,18 @@ serveur HTTP Apache</h1>
       des drapeaux <code>[QSD]</code> (Query String Discard) et
       <code>[END]</code> qui permettent de simplifier les scénarios de
       réécriture courants.</dd>
-      
+
+      <dt><code class="module"><a href="./mod/mod_ldap.html">mod_ldap</a></code>, <code class="module"><a href="./mod/mod_authnz_ldap.html">mod_authnz_ldap</a></code></dt>
+      <dd><code class="module"><a href="./mod/mod_authnz_ldap.html">mod_authnz_ldap</a></code> ajoute le support des
+      groupes imbriqués.</dd>
+      <dd><code class="module"><a href="./mod/mod_ldap.html">mod_ldap</a></code> apporte les directives <code class="directive"><a href="./mod/mod_ldap.html#ldapconnectionpoolttl">LDAPConnectionPoolTTL</a></code> et <code class="directive"><a href="./mod/mod_ldap.html#ldaptimeout">LDAPTimeout</a></code>, ainsi que d'autres
+      améliorations dans le traitement des délais. Ceci s'avère utile
+      pour les configurations où un pare-feu à mémoire d'état (stateful)
+      rejète les connexions inactives vers le serveur LDAP.</dd>
+      <dd><code class="module"><a href="./mod/mod_ldap.html">mod_ldap</a></code> propose la directive <code class="directive"><a href="./mod/mod_ldap.html#ldaplibrarydebug">LDAPLibraryDebug</a></code> qui permet de
+      journaliser les informations de débogage fournies par la boîte à
+      outils LDAP utilisée</dd>
+
     </dl>
   </div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section">
@@ -265,10 +318,10 @@ serveur HTTP Apache</h1>
       <dt>Ajout d'un analyseur syntaxique d'expressions</dt>
       <dd>Nous disposons à présent d'un analyseur générique d'expressions, dont l'API
       est décrite dans <var>ap_expr.h</var>. Il s'agit d'une adaptation de
-      l'analyseur qu'on trouvait auparavant dans <code class="module"><a href="./mod/mod_include.html">mod_include</a></code>.</dd>
+      l'analyseur qu'on trouvait auparavant dans <code class="module"><a href="./mod/mod_ssl.html">mod_ssl</a></code>.</dd>
 
       <dt>Conteneurs de logique d'autorisation</dt>
-      
+
       <dd>Afin de fournir une logique d'autorisation avancée via des
       directives telles que <code class="directive"><a href="./mod/mod_authz_core.html#requireall">&lt;RequireAll&gt;</a></code>, les modules d'autorisation
       s'enregistrent maintenant en tant
@@ -286,7 +339,7 @@ serveur HTTP Apache</h1>
       distribués de type memcache.</dd>
 
       <dt>Ajout du point d'ancrage Cache Status</dt>
-      
+
       <dd>Le module <code class="module"><a href="./mod/mod_cache.html">mod_cache</a></code> inclut maintenant un
       nouveau point d'ancrage, <code>cache_status</code>, qui est appelé
       lorsque la décision à propos de la mise en cache est connue. Il en
@@ -294,15 +347,16 @@ serveur HTTP Apache</h1>
       optionnels <code>X-Cache</code> et <code>X-Cache-Detail</code> à
       la réponse.</dd>
 
-      
+
     </dl>
     <p>La documentation du développeur contient une <a href="developer/new_api_2_4.html">liste détaillée des modifications
     de l'API</a>.</p>
   </div></div>
 <div class="bottomlang">
 <p><span>Langues Disponibles: </span><a href="./en/new_features_2_4.html" hreflang="en" rel="alternate" title="English">&nbsp;en&nbsp;</a> |
-<a href="./fr/new_features_2_4.html" title="Français">&nbsp;fr&nbsp;</a></p>
+<a href="./fr/new_features_2_4.html" title="Français">&nbsp;fr&nbsp;</a> |
+<a href="./tr/new_features_2_4.html" hreflang="tr" rel="alternate" title="Türkçe">&nbsp;tr&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2011 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2012 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="./mod/">Modules</a> | <a href="./mod/directives.html">Directives</a> | <a href="./faq/">FAQ</a> | <a href="./glossary.html">Glossaire</a> | <a href="./sitemap.html">Plan du site</a></p></div>
 </body></html>

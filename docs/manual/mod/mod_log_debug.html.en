@@ -13,11 +13,11 @@
 <body>
 <div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p>
-<p class="apache">Apache HTTP Server Version 2.3</p>
+<p class="apache">Apache HTTP Server Version 2.5</p>
 <img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
-<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.3</a> &gt; <a href="./">Modules</a></div>
+<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.5</a> &gt; <a href="./">Modules</a></div>
 <div id="page-content">
 <div id="preamble"><h1>Apache Module mod_log_debug</h1>
 <div class="toplang">
@@ -56,7 +56,7 @@
         Log message if request to /foo/* is processed in a sub-request:
         <div class="example"><p><code>
             &lt;Location /foo/&gt;<br />
-            &nbsp;&nbsp;LogMessage "subrequest to /foo/" hook=type_checker if=%{IS_SUBREQ}<br />
+            &nbsp;&nbsp;LogMessage "subrequest to /foo/" hook=type_checker expr=%{IS_SUBREQ}<br />
             &lt;/Location&gt;<br />
         </code></p></div>
 
@@ -69,9 +69,9 @@
         Log message if an IPv6 client causes a request timeout:
         <div class="example"><p><code>
             LogMessage "IPv6 timeout from %{REMOTE_ADDR}"
-              "if=-T %{IPV6} &amp;&amp; %{REQUEST_STATUS} = 408"
+              "expr=-T %{IPV6} &amp;&amp; %{REQUEST_STATUS} = 408"
         </code></p></div>
-        Note the placing of the double quotes for the <code>if=</code> argument.
+        Note the placing of the double quotes for the <code>expr=</code> argument.
       </li>
 
       <li>
@@ -95,7 +95,7 @@
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Log userdefined message to error log
 </td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>LogMessage <var>message</var>
-[hook=<var>hook</var>] [if=<var>expression</var>]
+[hook=<var>hook</var>] [expr=<var>expression</var>]
 </code></td></tr>
 <tr><th><a href="directive-dict.html#Default">Default:</a></th><td><code>Unset</code></td></tr>
 <tr><th><a href="directive-dict.html#Context">Context:</a></th><td>directory</td></tr>
@@ -139,6 +139,6 @@
 <div class="bottomlang">
 <p><span>Available Languages: </span><a href="../en/mod/mod_log_debug.html" title="English">&nbsp;en&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2011 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2012 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div>
 </body></html>

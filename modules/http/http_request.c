@@ -99,7 +99,7 @@ AP_DECLARE(void) ap_die(int type, request_rec *r)
          * next->frec == ap_http_header_filter
          */
         if (next) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01579)
                           "Custom error page caused AP_FILTER_ERROR");
             type = HTTP_INTERNAL_SERVER_ERROR;
         }
@@ -208,7 +208,7 @@ AP_DECLARE(void) ap_die(int type, request_rec *r)
              * dying with a recursive server error...
              */
             recursive_error = HTTP_INTERNAL_SERVER_ERROR;
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01580)
                         "Invalid error redirection directive: %s",
                         custom_response);
         }
@@ -252,15 +252,16 @@ AP_DECLARE(void) ap_process_request_after_handler(request_rec *r)
     bb = apr_brigade_create(r->connection->pool, r->connection->bucket_alloc);
     b = ap_bucket_eor_create(r->connection->bucket_alloc, r);
     APR_BRIGADE_INSERT_HEAD(bb, b);
-    
+
     ap_pass_brigade(r->connection->output_filters, bb);
-    
+
     /* From here onward, it is no longer safe to reference r
      * or r->pool, because r->pool may have been destroyed
      * already by the EOR bucket's cleanup function.
      */
-    
-    c->cs->state = CONN_STATE_WRITE_COMPLETION;
+
+    if (c->cs)
+        c->cs->state = CONN_STATE_WRITE_COMPLETION;
     check_pipeline(c);
     AP_PROCESS_REQUEST_RETURN((uintptr_t)r, r->uri, r->status);
     if (ap_extended_status) {
@@ -325,7 +326,8 @@ void ap_process_async_request(request_rec *r)
         if (ap_extended_status) {
             ap_time_process_request(c->sbh, STOP_PREQUEST);
         }
-        c->cs->state = CONN_STATE_SUSPENDED;
+        if (c->cs)
+            c->cs->state = CONN_STATE_SUSPENDED;
 #if APR_HAS_THREADS
         apr_thread_mutex_unlock(r->invoke_mtx);
 #endif
@@ -374,7 +376,7 @@ void ap_process_request(request_rec *r)
              * It is still safe to use r / r->pool here as the eor bucket
              * could not have been destroyed in the event of a timeout.
              */
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
+            ap_log_rerror(APLOG_MARK, APLOG_INFO, rv, r, APLOGNO(01581)
                           "Timeout while writing data for URI %s to the"
                           " client", r->unparsed_uri);
         }
@@ -437,6 +439,9 @@ static request_rec *internal_internal_redirect(const char *new_uri,
     new->prev = r;
     r->next   = new;
 
+    new->useragent_addr = r->useragent_addr;
+    new->useragent_ip = r->useragent_ip;
+
     /* Must have prev and next pointers set before calling create_request
      * hook.
      */
@@ -459,6 +464,11 @@ static request_rec *internal_internal_redirect(const char *new_uri,
 
     new->headers_in      = r->headers_in;
     new->headers_out     = apr_table_make(r->pool, 12);
+    if (ap_is_HTTP_REDIRECT(new->status)) {
+        const char *location = apr_table_get(r->headers_out, "Location");
+        if (location)
+            apr_table_setn(new->headers_out, "Location", location);
+    }
     new->err_headers_out = r->err_headers_out;
     new->subprocess_env  = rename_original_env(r->pool, r->subprocess_env);
     new->notes           = apr_table_make(r->pool, 5);
@@ -490,7 +500,7 @@ static request_rec *internal_internal_redirect(const char *new_uri,
             nextf = f->next;
 
             if (f->r == r && f->frec != ap_subreq_core_filter_handle) {
-                ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01582)
                               "dropping filter '%s' in internal redirect from %s to %s",
                               f->frec->name, r->unparsed_uri, new_uri);
 

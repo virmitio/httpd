@@ -23,8 +23,8 @@
 #define AP_HOOKS_H
 
 /* Although this file doesn't declare any hooks, declare the hook group here */
-/** 
- * @defgroup hooks Apache Hooks 
+/**
+ * @defgroup hooks Apache Hooks
  * @ingroup  APACHE_CORE
  */
 
@@ -50,8 +50,8 @@
  * @see AP_DECLARE_EXPORT
  *
  * AP_DECLARE_STATIC and AP_DECLARE_EXPORT are left undefined when
- * including Apache's Core headers, to import and link the symbols from the 
- * dynamic Apache Core library and assure appropriate indirection and calling 
+ * including Apache's Core headers, to import and link the symbols from the
+ * dynamic Apache Core library and assure appropriate indirection and calling
  * conventions at compile time.
  */
 # define AP_DECLARE_STATIC
@@ -72,11 +72,11 @@
  * @param args The arguments the hook function takes, in brackets.
  */
 #define AP_DECLARE_HOOK(ret,name,args) \
-	APR_DECLARE_EXTERNAL_HOOK(ap,AP,ret,name,args)
+        APR_DECLARE_EXTERNAL_HOOK(ap,AP,ret,name,args)
 
 /** @internal */
 #define AP_IMPLEMENT_HOOK_BASE(name) \
-	APR_IMPLEMENT_EXTERNAL_HOOK_BASE(ap,AP,name)
+        APR_IMPLEMENT_EXTERNAL_HOOK_BASE(ap,AP,name)
 
 /**
  * Implement an Apache core hook that has no return code, and
@@ -92,7 +92,7 @@
  * (e.g. within a dso) see APR_IMPLEMENT_EXTERNAL_HOOK_VOID.
  */
 #define AP_IMPLEMENT_HOOK_VOID(name,args_decl,args_use) \
-	APR_IMPLEMENT_EXTERNAL_HOOK_VOID(ap,AP,name,args_decl,args_use)
+        APR_IMPLEMENT_EXTERNAL_HOOK_VOID(ap,AP,name,args_decl,args_use)
 
 /**
  * Implement an Apache core hook that runs until one of the functions
@@ -115,12 +115,12 @@
  * (e.g. within a dso) see APR_IMPLEMENT_EXTERNAL_HOOK_RUN_ALL.
  */
 #define AP_IMPLEMENT_HOOK_RUN_ALL(ret,name,args_decl,args_use,ok,decline) \
-	APR_IMPLEMENT_EXTERNAL_HOOK_RUN_ALL(ap,AP,ret,name,args_decl, \
+        APR_IMPLEMENT_EXTERNAL_HOOK_RUN_ALL(ap,AP,ret,name,args_decl, \
                                             args_use,ok,decline)
 
 /**
- * Implement a hook that runs until a function returns something other than 
- * decline. If all functions return decline, the hook runner returns decline. 
+ * Implement a hook that runs until a function returns something other than
+ * decline. If all functions return decline, the hook runner returns decline.
  * The implementation is called ap_run_<i>name</i>.
  *
  * @param ret The return type of the hook (and the hook runner)
@@ -135,7 +135,7 @@
  * (e.g. within a dso) see APR_IMPLEMENT_EXTERNAL_HOOK_RUN_FIRST.
  */
 #define AP_IMPLEMENT_HOOK_RUN_FIRST(ret,name,args_decl,args_use,decline) \
-	APR_IMPLEMENT_EXTERNAL_HOOK_RUN_FIRST(ap,AP,ret,name,args_decl, \
+        APR_IMPLEMENT_EXTERNAL_HOOK_RUN_FIRST(ap,AP,ret,name,args_decl, \
                                               args_use,decline)
 
 /* Note that the other optional hook implementations are straightforward but
@@ -148,8 +148,8 @@
  * @see AP_IMPLEMENT_HOOK_RUN_ALL
  */
 #define AP_IMPLEMENT_OPTIONAL_HOOK_RUN_ALL(ret,name,args_decl,args_use,ok, \
-					   decline) \
-	APR_IMPLEMENT_OPTIONAL_HOOK_RUN_ALL(ap,AP,ret,name,args_decl, \
+                                           decline) \
+        APR_IMPLEMENT_OPTIONAL_HOOK_RUN_ALL(ap,AP,ret,name,args_decl, \
                                             args_use,ok,decline)
 
 /**

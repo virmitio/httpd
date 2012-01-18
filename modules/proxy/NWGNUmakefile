@@ -160,6 +160,11 @@ TARGET_nlm = \
 	$(OBJDIR)/proxyajp.nlm \
 	$(OBJDIR)/proxyfcgi.nlm \
 	$(OBJDIR)/proxyscgi.nlm \
+	$(OBJDIR)/proxyexpress.nlm \
+	$(OBJDIR)/proxylbm_busy.nlm \
+	$(OBJDIR)/proxylbm_hb.nlm \
+	$(OBJDIR)/proxylbm_req.nlm \
+	$(OBJDIR)/proxylbm_traf.nlm \
 	$(EOLIST)
 
 # If WITH_MOD_SERF and SERFSRC have been defined then build the mod_serf module

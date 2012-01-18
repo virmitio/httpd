@@ -173,9 +173,9 @@ typedef struct read_handle_t {
 static read_handle_t *read_handles;
 
 /**
- * @brief The piped logging structure.  
+ * @brief The piped logging structure.
  *
- * Piped logs are used to move functionality out of the main server.  
+ * Piped logs are used to move functionality out of the main server.
  * For example, log rotation is done with piped logs.
  */
 struct piped_log {
@@ -209,7 +209,7 @@ AP_DECLARE(apr_file_t *) ap_piped_log_write_fd(piped_log *pl)
  * take the parent process's child procs.
  * If the win32 parent instead passed each and every
  * logger write handle from itself down to the child,
- * and the parent manages all aspects of keeping the 
+ * and the parent manages all aspects of keeping the
  * reliable pipe log children alive, this would still
  * make no sense :)  Cripple it on Win32.
  */
@@ -248,14 +248,14 @@ AP_DECLARE(apr_status_t) ap_replace_stderr_log(apr_pool_t *p,
     char *filename = ap_server_root_relative(p, fname);
     if (!filename) {
         ap_log_error(APLOG_MARK, APLOG_STARTUP|APLOG_CRIT,
-                     APR_EBADPATH, NULL, "Invalid -E error log file %s",
+                     APR_EBADPATH, NULL, APLOGNO(00085) "Invalid -E error log file %s",
                      fname);
         return APR_EBADPATH;
     }
     if ((rc = apr_file_open(&stderr_file, filename,
                             APR_APPEND | APR_WRITE | APR_CREATE | APR_LARGEFILE,
                             APR_OS_DEFAULT, p)) != APR_SUCCESS) {
-        ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, NULL,
+        ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, NULL, APLOGNO(00086)
                      "%s: could not open error log file %s.",
                      ap_server_argv0, fname);
         return rc;
@@ -266,18 +266,18 @@ AP_DECLARE(apr_status_t) ap_replace_stderr_log(apr_pool_t *p,
          */
         stderr_pool = p;
     }
-    if ((rc = apr_file_open_stderr(&stderr_log, stderr_pool)) 
+    if ((rc = apr_file_open_stderr(&stderr_log, stderr_pool))
             == APR_SUCCESS) {
         apr_file_flush(stderr_log);
-        if ((rc = apr_file_dup2(stderr_log, stderr_file, stderr_pool)) 
+        if ((rc = apr_file_dup2(stderr_log, stderr_file, stderr_pool))
                 == APR_SUCCESS) {
             apr_file_close(stderr_file);
             /*
              * You might ponder why stderr_pool should survive?
              * The trouble is, stderr_pool may have s_main->error_log,
              * so we aren't in a position to destory stderr_pool until
-             * the next recycle.  There's also an apparent bug which 
-             * is not; if some folk decided to call this function before 
+             * the next recycle.  There's also an apparent bug which
+             * is not; if some folk decided to call this function before
              * the core open error logs hook, this pool won't survive.
              * Neither does the stderr logger, so this isn't a problem.
              */
@@ -288,7 +288,7 @@ AP_DECLARE(apr_status_t) ap_replace_stderr_log(apr_pool_t *p,
         stderr_pool = NULL;
 
     if (rc != APR_SUCCESS) {
-        ap_log_error(APLOG_MARK, APLOG_CRIT, rc, NULL,
+        ap_log_error(APLOG_MARK, APLOG_CRIT, rc, NULL, APLOGNO(00087)
                      "unable to replace stderr with error log file");
     }
     return rc;
@@ -297,7 +297,7 @@ AP_DECLARE(apr_status_t) ap_replace_stderr_log(apr_pool_t *p,
 static void log_child_errfn(apr_pool_t *pool, apr_status_t err,
                             const char *description)
 {
-    ap_log_error(APLOG_MARK, APLOG_ERR, err, NULL,
+    ap_log_error(APLOG_MARK, APLOG_ERR, err, NULL, APLOGNO(00088)
                  "%s", description);
 }
 
@@ -328,7 +328,7 @@ static int log_child(apr_pool_t *p, const char *progname,
                                       APR_NO_PIPE,
                                       APR_NO_PIPE)) == APR_SUCCESS)
         && ((rc = apr_procattr_error_check_set(procattr, 1)) == APR_SUCCESS)
-        && ((rc = apr_procattr_child_errfn_set(procattr, log_child_errfn)) 
+        && ((rc = apr_procattr_child_errfn_set(procattr, log_child_errfn))
                 == APR_SUCCESS)) {
         char **args;
         const char *pname;
@@ -371,7 +371,7 @@ static int open_error_log(server_rec *s, int is_main, apr_pool_t *p)
 
         /* In 2.4 favor PROGRAM_ENV, accept "||prog" syntax for compatibility
          * and "|$cmd" to override the default.
-         * Any 2.2 backport would continue to favor SHELLCMD_ENV so there 
+         * Any 2.2 backport would continue to favor SHELLCMD_ENV so there
          * accept "||prog" to override, and "|$cmd" to ease conversion.
          */
         if (*fname == '|')
@@ -387,7 +387,7 @@ static int open_error_log(server_rec *s, int is_main, apr_pool_t *p)
          * child inherits the parents stderr. */
         rc = log_child(p, fname, &dummy, cmdtype, is_main);
         if (rc != APR_SUCCESS) {
-            ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, NULL,
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, NULL, APLOGNO(00089)
                          "Couldn't start ErrorLog process '%s'.",
                          s->error_fname + 1);
             return DONE;
@@ -421,7 +421,7 @@ static int open_error_log(server_rec *s, int is_main, apr_pool_t *p)
     else {
         fname = ap_server_root_relative(p, s->error_fname);
         if (!fname) {
-            ap_log_error(APLOG_MARK, APLOG_STARTUP, APR_EBADPATH, NULL,
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, APR_EBADPATH, NULL, APLOGNO(00090)
                          "%s: Invalid error log path %s.",
                          ap_server_argv0, s->error_fname);
             return DONE;
@@ -429,7 +429,7 @@ static int open_error_log(server_rec *s, int is_main, apr_pool_t *p)
         if ((rc = apr_file_open(&s->error_log, fname,
                                APR_APPEND | APR_WRITE | APR_CREATE | APR_LARGEFILE,
                                APR_OS_DEFAULT, p)) != APR_SUCCESS) {
-            ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, NULL,
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, NULL, APLOGNO(00091)
                          "%s: could not open error log file %s.",
                          ap_server_argv0, fname);
             return DONE;
@@ -450,17 +450,17 @@ int ap_open_logs(apr_pool_t *pconf, apr_pool_t *p /* plog */,
     /* Register to throw away the read_handles list when we
      * cleanup plog.  Upon fork() for the apache children,
      * this read_handles list is closed so only the parent
-     * can relaunch a lost log child.  These read handles 
+     * can relaunch a lost log child.  These read handles
      * are always closed on exec.
-     * We won't care what happens to our stderr log child 
-     * between log phases, so we don't mind losing stderr's 
+     * We won't care what happens to our stderr log child
+     * between log phases, so we don't mind losing stderr's
      * read_handle a little bit early.
      */
     apr_pool_cleanup_register(p, &read_handles, ap_pool_cleanup_set_null,
                               apr_pool_cleanup_null);
 
     /* HERE we need a stdout log that outlives plog.
-     * We *presume* the parent of plog is a process 
+     * We *presume* the parent of plog is a process
      * or global pool which spans server restarts.
      * Create our stderr_pool as a child of the plog's
      * parent pool.
@@ -480,7 +480,7 @@ int ap_open_logs(apr_pool_t *pconf, apr_pool_t *p /* plog */,
         apr_file_flush(s_main->error_log);
         rv = apr_file_dup2(stderr_log, s_main->error_log, stderr_p);
         if (rv != APR_SUCCESS) {
-            ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s_main,
+            ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s_main, APLOGNO(00092)
                          "unable to replace stderr with error_log");
         }
         else {
@@ -510,7 +510,7 @@ int ap_open_logs(apr_pool_t *pconf, apr_pool_t *p /* plog */,
      *      errno-as-apr_status_t is also non-portable
      */
     if (replace_stderr && freopen("/dev/null", "w", stderr) == NULL) {
-        ap_log_error(APLOG_MARK, APLOG_CRIT, errno, s_main,
+        ap_log_error(APLOG_MARK, APLOG_CRIT, errno, s_main, APLOGNO(00093)
                      "unable to replace stderr with /dev/null");
     }
 
@@ -561,9 +561,12 @@ static int cpystrn(char *buf, const char *arg, int buflen)
 static int log_remote_address(const ap_errorlog_info *info, const char *arg,
                               char *buf, int buflen)
 {
-    if (info->c)
-        return apr_snprintf(buf, buflen, "%s:%d", info->c->remote_ip,
-                            info->c->remote_addr->port);
+    if (info->r && !(arg && *arg == 'c'))
+        return apr_snprintf(buf, buflen, "%s:%d", info->r->useragent_ip,
+                            info->r->useragent_addr->port);
+    else if (info->c)
+        return apr_snprintf(buf, buflen, "%s:%d", info->c->client_ip,
+                            info->c->client_addr->port);
     else
         return 0;
 }
@@ -958,14 +961,19 @@ static int do_errorlog_default(const ap_errorlog_info *info, char *buf,
         }
     }
 
-    if (info->c) {
-        /*
-         * remote_ip can be client or backend server. If we have a scoreboard
-         * handle, it is likely a client.
-         */
+    /*
+     * useragent_ip/client_ip can be client or backend server. If we have
+     * a scoreboard handle, it is likely a client.
+     */
+    if (info->r) {
+        len += apr_snprintf(buf + len, buflen - len,
+                            info->r->connection->sbh ? "[client %s:%d] " : "[remote %s:%d] ",
+                            info->r->useragent_ip, info->r->useragent_addr->port);
+    }
+    else if (info->c) {
         len += apr_snprintf(buf + len, buflen - len,
                             info->c->sbh ? "[client %s:%d] " : "[remote %s:%d] ",
-                            info->c->remote_ip, info->c->remote_addr->port);
+                            info->c->client_ip, info->c->client_addr->port);
     }
 
     /* the actual error message */
@@ -1033,7 +1041,7 @@ static int do_errorlog_format(apr_array_header_t *fmt, ap_errorlog_info *info,
         else if (skipping) {
             continue;
         }
-        else if ((int)item->min_loglevel > info->level) {
+        else if (info->level != -1 && (int)item->min_loglevel > info->level) {
             len = field_start;
             skipping = 1;
         }
@@ -1177,6 +1185,7 @@ static void log_error_core(const char *file, int line, int module_index,
 
     info.s             = s;
     info.c             = c;
+    info.pool          = pool;
     info.file          = NULL;
     info.line          = 0;
     info.status        = 0;
@@ -1261,11 +1270,14 @@ static void log_error_core(const char *file, int line, int module_index,
         }
         write_logline(errstr, len, logf, level_and_mask);
 
-        if (!log_format) {
-            /* only pass the real error string to the hook */
+        if (done) {
+            /*
+             * We don't call the error_log hook for per-request/per-conn
+             * lines, and we only pass the actual log message, not the
+             * prefix and suffix.
+             */
             errstr[errstr_end] = '\0';
-            ap_run_error_log(file, line, module_index, level, status, s, r, pool,
-                             errstr + errstr_start);
+            ap_run_error_log(&info, errstr + errstr_start);
         }
 
         *errstr = '\0';
@@ -1356,7 +1368,7 @@ AP_DECLARE(void) ap_log_command_line(apr_pool_t *plog, server_rec *s)
     process_rec *process = s->process;
     char *result;
     int len_needed = 0;
-    
+
     /* Piece together the command line from the pieces
      * in process->argv, with spaces in between.
      */
@@ -1373,7 +1385,7 @@ AP_DECLARE(void) ap_log_command_line(apr_pool_t *plog, server_rec *s)
             strcat(result, " ");
         }
     }
-    ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, s,
+    ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, s, APLOGNO(00094)
                  "Command line: '%s'", result);
 }
 
@@ -1385,11 +1397,11 @@ AP_DECLARE(void) ap_remove_pid(apr_pool_t *p, const char *rel_fname)
     if (fname != NULL) {
         rv = apr_file_remove(fname, p);
         if (rv != APR_SUCCESS) {
-            ap_log_error(APLOG_MARK, APLOG_ERR, rv, ap_server_conf,
+            ap_log_error(APLOG_MARK, APLOG_ERR, rv, ap_server_conf, APLOGNO(00095)
                          "failed to remove PID file %s", fname);
         }
         else {
-            ap_log_error(APLOG_MARK, APLOG_INFO, 0, ap_server_conf,
+            ap_log_error(APLOG_MARK, APLOG_INFO, 0, ap_server_conf, APLOGNO(00096)
                          "removed PID file %s (pid=%" APR_PID_T_FMT ")",
                          fname, getpid());
         }
@@ -1412,7 +1424,7 @@ AP_DECLARE(void) ap_log_pid(apr_pool_t *p, const char *filename)
     fname = ap_server_root_relative(p, filename);
     if (!fname) {
         ap_log_error(APLOG_MARK, APLOG_STARTUP|APLOG_CRIT, APR_EBADPATH,
-                     NULL, "Invalid PID file path %s, ignoring.", filename);
+                     NULL, APLOGNO(00097) "Invalid PID file path %s, ignoring.", filename);
         return;
     }
 
@@ -1426,7 +1438,7 @@ AP_DECLARE(void) ap_log_pid(apr_pool_t *p, const char *filename)
          *      that may screw up scripts written to do something
          *      based on the last modification time of the pid file.
          */
-        ap_log_perror(APLOG_MARK, APLOG_WARNING, 0, p,
+        ap_log_perror(APLOG_MARK, APLOG_WARNING, 0, p, APLOGNO(00098)
                       "pid file %s overwritten -- Unclean "
                       "shutdown of previous Apache run?",
                       fname);
@@ -1436,9 +1448,9 @@ AP_DECLARE(void) ap_log_pid(apr_pool_t *p, const char *filename)
                             APR_WRITE | APR_CREATE | APR_TRUNCATE,
                             APR_UREAD | APR_UWRITE | APR_GREAD | APR_WREAD, p))
         != APR_SUCCESS) {
-        ap_log_error(APLOG_MARK, APLOG_ERR, rv, NULL,
+        ap_log_error(APLOG_MARK, APLOG_ERR, rv, NULL, APLOGNO(00099)
                      "could not create %s", fname);
-        ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL, APLOGNO(00100)
                      "%s: could not log pid to file %s",
                      ap_server_argv0, fname);
         exit(1);
@@ -1465,7 +1477,7 @@ AP_DECLARE(apr_status_t) ap_read_pid(apr_pool_t *p, const char *filename,
     fname = ap_server_root_relative(p, filename);
     if (!fname) {
         ap_log_error(APLOG_MARK, APLOG_STARTUP|APLOG_CRIT, APR_EBADPATH,
-                     NULL, "Invalid PID file path %s, ignoring.", filename);
+                     NULL, APLOGNO(00101) "Invalid PID file path %s, ignoring.", filename);
         return APR_EGENERAL;
     }
 
@@ -1500,7 +1512,7 @@ AP_DECLARE(void) ap_log_assert(const char *szExp, const char *szFile,
     char time_str[APR_CTIME_LEN];
 
     apr_ctime(time_str, apr_time_now());
-    ap_log_error(APLOG_MARK, APLOG_CRIT, 0, NULL,
+    ap_log_error(APLOG_MARK, APLOG_CRIT, 0, NULL, APLOGNO(00102)
                  "[%s] file %s, line %d, assertion \"%s\" failed",
                  time_str, szFile, nLine, szExp);
 #if defined(WIN32)
@@ -1538,7 +1550,7 @@ static apr_status_t piped_log_spawn(piped_log *pl)
         ((status = apr_procattr_error_check_set(procattr, 1)) != APR_SUCCESS)) {
         char buf[120];
         /* Something bad happened, give up and go away. */
-        ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(00103)
                      "piped_log_spawn: unable to setup child process '%s': %s",
                      pl->program, apr_strerror(status, buf, sizeof(buf)));
     }
@@ -1566,7 +1578,7 @@ static apr_status_t piped_log_spawn(piped_log *pl)
         else {
             char buf[120];
             /* Something bad happened, give up and go away. */
-            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL,
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(00104)
                          "unable to start piped log program '%s': %s",
                          pl->program, apr_strerror(status, buf, sizeof(buf)));
         }
@@ -1591,20 +1603,20 @@ static void piped_log_maintenance(int reason, void *data, apr_wait_t status)
         apr_proc_other_child_unregister(pl);
         stats = ap_mpm_query(AP_MPMQ_MPM_STATE, &mpm_state);
         if (stats != APR_SUCCESS) {
-            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL,
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(00105)
                          "can't query MPM state; not restarting "
                          "piped log program '%s'",
                          pl->program);
         }
         else if (mpm_state != AP_MPMQ_STOPPING) {
-            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL,
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(00106)
                          "piped log program '%s' failed unexpectedly",
                          pl->program);
             if ((stats = piped_log_spawn(pl)) != APR_SUCCESS) {
                 /* what can we do?  This could be the error log we're having
                  * problems opening up... */
                 char buf[120];
-                ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL,
+                ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(00107)
                              "piped_log_maintenance: unable to respawn '%s': %s",
                              pl->program, apr_strerror(stats, buf, sizeof(buf)));
             }
@@ -1697,7 +1709,7 @@ AP_DECLARE(piped_log *) ap_open_piped_log_ex(apr_pool_t *p,
 
     rc = log_child(p, program, &dummy, cmdtype, 0);
     if (rc != APR_SUCCESS) {
-        ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, NULL,
+        ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, NULL, APLOGNO(00108)
                      "Couldn't start piped log process '%s'.",
                      (program == NULL) ? "NULL" : program);
         return NULL;
@@ -1721,7 +1733,7 @@ AP_DECLARE(piped_log *) ap_open_piped_log(apr_pool_t *p,
 
     /* In 2.4 favor PROGRAM_ENV, accept "||prog" syntax for compatibility
      * and "|$cmd" to override the default.
-     * Any 2.2 backport would continue to favor SHELLCMD_ENV so there 
+     * Any 2.2 backport would continue to favor SHELLCMD_ENV so there
      * accept "||prog" to override, and "|$cmd" to ease conversion.
      */
     if (*program == '|')
@@ -1759,11 +1771,8 @@ AP_DECLARE(const char *) ap_parse_log_level(const char *str, int *val)
 }
 
 AP_IMPLEMENT_HOOK_VOID(error_log,
-                       (const char *file, int line, int module_index, int level,
-                        apr_status_t status, const server_rec *s,
-                        const request_rec *r, apr_pool_t *pool,
-                        const char *errstr), (file, line, module_index, level,
-                        status, s, r, pool, errstr))
+                       (const ap_errorlog_info *info, const char *errstr),
+                       (info, errstr))
 
 AP_IMPLEMENT_HOOK_RUN_FIRST(int, generate_log_id,
                             (const conn_rec *c, const request_rec *r,

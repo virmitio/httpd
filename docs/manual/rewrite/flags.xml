@@ -38,7 +38,7 @@ providing detailed explanations and examples.</p>
 <seealso><a href="vhosts.html">Virtual hosts</a></seealso>
 <seealso><a href="proxy.html">Proxying</a></seealso>
 <seealso><a href="rewritemap.html">Using RewriteMap</a></seealso>
-<seealso><a href="advanced.html">Advanced techniques and tricks</a></seealso>
+<seealso><a href="advanced.html">Advanced techniques</a></seealso>
 <seealso><a href="avoid.html">When not to use mod_rewrite</a></seealso>
 
 <section id="introduction"><title>Introduction</title>
@@ -54,7 +54,7 @@ RewriteRule pattern target [Flag1,Flag2,Flag3]
 a longer form, such as <code>cookie</code>. Some flags take one or more
 arguments. Flags are not case sensitive.</p>
 
-<p>Each flag (with a few exceptions) 
+<p>Each flag (with a few exceptions)
 has a long and short form. While it is most common to use
 the short form, it is recommended that you familiarize yourself with the
 long form, so that you remember what each flag is supposed to do.</p>
@@ -80,14 +80,23 @@ Using the B flag, non-alphanumeric characters in backreferences
 will be escaped. For example, consider the rule:</p>
 
 <example>
-RewriteRule ^(/.*)$ /index.php?show=$1
+RewriteRule ^search/(.*)$ /search.php?term=$1
 </example>
 
-<p>This will map <code>/C++</code> to
-<code>/index.php?show=/C++</code>. But it will also map
-<code>/C%2b%2b</code> to <code>/index.php?show=/C++</code>, because
-the <code>%2b</code> has been unescaped.  With the B flag, it will
-instead map to <code>/index.php?show=/C%2b%2b</code>.</p>
+<p>Given a search term of 'x &amp; y/z', a browser will encode it as
+'x%20%26%20y%2Fz', making the request 'search/x%20%26%20y%2Fz'. Without the B
+flag, this rewrite rule will map to 'search.php?term=x &amp; y/z', which
+isn't a valid URL, and so would be encoded as
+<code>search.php?term=x%20&amp;y%2Fz=</code>, which is not what was intended.</p>
+
+<p>With the B flag set on this same rule, the parameters are re-encoded
+before being passed on to the output URL, resulting in a correct mapping to
+<code>/search.php?term=x%20%26%20y%2Fz</code>.</p>
+
+<p>Note that you may also need to set <directive
+module="core">AllowEncodedSlashes</directive> to <code>On</code> to get this
+particular example to work, as httpd does not allow encoded slashes in URLs, and
+returns a 404 if it sees one.</p>
 
 <p>This escaping is particularly necessary in a proxy situation,
 when the backend may break if presented with an unescaped URL.</p>
@@ -268,7 +277,7 @@ redirects.</p>
 <section id="flag_f"><title>F|forbidden</title>
 <p>Using the [F] flag causes the server to return a 403 Forbidden status
 code to the client. While the same behavior can be accomplished using
-the <directive module="mod_access">Deny</directive> directive, this 
+the <directive module="mod_access">Deny</directive> directive, this
 allows more flexibility in assigning a Forbidden status.</p>
 
 <p>The following rule will forbid <code>.exe</code> files from being
@@ -344,13 +353,13 @@ immediately without considering further rules.</p>
 
 <p>If you are using <directive
 module="mod_rewrite">RewriteRule</directive> in either
-<code>.htaccess</code> files or in 
+<code>.htaccess</code> files or in
 <directive type="section" module="core">Directory</directive> sections,
 it is important to have some understanding of how the rules are
 processed.  The simplified form of this is that once the rules have been
 processed, the rewritten request is handed back to the URL parsing
 engine to do what it may with it. It is possible that as the rewritten
-request is handled, the <code>.htaccess</code> file or 
+request is handled, the <code>.htaccess</code> file or
 <directive type="section" module="core">Directory</directive> section
 may be encountered again, and thus the ruleset may be run again from the
 start. Most commonly this will happen if one of the rules causes a
@@ -372,7 +381,7 @@ redirects.</p>
 <p>The example given here will rewrite any request to
 <code>index.php</code>, giving the original request as a query string
 argument to <code>index.php</code>, however, the <directive
-module="mod_rewrite">RewriteCond</directive> ensures that if the request 
+module="mod_rewrite">RewriteCond</directive> ensures that if the request
 is already for <code>index.php</code>, the <directive
 module="mod_rewrite">RewriteRule</directive> will be skipped.</p>
 
@@ -454,7 +463,7 @@ On subrequests, it is not always useful, and can even cause errors, if
 the complete set of rules are applied. Use this flag to exclude
 problematic rules.</p>
 
-<p>To decide whether or not to use this rule: if you prefix URLs with 
+<p>To decide whether or not to use this rule: if you prefix URLs with
 CGI-scripts, to force them to be processed by the CGI-script, it's
 likely that you will run into problems (or significant overhead)
 on sub-requests. In these cases, use this flag.</p>
@@ -473,7 +482,7 @@ example, if you wanted all image requests to be handled by a back-end
 image server, you might do something like the following:</p>
 
 <example>
-RewriteRule (.*)\.(jpg|gif|png) http://images.example.com$1.$2 [P]
+RewriteRule /(.*)\.(jpg|gif|png) http://images.example.com/$1.$2 [P]
 </example>
 
 <p>Use of the [P] flag implies [L] - that is, the request is immediately
@@ -488,6 +497,15 @@ error from the proxy module. Use this flag to achieve a
 more powerful implementation of the <directive
 module="mod_proxy">ProxyPass</directive> directive,
 to map remote content into the namespace of the local server.</p>
+
+<note type="warning">
+<title>Security Warning</title>
+<p>Take care when constructing the target URL of the rule, considering
+the security impact from allowing the client influence over the set of
+URLs to which your server will act as a proxy.  Ensure that the scheme
+and hostname part of the URL is either fixed, or does not allow the
+client undue influence.</p>
+</note>
 
 <p>Note: <module>mod_proxy</module> must be enabled in order
 to use this flag.</p>
@@ -504,17 +522,17 @@ use of the [PT] flag causes the result of the <directive
 module="mod_rewrite">RewriteRule</directive> to be passed back through
 URL mapping, so that location-based mappings, such as <directive
 module="mod_alias">Alias</directive>, <directive
-module="core">Redirect</directive>, or <directive 
-module="mod_alias">ScriptAlias</directive>, for example, might have a 
+module="core">Redirect</directive>, or <directive
+module="mod_alias">ScriptAlias</directive>, for example, might have a
 chance to take effect.
 </p>
 
 <p>
-If, for example, you have an 
+If, for example, you have an
 <directive module="mod_alias">Alias</directive>
 for /icons, and have a <directive
 module="mod_rewrite">RewriteRule</directive> pointing there, you should
-use the [PT] flag to ensure that the 
+use the [PT] flag to ensure that the
 <directive module="mod_alias">Alias</directive> is evaluated.
 </p>
 
@@ -596,8 +614,8 @@ will be used to generate the URL sent with the redirect.
 </p>
 
 <p>
-<em>Any</em> valid HTTP response  status code may be specified, 
-using the syntax [R=305], with a 302 status code being used by 
+<em>Any</em> valid HTTP response  status code may be specified,
+using the syntax [R=305], with a 302 status code being used by
 default if none is specified. The status code specified need not
 necessarily be a redirect (3xx) status code.
 </p>
@@ -607,7 +625,7 @@ substitution string is dropped entirely, and rewriting is stopped as if
 the <code>L</code> were used.</p>
 
 <p>In addition to response status codes, you may also specify redirect
-status using their symbolic names: <code>temp</code> (default), 
+status using their symbolic names: <code>temp</code> (default),
 <code>permanent</code>, or <code>seeother</code>.</p>
 
 <p>
@@ -643,9 +661,9 @@ module="mod_rewrite">RewriteCond</directive> only applies to the
 <directive module="mod_rewrite">RewriteRule</directive> immediately
 following it. Thus, if you want to make a <code>RewriteCond</code> apply
 to several <code>RewriteRule</code>s, one possible technique is to
-negate those conditions and use a [Skip] flag. So, you can 
-use this to make pseudo if-then-else constructs: The last rule of 
-the then-clause becomes <code>skip=N</code>, where N is the 
+negate those conditions and use a [Skip] flag. So, you can
+use this to make pseudo if-then-else constructs: The last rule of
+the then-clause becomes <code>skip=N</code>, where N is the
 number of rules in the else-clause.</p>
 </section>
 
@@ -679,10 +697,10 @@ invariably be a less efficient solution than the alternatives.</p>
 
 <p>
 If used in per-directory context, use only <code>-</code> (dash)
-as the substitution <em>for the entire round of mod_rewrite processing</em>, 
-otherwise the MIME-type set with this flag is lost due to an internal 
+as the substitution <em>for the entire round of mod_rewrite processing</em>,
+otherwise the MIME-type set with this flag is lost due to an internal
 re-processing (including subsequent rounds of mod_rewrite processing).
-The <code>L</code> flag can be useful in this context to end the 
+The <code>L</code> flag can be useful in this context to end the
 <em>current</em> round of mod_rewrite processing.</p>
 
 </section>

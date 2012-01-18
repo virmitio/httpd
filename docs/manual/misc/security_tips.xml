@@ -73,6 +73,10 @@
     settings that can help mitigate problems:</p>
 
     <ul>
+      <li>The <directive module="mod_reqtimeout">RequestReadTimeout</directive>
+      directive allows to limit the time a client may take to send the
+      request.</li>
+
       <li>The <directive module="core">TimeOut</directive> directive
       should be lowered on sites that are subject to DoS attacks.
       Setting this to as low as a few seconds may be appropriate.
@@ -113,13 +117,14 @@
 
       <li>The use of a threaded <a href="../mpm.html">mpm</a> may
       allow you to handle more simultaneous connections, thereby
-      mitigating DoS attacks.  Further, the experimental
+      mitigating DoS attacks.  Further, the 
       <module>event</module> mpm
       uses asynchronous processing to avoid devoting a thread to each
-      connection. At the current point of time this
-      is work in progress and not fully implemented.  Especially the
+      connection. Due to the nature of the OpenSSL library the
       <module>event</module> mpm is currently incompatible with
-      <module>mod_ssl</module> and other input filters.</li>
+	  <module>mod_ssl</module> and other input filters. In these
+      cases it falls back to the behaviour of the
+      <module>worker</module> mpm.</li>
 
       <li>There are a number of third-party modules available through
       <a
@@ -440,6 +445,21 @@
       &lt;/Files&gt;
     </example>
 
+  </section>
+
+  <section id="merging">
+
+    <title>Merging of configuration sections</title>
+
+    <p> The merging of configuration sections is complicated and sometimes
+    directive specific.  Always test your changes when creating dependencies
+    on how directives are merged.</p>
+
+    <p> For modules that don't implement any merging logic, such as 
+    <directive>mod_access_compat</directive>, the behavior in later sections
+    depends on whether the later section has any directives
+    from the module.  The configuration is inherited until a change is made, 
+    at which point the configuration is <em>replaced</em> and not merged.</p>
   </section>
 
 </manualpage>

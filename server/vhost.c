@@ -71,7 +71,7 @@ struct ipaddr_chain {
     server_rec *server;         /* the server to use if this matches */
     name_chain *names;          /* if non-NULL then a list of name-vhosts
                                  * sharing this address */
-    name_chain *initialnames;   /* no runtime use, temporary storage of first 
+    name_chain *initialnames;   /* no runtime use, temporary storage of first
                                  * NVH'es names */
 };
 
@@ -189,16 +189,16 @@ static const char *get_addresses(apr_pool_t *p, const char *w_,
     }
 
     if (strcmp(host, "*") == 0 || strcasecmp(host, "_default_") == 0) {
-        rv = apr_sockaddr_info_get(&my_addr, "0.0.0.0", APR_INET, port, 0, p);
+        rv = apr_sockaddr_info_get(&my_addr, NULL, APR_UNSPEC, port, 0, p);
         if (rv) {
-            return "Could not resolve address '0.0.0.0' -- "
+            return "Could not determine a wildcard address ('0.0.0.0') -- "
                 "check resolver configuration.";
         }
     }
     else {
         rv = apr_sockaddr_info_get(&my_addr, host, APR_UNSPEC, port, 0, p);
         if (rv != APR_SUCCESS) {
-            ap_log_error(APLOG_MARK, APLOG_ERR, rv, NULL,
+            ap_log_error(APLOG_MARK, APLOG_ERR, rv, NULL, APLOGNO(00547)
                 "Could not resolve host name %s -- ignoring!", host);
             return NULL;
         }
@@ -254,11 +254,11 @@ AP_DECLARE_NONSTD(const char *)ap_set_name_virtual_host(cmd_parms *cmd,
                                                         const char *arg)
 {
     static int warnonce = 0;
-    if (++warnonce == 1) { 
-        ap_log_error(APLOG_MARK, APLOG_NOTICE|APLOG_STARTUP, APR_SUCCESS, NULL, 
-                     "NameVirtualHost has no effect and will be removed in the " 
-                     "next release %s:%d", 
-                     cmd->directive->filename, 
+    if (++warnonce == 1) {
+        ap_log_error(APLOG_MARK, APLOG_NOTICE|APLOG_STARTUP, APR_SUCCESS, NULL, APLOGNO(00548)
+                     "NameVirtualHost has no effect and will be removed in the "
+                     "next release %s:%d",
+                     cmd->directive->filename,
                      cmd->directive->line_num);
     }
 
@@ -395,7 +395,7 @@ static APR_INLINE ipaddr_chain *find_ipaddr(apr_sockaddr_t *sa)
         if (wild_match == NULL && (cur->port == 0 || sa->port == 0)) {
             if (apr_sockaddr_equal(cur, sa)) {
                 /* don't break, continue looking for an exact match */
-                wild_match = trav; 
+                wild_match = trav;
             }
         }
     }
@@ -417,10 +417,17 @@ static ipaddr_chain *find_default_server(apr_port_t port)
         if (wild_match == NULL && sar->host_port == 0) {
             /* don't break, continue looking for an exact match */
             wild_match = trav;
-        } 
+        }
     }
     return wild_match;
 }
+
+#if APR_HAVE_IPV6
+#define IS_IN6_ANYADDR(ad) ((ad)->family == APR_INET6                   \
+                            && IN6_IS_ADDR_UNSPECIFIED(&(ad)->sa.sin6.sin6_addr))
+#else
+#define IS_IN6_ANYADDR(ad) (0)
+#endif
 
 static void dump_a_vhost(apr_file_t *f, ipaddr_chain *ic)
 {
@@ -429,8 +436,8 @@ static void dump_a_vhost(apr_file_t *f, ipaddr_chain *ic)
     char buf[MAX_STRING_LEN];
     apr_sockaddr_t *ha = ic->sar->host_addr;
 
-    if (ha->family == APR_INET &&
-             ha->sa.sin.sin_addr.s_addr == INADDR_ANY) {
+    if ((ha->family == APR_INET && ha->sa.sin.sin_addr.s_addr == INADDR_ANY)
+        || IS_IN6_ANYADDR(ha)) {
         len = apr_snprintf(buf, sizeof(buf), "*:%u",
                            ic->sar->host_port);
     }
@@ -518,16 +525,16 @@ static void add_name_vhost_config(apr_pool_t *p, server_rec *main_s,
    nc->next = ic->names;
 
    /* iterating backwards, so each one we see becomes the current default server */
-   ic->server = s; 
+   ic->server = s;
 
-   if (ic->names == NULL) { 
-       if (ic->initialnames == NULL) { 
+   if (ic->names == NULL) {
+       if (ic->initialnames == NULL) {
            /* first pass, set these names aside in case we see another VH.
             * Until then, this looks like an IP-based VH to runtime.
             */
            ic->initialnames = nc;
        }
-       else { 
+       else {
            /* second pass through this chain -- this really is an NVH, and we
             * have two sets of names to link in.
             */
@@ -536,7 +543,7 @@ static void add_name_vhost_config(apr_pool_t *p, server_rec *main_s,
            ic->initialnames = NULL;
        }
    }
-   else { 
+   else {
        /* 3rd or more -- just keep stacking the names */
        ic->names = nc;
    }
@@ -577,8 +584,8 @@ AP_DECLARE(void) ap_fini_vhost_config(apr_pool_t *p, server_rec *main_s)
 
             if (!memcmp(sar->host_addr->ipaddr_ptr, inaddr_any, sar->host_addr->ipaddr_len)) {
                 ic = find_default_server(sar->host_port);
-                if (!ic || sar->host_port != ic->sar->host_port) { 
-                    /* No default server, or we found a default server but 
+                if (!ic || sar->host_port != ic->sar->host_port) {
+                    /* No default server, or we found a default server but
                     ** exactly one of us is a wildcard port, which means we want
                     ** two ip-based vhosts not an NVH with two names
                     */
@@ -592,8 +599,8 @@ AP_DECLARE(void) ap_fini_vhost_config(apr_pool_t *p, server_rec *main_s)
                 /* see if it matches something we've already got */
                 ic = find_ipaddr(sar->host_addr);
 
-                if (!ic || sar->host_port != ic->sar->host_port) { 
-                    /* No matching server, or we found a matching server but 
+                if (!ic || sar->host_port != ic->sar->host_port) {
+                    /* No matching server, or we found a matching server but
                     ** exactly one of us is a wildcard port, which means we want
                     ** two ip-based vhosts not an NVH with two names
                     */
@@ -636,7 +643,7 @@ AP_DECLARE(void) ap_fini_vhost_config(apr_pool_t *p, server_rec *main_s)
                     char *ipaddr_str;
 
                     apr_sockaddr_ip_get(&ipaddr_str, s->addrs->host_addr);
-                    ap_log_error(APLOG_MARK, APLOG_ERR, rv, main_s,
+                    ap_log_error(APLOG_MARK, APLOG_ERR, rv, main_s, APLOGNO(00549)
                                  "Failed to resolve server name "
                                  "for %s (check DNS) -- or specify an explicit "
                                  "ServerName",
@@ -747,7 +754,7 @@ static void fix_hostname(request_rec *r)
 
 bad:
     r->status = HTTP_BAD_REQUEST;
-    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00550)
                   "Client sent malformed Host header");
     return;
 }
@@ -853,9 +860,11 @@ static void check_hostalias(request_rec *r)
     const char *host = r->hostname;
     apr_port_t port;
     server_rec *s;
+    server_rec *virthost_s;
     server_rec *last_s;
     name_chain *src;
 
+    virthost_s = NULL;
     last_s = NULL;
 
     port = r->connection->local_addr->port;
@@ -882,23 +891,34 @@ static void check_hostalias(request_rec *r)
 
         s = src->server;
 
-        /* does it match the virthost from the sar? */
-        if (!strcasecmp(host, sar->virthost)) {
-            goto found;
-        }
-
-        if (s == last_s) {
-            /* we've already done ServerName and ServerAlias checks for this
-             * vhost
-             */
-            continue;
+        /* If we still need to do ServerName and ServerAlias checks for this
+         * server, do them now.
+         */
+        if (s != last_s) {
+            /* does it match any ServerName or ServerAlias directive? */
+            if (matches_aliases(s, host)) {
+                goto found;
+            }
         }
         last_s = s;
 
-        if (matches_aliases(s, host)) {
-            goto found;
+        /* Fallback: does it match the virthost from the sar? */
+        if (!strcasecmp(host, sar->virthost)) {
+            /* only the first match is used */
+            if (virthost_s == NULL) {
+                virthost_s = s;
+            }
         }
     }
+
+    /* If ServerName and ServerAlias check failed, we end up here.  If it
+     * matches a VirtualHost, virthost_s is set. Use that as fallback
+     */
+    if (virthost_s) {
+        s = virthost_s;
+        goto found;
+    }
+
     return;
 
 found:

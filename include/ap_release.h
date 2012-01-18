@@ -34,23 +34,25 @@
  * The tokens are listed in order of their significance for identifying the
  * application.
  *
- * "Product tokens should be short and to the point -- use of them for 
+ * "Product tokens should be short and to the point -- use of them for
  * advertizing or other non-essential information is explicitly forbidden."
  *
- * Example: "Apache/1.1.0 MrWidget/0.1-alpha" 
+ * Example: "Apache/1.1.0 MrWidget/0.1-alpha"
  */
 #define AP_SERVER_BASEVENDOR "Apache Software Foundation"
 #define AP_SERVER_BASEPROJECT "Apache HTTP Server"
 #define AP_SERVER_BASEPRODUCT "Apache"
 
 #define AP_SERVER_MAJORVERSION_NUMBER 2
-#define AP_SERVER_MINORVERSION_NUMBER 3
-#define AP_SERVER_PATCHLEVEL_NUMBER   14
+#define AP_SERVER_MINORVERSION_NUMBER 5
+#define AP_SERVER_PATCHLEVEL_NUMBER   0
 #define AP_SERVER_DEVBUILD_BOOLEAN    1
-
-#if AP_SERVER_DEVBUILD_BOOLEAN
 #define AP_SERVER_ADD_STRING          "-dev"
-#else
+
+/* Synchronize the above with docs/manual/style/version.ent */
+
+#if !AP_SERVER_DEVBUILD_BOOLEAN
+#undef AP_SERVER_ADD_STRING
 #define AP_SERVER_ADD_STRING          ""
 #endif
 

@@ -89,6 +89,8 @@ AC_DEFUN(APACHE_GEN_CONFIG_VARS,[
   APACHE_SUBST(MKDEP)
   APACHE_SUBST(INSTALL_PROG_FLAGS)
   APACHE_SUBST(DSO_MODULES)
+  APACHE_SUBST(ENABLED_DSO_MODULES)
+  APACHE_SUBST(LOAD_ALL_MODULES)
   APACHE_SUBST(APR_BINDIR)
   APACHE_SUBST(APR_INCLUDEDIR)
   APACHE_SUBST(APR_VERSION)
@@ -97,6 +99,8 @@ AC_DEFUN(APACHE_GEN_CONFIG_VARS,[
   APACHE_SUBST(APU_INCLUDEDIR)
   APACHE_SUBST(APU_VERSION)
   APACHE_SUBST(APU_CONFIG)
+  APACHE_SUBST(APREQ_MAJOR_VERSION)
+  APACHE_SUBST(APREQ_LIBTOOL_VERSION)
 
   abs_srcdir="`(cd $srcdir && pwd)`"
 
@@ -255,6 +259,7 @@ EOF
             # add default MPM to LoadModule list
             if test $1 = $default_mpm; then
                 DSO_MODULES="$DSO_MODULES mpm_$1"
+                ENABLED_DSO_MODULES="${ENABLED_DSO_MODULES},mpm_$1"
             fi
         fi
         $4
@@ -270,6 +275,9 @@ dnl   no     -- disabled under default, most, all. user must explicitly enable.
 dnl   most   -- disabled by default. enabled explicitly or with most or all.
 dnl   static -- enabled as static by default, must be explicitly changed.
 dnl   ""     -- disabled under default, most. enabled explicitly or with all.
+dnl             XXX: The arg must really be empty here. Passing an empty shell
+dnl             XXX: variable doesn't work for some reason. This should be
+dnl             XXX: fixed.
 dnl
 dnl basically: yes/no is a hard setting. "most" means follow the "most"
 dnl            setting. otherwise, fall under the "all" setting.
@@ -279,21 +287,26 @@ dnl
 AC_DEFUN(APACHE_MODULE,[
   AC_MSG_CHECKING(whether to enable mod_$1)
   define([optname],[--]ifelse($5,yes,disable,enable)[-]translit($1,_,-))dnl
-  AC_ARG_ENABLE(translit($1,_,-),APACHE_HELP_STRING(optname(),$2),,enable_$1=ifelse($5,,maybe-all,$5))
+  AC_ARG_ENABLE(translit($1,_,-),APACHE_HELP_STRING(optname(),$2),force_$1=$enableval,enable_$1=ifelse($5,,maybe-all,$5))
   undefine([optname])dnl
   _apmod_extra_msg=""
   dnl When --enable-modules=most or --enable-modules=(really)all is set and the
   dnl module was not explicitly requested, allow a module to disable itself if
   dnl its pre-reqs fail.
-  dnl XXX: Todo: Allow to disable specific modules even with "reallyall".
-  if test "$module_selection" = "most" -a "$enable_$1" = "most" ||
-     test "$module_selection" = "reallyall" -a "$enable_$1" != "yes" -a \
-          "$enable_$1" != "static"
-  then
-    _apmod_error_fatal="no"
-  else
-    _apmod_error_fatal="yes"
-  fi
+  case "$enable_$1" in
+    yes|static|shared)
+      _apmod_required="yes"
+      ;;
+    *)
+      case "$module_selection" in
+      reallyall|all|most)
+        _apmod_required="no"
+        ;;
+      *)
+        _apmod_required="yes"
+        ;;
+      esac
+  esac
   if test "$enable_$1" = "static"; then
     enable_$1=static
   elif test "$enable_$1" = "yes"; then
@@ -315,7 +328,8 @@ AC_DEFUN(APACHE_MODULE,[
     else
       enable_$1=no
     fi
-  elif test "$enable_$1" = "no" -a "$module_selection" = "reallyall"; then
+  elif test "$enable_$1" = "no" -a "$module_selection" = "reallyall" -a \
+            "$force_$1" != "no" ; then
       enable_$1=$module_default
       _apmod_extra_msg=" ($module_selection)"
   fi
@@ -326,7 +340,7 @@ AC_DEFUN(APACHE_MODULE,[
                     $6
                     AC_MSG_CHECKING(whether to enable mod_$1)
                     if test "$enable_$1" = "no"; then
-                      if test "$_apmod_error_fatal" = "no"; then
+                      if test "$_apmod_required" = "no"; then
                         _apmod_extra_msg=" (disabled)"
                       else
                         AC_MSG_ERROR([mod_$1 has been requested but can not be built due to prerequisite failures])
@@ -347,6 +361,9 @@ AC_DEFUN(APACHE_MODULE,[
       sharedobjs=yes
       shared=yes
       DSO_MODULES="$DSO_MODULES $1"
+      if test "$5" = "yes" ; then
+        ENABLED_DSO_MODULES="${ENABLED_DSO_MODULES},$1"
+      fi
       ;;
     esac
     define([modprefix], [MOD_]translit($1, [a-z-], [A-Z_]))
@@ -428,166 +445,113 @@ AC_DEFUN(APACHE_REQUIRE_CXX,[
 ])
 
 dnl
-dnl APACHE_CHECK_SSL_TOOLKIT
+dnl APACHE_CHECK_OPENSSL
 dnl
-dnl Configure for the detected openssl/ssl-c toolkit installation, giving
-dnl preference to "--with-ssl=<path>" if it was specified.
+dnl Configure for OpenSSL, giving preference to
+dnl "--with-ssl=<path>" if it was specified.
 dnl
-AC_DEFUN(APACHE_CHECK_SSL_TOOLKIT,[
-if test "x$ap_ssltk_configured" = "x"; then
-  dnl initialise the variables we use
-  ap_ssltk_found=""
-  ap_ssltk_base=""
-  ap_ssltk_libs=""
-  ap_ssltk_type=""
+AC_DEFUN(APACHE_CHECK_OPENSSL,[
+  AC_CACHE_CHECK([for OpenSSL], [ac_cv_openssl], [
+    dnl initialise the variables we use
+    ac_cv_openssl=no
+    ap_openssl_found=""
+    ap_openssl_base=""
+    ap_openssl_libs=""
 
-  dnl Determine the SSL/TLS toolkit's base directory, if any
-  AC_MSG_CHECKING([for user-provided SSL/TLS toolkit base])
-  AC_ARG_WITH(sslc, APACHE_HELP_STRING(--with-sslc=DIR,RSA SSL-C SSL/TLS toolkit), [
-    dnl If --with-sslc specifies a directory, we use that directory or fail
-    if test "x$withval" != "xyes" -a "x$withval" != "x"; then
-      dnl This ensures $withval is actually a directory and that it is absolute
-      ap_ssltk_base="`cd $withval ; pwd`"
+    dnl Determine the OpenSSL base directory, if any
+    AC_MSG_CHECKING([for user-provided OpenSSL base directory])
+    AC_ARG_WITH(ssl, APACHE_HELP_STRING(--with-ssl=DIR,OpenSSL base directory), [
+      dnl If --with-ssl specifies a directory, we use that directory
+      if test "x$withval" != "xyes" -a "x$withval" != "x"; then
+        dnl This ensures $withval is actually a directory and that it is absolute
+        ap_openssl_base="`cd $withval ; pwd`"
+      fi
+    ])
+    if test "x$ap_openssl_base" = "x"; then
+      AC_MSG_RESULT(none)
+    else
+      AC_MSG_RESULT($ap_openssl_base)
     fi
-    ap_ssltk_type="sslc"
-  ])
-  AC_ARG_WITH(ssl, APACHE_HELP_STRING(--with-ssl=DIR,OpenSSL SSL/TLS toolkit), [
-    dnl If --with-ssl specifies a directory, we use that directory or fail
-    if test "x$withval" != "xyes" -a "x$withval" != "x"; then
-      dnl This ensures $withval is actually a directory and that it is absolute
-      ap_ssltk_base="`cd $withval ; pwd`"
-    fi
-  ])
-  if test "x$ap_ssltk_base" = "x"; then
-    AC_MSG_RESULT(none)
-  else
-    AC_MSG_RESULT($ap_ssltk_base)
-  fi
 
-  dnl Run header and version checks
-  saved_CPPFLAGS="$CPPFLAGS"
-  saved_LIBS="$LIBS"
-  saved_LDFLAGS="$LDFLAGS"
-  SSL_LIBS=""
+    dnl Run header and version checks
+    saved_CPPFLAGS="$CPPFLAGS"
+    saved_LIBS="$LIBS"
+    saved_LDFLAGS="$LDFLAGS"
+    SSL_LIBS=""
 
-  dnl Before doing anything else, load in pkg-config variables (if not sslc).
-  if test "x$ap_ssltk_type" = "x" -a -n "$PKGCONFIG"; then
-    saved_PKG_CONFIG_PATH="$PKG_CONFIG_PATH"
-    if test "x$ap_ssltk_base" != "x" -a \
-            -f "${ap_ssltk_base}/lib/pkgconfig/openssl.pc"; then
-      dnl Ensure that the given path is used by pkg-config too, otherwise
-      dnl the system openssl.pc might be picked up instead.
-      PKG_CONFIG_PATH="${ap_ssltk_base}/lib/pkgconfig${PKG_CONFIG_PATH+:}${PKG_CONFIG_PATH}"
-      export PKG_CONFIG_PATH
+    dnl Before doing anything else, load in pkg-config variables
+    if test -n "$PKGCONFIG"; then
+      saved_PKG_CONFIG_PATH="$PKG_CONFIG_PATH"
+      if test "x$ap_openssl_base" != "x" -a \
+              -f "${ap_openssl_base}/lib/pkgconfig/openssl.pc"; then
+        dnl Ensure that the given path is used by pkg-config too, otherwise
+        dnl the system openssl.pc might be picked up instead.
+        PKG_CONFIG_PATH="${ap_openssl_base}/lib/pkgconfig${PKG_CONFIG_PATH+:}${PKG_CONFIG_PATH}"
+        export PKG_CONFIG_PATH
+      fi
+      ap_openssl_libs="`$PKGCONFIG --libs-only-l openssl 2>&1`"
+      if test $? -eq 0; then
+        ap_openssl_found="yes"
+        pkglookup="`$PKGCONFIG --cflags-only-I openssl`"
+        APR_ADDTO(CPPFLAGS, [$pkglookup])
+        APR_ADDTO(INCLUDES, [$pkglookup])
+        pkglookup="`$PKGCONFIG --libs-only-L --libs-only-other openssl`"
+        APR_ADDTO(LDFLAGS, [$pkglookup])
+        APR_ADDTO(SSL_LIBS, [$pkglookup])
+      fi
+      PKG_CONFIG_PATH="$saved_PKG_CONFIG_PATH"
     fi
-    ap_ssltk_libs="`$PKGCONFIG --libs-only-l openssl 2>&1`"
-    if test $? -eq 0; then
-      ap_ssltk_found="yes"
-      pkglookup="`$PKGCONFIG --cflags-only-I openssl`"
-      APR_ADDTO(CPPFLAGS, [$pkglookup])
-      APR_ADDTO(INCLUDES, [$pkglookup])
-      pkglookup="`$PKGCONFIG --libs-only-L --libs-only-other openssl`"
-      APR_ADDTO(LDFLAGS, [$pkglookup])
-      APR_ADDTO(SSL_LIBS, [$pkglookup])
+
+    dnl fall back to the user-supplied directory if not found via pkg-config
+    if test "x$ap_openssl_base" != "x" -a "x$ap_openssl_found" = "x"; then
+      APR_ADDTO(CPPFLAGS, [-I$ap_openssl_base/include])
+      APR_ADDTO(INCLUDES, [-I$ap_openssl_base/include])
+      APR_ADDTO(LDFLAGS, [-L$ap_openssl_base/lib])
+      APR_ADDTO(SSL_LIBS, [-L$ap_openssl_base/lib])
+      if test "x$ap_platform_runtime_link_flag" != "x"; then
+        APR_ADDTO(LDFLAGS, [$ap_platform_runtime_link_flag$ap_openssl_base/lib])
+        APR_ADDTO(SSL_LIBS, [$ap_platform_runtime_link_flag$ap_openssl_base/lib])
+      fi
     fi
-    PKG_CONFIG_PATH="$saved_PKG_CONFIG_PATH"
-  fi
-  if test "x$ap_ssltk_base" != "x" -a "x$ap_ssltk_found" = "x"; then
-    APR_ADDTO(CPPFLAGS, [-I$ap_ssltk_base/include])
-    APR_ADDTO(INCLUDES, [-I$ap_ssltk_base/include])
-    APR_ADDTO(LDFLAGS, [-L$ap_ssltk_base/lib])
-    APR_ADDTO(SSL_LIBS, [-L$ap_ssltk_base/lib])
-    if test "x$ap_platform_runtime_link_flag" != "x"; then
-      APR_ADDTO(LDFLAGS, [$ap_platform_runtime_link_flag$ap_ssltk_base/lib])
-      APR_ADDTO(SSL_LIBS, [$ap_platform_runtime_link_flag$ap_ssltk_base/lib])
-    fi
-  fi
-  if test "x$ap_ssltk_type" = "x"; then
-    dnl First check for manditory headers
-    AC_CHECK_HEADERS([openssl/opensslv.h openssl/ssl.h], [ap_ssltk_type="openssl"], [])
-    if test "$ap_ssltk_type" = "openssl"; then
-      dnl so it's OpenSSL - test for a good version
-      AC_MSG_CHECKING([for OpenSSL version])
-      AC_TRY_COMPILE([#include <openssl/opensslv.h>],[
+
+    AC_MSG_CHECKING([for OpenSSL version >= 0.9.7])
+    AC_TRY_COMPILE([#include <openssl/opensslv.h>],[
 #if !defined(OPENSSL_VERSION_NUMBER)
-#error "Missing openssl version"
+#error "Missing OpenSSL version"
 #endif
-#if  (OPENSSL_VERSION_NUMBER < 0x009060af) \
- || ((OPENSSL_VERSION_NUMBER > 0x00907000) && (OPENSSL_VERSION_NUMBER < 0x0090702f))
-#error "Insecure openssl version " OPENSSL_VERSION_TEXT
+#if OPENSSL_VERSION_NUMBER < 0x0090700f
+#error "Unsupported OpenSSL version " OPENSSL_VERSION_TEXT
 #endif],
-      [AC_MSG_RESULT(OK)],
-      [dnl Replace this with OPENSSL_VERSION_TEXT from opensslv.h?
-       AC_MSG_RESULT([not encouraging])
-       AC_MSG_WARN([OpenSSL version may contain security vulnerabilities!]
-                   [ Ensure the latest security patches have been applied!])
-      ])
+      [AC_MSG_RESULT(OK)
+       ac_cv_openssl=yes],
+      [AC_MSG_RESULT(FAILED)])
+
+    if test "x$ac_cv_openssl" = "xyes"; then
+      ap_openssl_libs="-lssl -lcrypto `$apr_config --libs`"
+      APR_ADDTO(SSL_LIBS, [$ap_openssl_libs])
+      APR_ADDTO(LIBS, [$ap_openssl_libs])
+      APACHE_SUBST(SSL_LIBS)
+
+      dnl Run library and function checks
+      liberrors=""
+      AC_CHECK_HEADERS([openssl/engine.h])
+      AC_CHECK_FUNCS([SSLeay_version SSL_CTX_new], [], [liberrors="yes"])
+      AC_CHECK_FUNCS([ENGINE_init ENGINE_load_builtin_engines])
+      if test "x$liberrors" != "x"; then
+        AC_MSG_WARN([OpenSSL libraries are unusable])
+      fi
     else
-      AC_MSG_RESULT([no OpenSSL headers found])
+      AC_MSG_WARN([OpenSSL version is too old])
     fi
-  fi
-  if test "$ap_ssltk_type" != "openssl"; then
-    dnl Might be SSL-C - report, then test anything relevant
-    AC_CHECK_HEADERS([sslc.h], [ap_ssltk_type="sslc"], [ap_ssltk_type=""])
-    if test "$ap_ssltk_type" = "sslc"; then
-      ap_ssltk_libs="-lsslc"
-      AC_MSG_CHECKING([for SSL-C version])
-      AC_TRY_COMPILE([#include <sslc.h>],[
-#if !defined(SSLC_VERSION_NUMBER)
-#error "Missing SSL-C version"
-#endif
-#if SSLC_VERSION_NUMBER < 0x2310
-#define stringize_ver(x) #x
-#error "Insecure SSL-C version " stringize_ver(SSLC_VERSION_NUMBER)
-#endif],
-      [AC_MSG_RESULT(OK)],
-      [dnl Replace this with SSLC_VERSION_NUMBER?
-       AC_MSG_RESULT([not encouraging])
-       echo "WARNING: SSL-C version may contain security vulnerabilities!"
-       echo "         Ensure the latest security patches have been applied!"
-      ])
-    else
-      AC_MSG_RESULT([no SSL-C headers found])
-    fi
-  fi
-  if test "x$ap_ssltk_type" = "x"; then
-    AC_MSG_ERROR([...No recognized SSL/TLS toolkit detected])
-  fi
 
-  if test "$ap_ssltk_type" = "openssl" -a "x$ap_ssltk_found" = "x"; then
-    ap_ssltk_found="yes"
-    ap_ssltk_libs="-lssl -lcrypto `$apr_config --libs`"
+    dnl restore
+    CPPFLAGS="$saved_CPPFLAGS"
+    LIBS="$saved_LIBS"
+    LDFLAGS="$saved_LDFLAGS"
+  ])
+  if test "x$ac_cv_openssl" = "xyes"; then
+    AC_DEFINE(HAVE_OPENSSL, 1, [Define if OpenSSL is available])
   fi
-  APR_ADDTO(SSL_LIBS, [$ap_ssltk_libs])
-  APR_ADDTO(LIBS, [$ap_ssltk_libs])
-  APACHE_SUBST(SSL_LIBS)
-
-  dnl Run library and function checks
-  liberrors=""
-  if test "$ap_ssltk_type" = "openssl"; then
-    AC_CHECK_HEADERS([openssl/engine.h])
-    AC_CHECK_FUNCS([SSLeay_version SSL_CTX_new], [], [liberrors="yes"])
-    AC_CHECK_FUNCS([ENGINE_init ENGINE_load_builtin_engines])
-  else
-    AC_CHECK_FUNCS([SSLC_library_version SSL_CTX_new], [], [liberrors="yes"])
-    AC_CHECK_FUNCS(SSL_set_state)
-  fi
-  dnl restore
-  CPPFLAGS="$saved_CPPFLAGS"
-  LIBS="$saved_LIBS"
-  LDFLAGS="$saved_LDFLAGS"
-  if test "x$liberrors" != "x"; then
-    AC_MSG_ERROR([... Error, SSL/TLS libraries were missing or unusable])
-  fi
-
-  dnl Adjust apache's configuration based on what we found above.
-  dnl (a) define preprocessor symbols
-  if test "$ap_ssltk_type" = "openssl"; then
-    AC_DEFINE(HAVE_OPENSSL, 1, [Define if SSL is supported using OpenSSL])
-  else
-    AC_DEFINE(HAVE_SSLC, 1, [Define if SSL is supported using SSL-C])
-  fi
-fi
 ])
 
 dnl
@@ -728,4 +692,47 @@ int main(void)
 if test "$ap_cv_void_ptr_lt_long" = "yes"; then
     AC_MSG_ERROR([Size of "void *" is less than size of "long"])
 fi
+])
+
+dnl
+dnl APACHE_CHECK_APR_HAS_LDAP
+dnl
+dnl Check if APR_HAS_LDAP is 1
+dnl Unfortunately, we can't use APR_CHECK_APR_DEFINE (because it only includes apr.h)
+dnl or APR_CHECK_DEFINE (because it only checks for defined'ness and not for 0/1).
+dnl
+AC_DEFUN([APACHE_CHECK_APR_HAS_LDAP], [
+  AC_CACHE_CHECK([for ldap support in apr/apr-util],ac_cv_APR_HAS_LDAP,[
+    apache_old_cppflags="$CPPFLAGS"
+    CPPFLAGS="$CPPFLAGS $INCLUDES"
+    AC_EGREP_CPP(YES_IS_DEFINED, [
+#include <apr_ldap.h>
+#if APR_HAS_LDAP
+YES_IS_DEFINED
+#endif
+    ], ac_cv_APR_HAS_LDAP=yes, ac_cv_APR_HAS_LDAP=no)
+    CPPFLAGS="$apache_old_cppflags"
+  ])
+])
+
+dnl
+dnl APACHE_ADD_GCC_CFLAGS
+dnl
+dnl Check if compiler is gcc and supports flag. If yes, add to CFLAGS.
+dnl
+AC_DEFUN([APACHE_ADD_GCC_CFLAG], [
+  define([ap_gcc_ckvar], [ac_cv_gcc_]translit($1, [-:.=], [____]))
+  if test "$GCC" = "yes"; then
+    AC_CACHE_CHECK([whether gcc accepts $1], ap_gcc_ckvar, [
+      save_CFLAGS="$CFLAGS"
+      CFLAGS="$CFLAGS $1"
+      AC_COMPILE_IFELSE([AC_LANG_SOURCE([int foo() { return 0; }])],
+        [ap_gcc_ckvar=yes], [ap_gcc_ckvar=no])
+      CFLAGS="$save_CFLAGS"
+    ])
+    if test "$]ap_gcc_ckvar[" = "yes" ; then
+       APR_ADDTO(CFLAGS,[$1])
+    fi
+  fi
+  undefine([ap_gcc_ckvar])
 ])

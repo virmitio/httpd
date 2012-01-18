@@ -12,11 +12,11 @@
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
 <body id="manual-page"><div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p>
-<p class="apache">Apache HTTP Server Version 2.3</p>
+<p class="apache">Apache HTTP Server Version 2.5</p>
 <img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
-<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.3</a> &gt; <a href="./">Virtual Hosts</a></div><div id="page-content"><div id="preamble"><h1>Name-based Virtual Host Support</h1>
+<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.5</a> &gt; <a href="./">Virtual Hosts</a></div><div id="page-content"><div id="preamble"><h1>Name-based Virtual Host Support</h1>
 <div class="toplang">
 <p><span>Available Languages: </span><a href="../de/vhosts/name-based.html" hreflang="de" rel="alternate" title="Deutsch">&nbsp;de&nbsp;</a> |
 <a href="../en/vhosts/name-based.html" title="English">&nbsp;en&nbsp;</a> |
@@ -40,8 +40,8 @@
     determine the correct virtual host to serve.  Therefore you need to
     have a separate IP address for each host.</p>
 
-    <p>With name-based virtual hosting, the server relies on the client to 
-    report the hostname as part of the HTTP headers.  Using this technique, 
+    <p>With name-based virtual hosting, the server relies on the client to
+    report the hostname as part of the HTTP headers.  Using this technique,
     many different hosts can share the same IP address.</p>
 
     <p>Name-based virtual hosting is usually simpler, since you need
@@ -68,8 +68,8 @@
     after narrowing down the candidates to the best IP-based match.  Using a wildcard (*)
     for the IP address in all of the VirtualHost directives makes this
     IP-based mapping irrelevant.</p>
-    
-    <p>When a request arrives, the server will find the best (most specific) matching  
+
+    <p>When a request arrives, the server will find the best (most specific) matching
     <code class="directive"><a href="../mod/core.html#virtualhost">&lt;VirtualHost&gt;</a></code> argument based on
     the IP address and port used by the request.  If there is more than one virtual host
     containing this best-match address and port combination,  Apache will further
@@ -77,9 +77,9 @@
     present in the request.</p>
 
     <h3><a name="defaultvhost" id="defaultvhost">The default name-based vhost for an IP and port combination </a></h3>
-    <p> If no matching ServerName or ServerAlias is found in the set of 
-    virtual hosts containing the most specific matching IP address and port 
-    combination, then <strong>the first listed virtual host</strong> that 
+    <p> If no matching ServerName or ServerAlias is found in the set of
+    virtual hosts containing the most specific matching IP address and port
+    combination, then <strong>the first listed virtual host</strong> that
     matches that will be used.</p>
 </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
@@ -98,11 +98,11 @@
         <p> Any request that doesn't match an existing <code class="directive"><a href="../mod/core.html#virtualhost">&lt;VirtualHost&gt;</a></code> is handled by the global
         server configuration, regardless of the hostname or ServerName.</p>
 
-        <p> When you add a name-based virtual host to an existing server, and 
-        the virtual host arguments match preexisting IP and port combinations, 
+        <p> When you add a name-based virtual host to an existing server, and
+        the virtual host arguments match preexisting IP and port combinations,
         requests will now be handled by an explicit virtual host.  In this case,
         it's usually wise to create a <a href="#defaultvhost">default virtual host</a>
-        with a <code class="directive"><a href="../mod/core.html#servername">ServerName</a></code> matching that of 
+        with a <code class="directive"><a href="../mod/core.html#servername">ServerName</a></code> matching that of
         the base server.  New domains on the same interface and port, but
         requiring separate configurations,  can then be added as subsequent (non-default)
         virtual hosts.</p>
@@ -172,6 +172,6 @@
 <a href="../ko/vhosts/name-based.html" hreflang="ko" rel="alternate" title="Korean">&nbsp;ko&nbsp;</a> |
 <a href="../tr/vhosts/name-based.html" hreflang="tr" rel="alternate" title="Türkçe">&nbsp;tr&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2011 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2012 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div>
 </body></html>

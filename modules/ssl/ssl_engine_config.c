@@ -109,6 +109,10 @@ static void modssl_ctx_init(modssl_ctx_t *mctx)
     mctx->pks                 = NULL;
     mctx->pkp                 = NULL;
 
+#ifdef HAVE_TLS_SESSION_TICKETS
+    mctx->ticket_key          = NULL;
+#endif
+
     mctx->protocol            = SSL_PROTOCOL_ALL;
 
     mctx->pphrase_dialog_type = SSL_PPTYPE_UNSET;
@@ -119,7 +123,7 @@ static void modssl_ctx_init(modssl_ctx_t *mctx)
 
     mctx->crl_path            = NULL;
     mctx->crl_file            = NULL;
-    mctx->crl                 = NULL; /* set during module init */
+    mctx->crl_check_mode      = SSL_CRLCHECK_UNSET;
 
     mctx->auth.ca_cert_path   = NULL;
     mctx->auth.ca_cert_file   = NULL;
@@ -135,15 +139,15 @@ static void modssl_ctx_init(modssl_ctx_t *mctx)
     mctx->ocsp_responder_timeout = UNSET;
 
 #ifdef HAVE_OCSP_STAPLING
-    mctx->stapling_enabled                   = UNSET;
-    mctx->stapling_resptime_skew      = UNSET;
-    mctx->stapling_resp_maxage        = UNSET;
-    mctx->stapling_cache_timeout  = UNSET;
-    mctx->stapling_return_errors = UNSET;
-    mctx->stapling_fake_trylater          = UNSET;
-    mctx->stapling_errcache_timeout     = UNSET;
-    mctx->stapling_responder_timeout      = UNSET;
-    mctx->stapling_force_url   		= NULL;
+    mctx->stapling_enabled           = UNSET;
+    mctx->stapling_resptime_skew     = UNSET;
+    mctx->stapling_resp_maxage       = UNSET;
+    mctx->stapling_cache_timeout     = UNSET;
+    mctx->stapling_return_errors     = UNSET;
+    mctx->stapling_fake_trylater     = UNSET;
+    mctx->stapling_errcache_timeout  = UNSET;
+    mctx->stapling_responder_timeout = UNSET;
+    mctx->stapling_force_url         = NULL;
 #endif
 }
 
@@ -160,7 +164,9 @@ static void modssl_ctx_init_proxy(SSLSrvConfigRec *sc,
 
     mctx->pkp->cert_file = NULL;
     mctx->pkp->cert_path = NULL;
+    mctx->pkp->ca_cert_file = NULL;
     mctx->pkp->certs     = NULL;
+    mctx->pkp->ca_certs  = NULL;
 }
 
 static void modssl_ctx_init_server(SSLSrvConfigRec *sc,
@@ -175,6 +181,10 @@ static void modssl_ctx_init_server(SSLSrvConfigRec *sc,
     mctx->pks = apr_pcalloc(p, sizeof(*mctx->pks));
 
     /* mctx->pks->... certs/keys are set during module init */
+
+#ifdef HAVE_TLS_SESSION_TICKETS
+    mctx->ticket_key = apr_pcalloc(p, sizeof(*mctx->ticket_key));
+#endif
 }
 
 static SSLSrvConfigRec *ssl_config_server_new(apr_pool_t *p)
@@ -236,6 +246,7 @@ static void modssl_ctx_cfg_merge(modssl_ctx_t *base,
 
     cfgMerge(crl_path, NULL);
     cfgMerge(crl_file, NULL);
+    cfgMerge(crl_check_mode, SSL_CRLCHECK_UNSET);
 
     cfgMergeString(auth.ca_cert_path);
     cfgMergeString(auth.ca_cert_file);
@@ -270,6 +281,7 @@ static void modssl_ctx_cfg_merge_proxy(modssl_ctx_t *base,
 
     cfgMergeString(pkp->cert_file);
     cfgMergeString(pkp->cert_path);
+    cfgMergeString(pkp->ca_cert_file);
 }
 
 static void modssl_ctx_cfg_merge_server(modssl_ctx_t *base,
@@ -287,6 +299,10 @@ static void modssl_ctx_cfg_merge_server(modssl_ctx_t *base,
 
     cfgMergeString(pks->ca_name_path);
     cfgMergeString(pks->ca_name_file);
+
+#ifdef HAVE_TLS_SESSION_TICKETS
+    cfgMergeString(ticket_key->file_path);
+#endif
 }
 
 /*
@@ -461,12 +477,11 @@ const char *ssl_cmd_SSLCryptoDevice(cmd_parms *cmd,
               "'builtin' (none)";
         e = ENGINE_get_first();
         while (e) {
-            ENGINE *en;
             err = apr_pstrcat(cmd->pool, err, ", '", ENGINE_get_id(e),
                                          "' (", ENGINE_get_name(e), ")", NULL);
-            en = ENGINE_get_next(e);
-            ENGINE_free(e);
-            e = en;
+            /* Iterate; this call implicitly decrements the refcount
+             * on the 'old' e, per the docs in engine.h. */
+            e = ENGINE_get_next(e);
         }
         return err;
     }
@@ -517,12 +532,8 @@ const char *ssl_cmd_SSLRandomSeed(cmd_parms *cmd,
         seed->cpPath = ap_server_root_relative(mc->pPool, arg2+5);
     }
     else if ((arg2len > 4) && strEQn(arg2, "egd:", 4)) {
-#ifdef HAVE_SSL_RAND_EGD
         seed->nSrc   = SSL_RSSRC_EGD;
         seed->cpPath = ap_server_root_relative(mc->pPool, arg2+4);
-#else
-    return "egd not supported with this SSL toolkit";
-#endif
     }
     else if (strcEQ(arg2, "builtin")) {
         seed->nSrc   = SSL_RSSRC_BUILTIN;
@@ -795,6 +806,24 @@ const char *ssl_cmd_SSLPKCS7CertificateFile(cmd_parms *cmd,
     return NULL;
 }
 
+#ifdef HAVE_TLS_SESSION_TICKETS
+const char *ssl_cmd_SSLSessionTicketKeyFile(cmd_parms *cmd,
+                                            void *dcfg,
+                                            const char *arg)
+{
+    SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
+    const char *err;
+
+    if ((err = ssl_cmd_check_file(cmd, &arg))) {
+        return err;
+    }
+
+    sc->server->ticket_key->file_path = arg;
+
+    return NULL;
+}
+#endif
+
 #define NO_PER_DIR_SSL_CA \
     "Your SSL library does not have support for per-directory CA"
 
@@ -809,7 +838,7 @@ const char *ssl_cmd_SSLCACertificatePath(cmd_parms *cmd,
     if ((err = ssl_cmd_check_dir(cmd, &arg))) {
         return err;
     }
-    
+
     if (cmd->path) {
         return NO_PER_DIR_SSL_CA;
     }
@@ -902,6 +931,37 @@ const char *ssl_cmd_SSLCARevocationFile(cmd_parms *cmd,
     sc->server->crl_file = arg;
 
     return NULL;
+}
+
+static const char *ssl_cmd_crlcheck_parse(cmd_parms *parms,
+                                          const char *arg,
+                                          ssl_crlcheck_t *mode)
+{
+    if (strcEQ(arg, "none")) {
+        *mode = SSL_CRLCHECK_NONE;
+    }
+    else if (strcEQ(arg, "leaf")) {
+        *mode = SSL_CRLCHECK_LEAF;
+    }
+    else if (strcEQ(arg, "chain")) {
+        *mode = SSL_CRLCHECK_CHAIN;
+    }
+    else {
+        return apr_pstrcat(parms->temp_pool, parms->cmd->name,
+                           ": Invalid argument '", arg, "'",
+                           NULL);
+    }
+
+    return NULL;
+}
+
+const char *ssl_cmd_SSLCARevocationCheck(cmd_parms *cmd,
+                                         void *dcfg,
+                                         const char *arg)
+{
+    SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
+
+    return ssl_cmd_crlcheck_parse(cmd, arg, &sc->server->crl_check_mode);
 }
 
 static const char *ssl_cmd_verify_parse(cmd_parms *parms,
@@ -1036,7 +1096,7 @@ const char *ssl_cmd_SSLSessionCache(cmd_parms *cmd,
         if (mc->sesscache) {
             /* Cache found; create it, passing anything beyond the colon. */
             mc->sesscache_mode = enabled_flags;
-            err = mc->sesscache->create(&mc->sesscache_context, sep, 
+            err = mc->sesscache->create(&mc->sesscache_context, sep,
                                         cmd->temp_pool, cmd->pool);
         }
         else {
@@ -1045,20 +1105,22 @@ const char *ssl_cmd_SSLSessionCache(cmd_parms *cmd,
 
             /* Build a comma-separated list of all registered provider
              * names: */
-            name_list = ap_list_provider_names(cmd->pool, 
+            name_list = ap_list_provider_names(cmd->pool,
                                                AP_SOCACHE_PROVIDER_GROUP,
                                                AP_SOCACHE_PROVIDER_VERSION);
             all_names = apr_array_pstrcat(cmd->pool, name_list, ',');
 
             err = apr_psprintf(cmd->pool, "'%s' session cache not supported "
-                               "(known names: %s)", name, all_names);
+                               "(known names: %s). Maybe you need to load the "
+                               "appropriate socache module (mod_socache_%s?).",
+                               name, all_names, name);
         }
     }
 
     if (err) {
         return apr_psprintf(cmd->pool, "SSLSessionCache: %s", err);
     }
-    
+
     return NULL;
 }
 
@@ -1208,12 +1270,12 @@ static const char *ssl_cmd_protocol_parse(cmd_parms *parms,
         }
 
         if (strcEQ(w, "SSLv2")) {
-#ifdef OPENSSL_NO_SSL2
-            if (action != '-') {
-                return "SSLv2 not supported by this version of OpenSSL";
+            if (action == '-') {
+                continue;
             }
-#endif
-            thisopt = SSL_PROTOCOL_SSLV2;
+            else {
+                return "SSLProtocol: SSLv2 is no longer supported";
+            }
         }
         else if (strcEQ(w, "SSLv3")) {
             thisopt = SSL_PROTOCOL_SSLV3;
@@ -1221,6 +1283,14 @@ static const char *ssl_cmd_protocol_parse(cmd_parms *parms,
         else if (strcEQ(w, "TLSv1")) {
             thisopt = SSL_PROTOCOL_TLSV1;
         }
+#ifdef HAVE_TLSV1_X
+        else if (strcEQ(w, "TLSv1.1")) {
+            thisopt = SSL_PROTOCOL_TLSV1_1;
+        }
+        else if (strcEQ(w, "TLSv1.2")) {
+            thisopt = SSL_PROTOCOL_TLSV1_2;
+        }
+#endif
         else if (strcEQ(w, "all")) {
             thisopt = SSL_PROTOCOL_ALL;
         }
@@ -1381,6 +1451,15 @@ const char *ssl_cmd_SSLProxyCARevocationFile(cmd_parms *cmd,
     return NULL;
 }
 
+const char *ssl_cmd_SSLProxyCARevocationCheck(cmd_parms *cmd,
+                                              void *dcfg,
+                                              const char *arg)
+{
+    SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
+
+    return ssl_cmd_crlcheck_parse(cmd, arg, &sc->proxy->crl_check_mode);
+}
+
 const char *ssl_cmd_SSLProxyMachineCertificateFile(cmd_parms *cmd,
                                                    void *dcfg,
                                                    const char *arg)
@@ -1413,6 +1492,21 @@ const char *ssl_cmd_SSLProxyMachineCertificatePath(cmd_parms *cmd,
     return NULL;
 }
 
+const char *ssl_cmd_SSLProxyMachineCertificateChainFile(cmd_parms *cmd,
+                                                   void *dcfg,
+                                                   const char *arg)
+{
+    SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
+    const char *err;
+
+    if ((err = ssl_cmd_check_file(cmd, &arg))) {
+        return err;
+    }
+
+    sc->proxy->pkp->ca_cert_file = arg;
+
+    return NULL;
+}
 
 const char *ssl_cmd_SSLUserName(cmd_parms *cmd, void *dcfg,
                                 const char *arg)
@@ -1423,21 +1517,21 @@ const char *ssl_cmd_SSLUserName(cmd_parms *cmd, void *dcfg,
 }
 
 const char *ssl_cmd_SSLOCSPEnable(cmd_parms *cmd, void *dcfg, int flag)
-{   
+{
     SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
 
     sc->server->ocsp_enabled = flag ? TRUE : FALSE;
 
-#ifndef HAVE_OCSP
+#ifdef OPENSSL_NO_OCSP
     if (flag) {
-        return "OCSP support not detected in SSL library; cannot enable "
+        return "OCSP support disabled in SSL library; cannot enable "
             "OCSP validation";
     }
-#endif    
+#endif
 
     return NULL;
 }
-        
+
 const char *ssl_cmd_SSLOCSPOverrideResponder(cmd_parms *cmd, void *dcfg, int flag)
 {
     SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
@@ -1448,7 +1542,7 @@ const char *ssl_cmd_SSLOCSPOverrideResponder(cmd_parms *cmd, void *dcfg, int fla
 }
 
 const char *ssl_cmd_SSLOCSPDefaultResponder(cmd_parms *cmd, void *dcfg, const char *arg)
-{   
+{
     SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
 
     sc->server->ocsp_responder = arg;
@@ -1549,33 +1643,35 @@ const char *ssl_cmd_SSLStaplingCache(cmd_parms *cmd,
     if (mc->stapling_cache) {
         /* Cache found; create it, passing anything beyond the colon. */
         err = mc->stapling_cache->create(&mc->stapling_cache_context,
-                                         sep, cmd->temp_pool, 
+                                         sep, cmd->temp_pool,
                                          cmd->pool);
     }
     else {
         apr_array_header_t *name_list;
         const char *all_names;
-        
+
         /* Build a comma-separated list of all registered provider
          * names: */
-        name_list = ap_list_provider_names(cmd->pool, 
+        name_list = ap_list_provider_names(cmd->pool,
                                            AP_SOCACHE_PROVIDER_GROUP,
                                            AP_SOCACHE_PROVIDER_VERSION);
         all_names = apr_array_pstrcat(cmd->pool, name_list, ',');
-        
+
         err = apr_psprintf(cmd->pool, "'%s' stapling cache not supported "
-                           "(known names: %s)", name, all_names);
+                           "(known names: %s) Maybe you need to load the "
+                           "appropriate socache module (mod_socache_%s?)",
+                           name, all_names, name);
     }
 
     if (err) {
         return apr_psprintf(cmd->pool, "SSLStaplingCache: %s", err);
     }
-    
+
     return NULL;
 }
 
 const char *ssl_cmd_SSLUseStapling(cmd_parms *cmd, void *dcfg, int flag)
-{   
+{
     SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
     sc->server->stapling_enabled = flag ? TRUE : FALSE;
     return NULL;
@@ -1587,7 +1683,7 @@ const char *ssl_cmd_SSLStaplingResponseTimeSkew(cmd_parms *cmd, void *dcfg,
     SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
     sc->server->stapling_resptime_skew = atoi(arg);
     if (sc->server->stapling_resptime_skew < 0) {
-        return "SSLstapling_resptime_skew: invalid argument";
+        return "SSLStaplingResponseTimeSkew: invalid argument";
     }
     return NULL;
 }
@@ -1598,7 +1694,7 @@ const char *ssl_cmd_SSLStaplingResponseMaxAge(cmd_parms *cmd, void *dcfg,
     SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
     sc->server->stapling_resp_maxage = atoi(arg);
     if (sc->server->stapling_resp_maxage < 0) {
-        return "SSLstapling_resp_maxage: invalid argument";
+        return "SSLStaplingResponseMaxAge: invalid argument";
     }
     return NULL;
 }
@@ -1609,7 +1705,7 @@ const char *ssl_cmd_SSLStaplingStandardCacheTimeout(cmd_parms *cmd, void *dcfg,
     SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
     sc->server->stapling_cache_timeout = atoi(arg);
     if (sc->server->stapling_cache_timeout < 0) {
-        return "SSLstapling_cache_timeout: invalid argument";
+        return "SSLStaplingStandardCacheTimeout: invalid argument";
     }
     return NULL;
 }
@@ -1620,14 +1716,14 @@ const char *ssl_cmd_SSLStaplingErrorCacheTimeout(cmd_parms *cmd, void *dcfg,
     SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
     sc->server->stapling_errcache_timeout = atoi(arg);
     if (sc->server->stapling_errcache_timeout < 0) {
-        return "SSLstapling_errcache_timeout: invalid argument";
+        return "SSLStaplingErrorCacheTimeout: invalid argument";
     }
     return NULL;
 }
 
 const char *ssl_cmd_SSLStaplingReturnResponderErrors(cmd_parms *cmd,
                                                      void *dcfg, int flag)
-{   
+{
     SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
     sc->server->stapling_return_errors = flag ? TRUE : FALSE;
     return NULL;
@@ -1635,7 +1731,7 @@ const char *ssl_cmd_SSLStaplingReturnResponderErrors(cmd_parms *cmd,
 
 const char *ssl_cmd_SSLStaplingFakeTryLater(cmd_parms *cmd,
                                             void *dcfg, int flag)
-{   
+{
     SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
     sc->server->stapling_fake_trylater = flag ? TRUE : FALSE;
     return NULL;
@@ -1648,7 +1744,7 @@ const char *ssl_cmd_SSLStaplingResponderTimeout(cmd_parms *cmd, void *dcfg,
     sc->server->stapling_responder_timeout = atoi(arg);
     sc->server->stapling_responder_timeout *= APR_USEC_PER_SEC;
     if (sc->server->stapling_responder_timeout < 0) {
-        return "SSLstapling_responder_timeout: invalid argument";
+        return "SSLStaplingResponderTimeout: invalid argument";
     }
     return NULL;
 }
@@ -1665,9 +1761,12 @@ const char *ssl_cmd_SSLStaplingForceURL(cmd_parms *cmd, void *dcfg,
 
 void ssl_hook_ConfigTest(apr_pool_t *pconf, server_rec *s)
 {
+    apr_file_t *out = NULL;
     if (!ap_exists_config_define("DUMP_CERTS")) {
         return;
     }
+    apr_file_open_stdout(&out, pconf);
+    apr_file_printf(out, "Server certificates:\n");
 
     /* Dump the filenames of all configured server certificates to
      * stdout. */
@@ -1679,7 +1778,7 @@ void ssl_hook_ConfigTest(apr_pool_t *pconf, server_rec *s)
             int i;
 
             for (i = 0; (i < SSL_AIDX_MAX) && pks->cert_files[i]; i++) {
-                printf("%s\n", pks->cert_files[i]);
+                apr_file_printf(out, "  %s\n", pks->cert_files[i]);
             }
         }
 

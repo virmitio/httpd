@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.ja.xsl"?>
-<!-- English Revision: 675568:1043126 (outdated) -->
+<!-- English Revision: 675568:1226477 (outdated) -->
 
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
@@ -262,7 +262,7 @@
     <directive module="mod_access_compat">Deny</directive> 行はもう一つのグループとみなされます。
     またデフォルト状態は単独で一つのグループとみなされます。</p>
 
-    <p><em>Order</em> 設定は以下の以下のどれかです。</p>
+    <p><em>Order</em> 設定は以下のどれかです。</p>
 
     <dl>
       <dt><code>Allow,Deny</code></dt>

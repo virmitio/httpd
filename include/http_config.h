@@ -28,6 +28,7 @@
 
 #include "util_cfgtree.h"
 #include "ap_config.h"
+#include "apr_tables.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -241,6 +242,13 @@ struct command_struct {
 #define EXEC_ON_READ 256     /**< force directive to execute a command
                 which would modify the configuration (like including another
                 file, or IFModule */
+/* Flags to determine whether syntax errors in .htaccess should be
+ * treated as nonfatal (log and ignore errors)
+ */
+#define NONFATAL_OVERRIDE 512    /* Violation of AllowOverride rule */
+#define NONFATAL_UNKNOWN 1024    /* Unrecognised directive */
+#define NONFATAL_ALL (NONFATAL_OVERRIDE|NONFATAL_UNKNOWN)
+
 /** this directive can be placed anywhere */
 #define OR_ALL (OR_LIMIT|OR_OPTIONS|OR_FILEINFO|OR_AUTHCFG|OR_INDEXES)
 
@@ -259,7 +267,7 @@ struct ap_configfile_t {
     /**< an apr_file_getc()-like function */
     apr_status_t (*getch) (char *ch, void *param);
     /**< an apr_file_gets()-like function */
-    apr_status_t (*getstr) (void *buf, size_t bufsiz, void *param);
+    apr_status_t (*getstr) (void *buf, apr_size_t bufsiz, void *param);
     /**< a close handler function */
     apr_status_t (*close) (void *param);
     /**< the argument passed to getch/getstr/close */
@@ -282,6 +290,8 @@ struct cmd_parms_struct {
     int override;
     /** Which allow-override-opts bits are set */
     int override_opts;
+    /** Table of directives allowed per AllowOverrideList */
+    apr_table_t *override_list;
     /** Which methods are &lt;Limit&gt;ed */
     apr_int64_t limited;
     /** methods which are limited */
@@ -770,7 +780,7 @@ AP_DECLARE(ap_configfile_t *) ap_pcfg_open_custom(apr_pool_t *p,
     const char *descr,
     void *param,
     apr_status_t (*getc_func) (char *ch, void *param),
-    apr_status_t (*gets_func) (void *buf, size_t bufsiz, void *param),
+    apr_status_t (*gets_func) (void *buf, apr_size_t bufsiz, void *param),
     apr_status_t (*close_func) (void *param));
 
 /**
@@ -781,7 +791,7 @@ AP_DECLARE(ap_configfile_t *) ap_pcfg_open_custom(apr_pool_t *p,
  * @param cfp File to read from
  * @return error status, APR_ENOSPC if bufsize is too small for the line
  */
-AP_DECLARE(apr_status_t) ap_cfg_getline(char *buf, size_t bufsize, ap_configfile_t *cfp);
+AP_DECLARE(apr_status_t) ap_cfg_getline(char *buf, apr_size_t bufsize, ap_configfile_t *cfp);
 
 /**
  * Read one char from open configfile_t, increase line number upon LF
@@ -815,6 +825,8 @@ AP_DECLARE(const char *) ap_pcfg_strerror(apr_pool_t *p, ap_configfile_t *cfp,
  * @param cmd The cmd_parms to pass to the directives inside the container
  * @param directive The directive name to read until
  * @return Error string on failure, NULL on success
+ * @note If cmd->pool == cmd->temp_pool, ap_soak_end_container() will assume
+ *       .htaccess context and use a lower maximum line length.
  */
 AP_DECLARE(const char *) ap_soak_end_container(cmd_parms *cmd, char *directive);
 
@@ -828,6 +840,8 @@ AP_DECLARE(const char *) ap_soak_end_container(cmd_parms *cmd, char *directive);
  * @param curr_parent The current parent node
  * @param orig_directive The directive to read until hit.
  * @return Error string on failure, NULL on success
+ * @note If p == temp_pool, ap_build_cont_config() will assume .htaccess
+ *       context and use a lower maximum line length.
 */
 AP_DECLARE(const char *) ap_build_cont_config(apr_pool_t *p,
                                               apr_pool_t *temp_pool,
@@ -843,6 +857,8 @@ AP_DECLARE(const char *) ap_build_cont_config(apr_pool_t *p,
  * @param temp_pool The temporary pool
  * @param conftree Place to store the root node of the config tree
  * @return Error string on erro, NULL otherwise
+ * @note If conf_pool == temp_pool, ap_build_config() will assume .htaccess
+ *       context and use a lower maximum line length.
  */
 AP_DECLARE(const char *) ap_build_config(cmd_parms *parms,
                                          apr_pool_t *conf_pool,
@@ -878,6 +894,7 @@ AP_DECLARE(const char *) ap_check_cmd_context(cmd_parms *cmd,
 #define  NOT_IN_DIRECTORY       0x04 /**< Forbidden in &lt;Directory&gt; */
 #define  NOT_IN_LOCATION        0x08 /**< Forbidden in &lt;Location&gt; */
 #define  NOT_IN_FILES           0x10 /**< Forbidden in &lt;Files&gt; */
+#define  NOT_IN_HTACCESS        0x20 /**< Forbidden in .htaccess files */
 /** Forbidden in &lt;Directory&gt;/&lt;Location&gt;/&lt;Files&gt;*/
 #define  NOT_IN_DIR_LOC_FILE    (NOT_IN_DIRECTORY|NOT_IN_LOCATION|NOT_IN_FILES)
 /** Forbidden in &lt;VirtualHost&gt;/&lt;Limit&gt;/&lt;Directory&gt;/&lt;Location&gt;/&lt;Files&gt; */
@@ -1065,6 +1082,7 @@ AP_CORE_DECLARE(ap_conf_vector_t*) ap_create_conn_config(apr_pool_t *p);
  * @param r The request currently being served
  * @param override Which overrides are active
  * @param override_opts Which allow-override-opts bits are set
+ * @param override_list Table of directives allowed for override
  * @param path The path to the htaccess file
  * @param access_name The list of possible names for .htaccess files
  * int The status of the current request
@@ -1073,6 +1091,7 @@ AP_CORE_DECLARE(int) ap_parse_htaccess(ap_conf_vector_t **result,
                                        request_rec *r,
                                        int override,
                                        int override_opts,
+                                       apr_table_t *override_list,
                                        const char *path,
                                        const char *access_name);
 
@@ -1169,10 +1188,13 @@ AP_CORE_DECLARE(const command_rec *) ap_find_command(const char *name,
                                                      const command_rec *cmds);
 
 /**
- * Find a given directive in a list module
+ * Find a given directive in a list of modules.
  * @param cmd_name The directive to search for
- * @param mod The module list to search
- * @return The directive definition of the specified directive
+ * @param mod Pointer to the first module in the linked list; will be set to
+ *            the module providing cmd_name
+ * @return The directive definition of the specified directive.
+ *         *mod will be changed to point to the module containing the
+ *         directive.
  */
 AP_CORE_DECLARE(const command_rec *) ap_find_command_in_modules(const char *cmd_name,
                                                                 module **mod);
@@ -1228,6 +1250,10 @@ AP_DECLARE_HOOK(int,check_config,(apr_pool_t *pconf, apr_pool_t *plog,
  * only if the server was invoked to test the configuration syntax.
  * @param pconf The config pool
  * @param s The list of server_recs
+ * @note To avoid reordering problems due to different buffering, hook
+ *       functions should only apr_file_*() to print to stdout/stderr and
+ *       not simple printf()/fprintf().
+ *     
  */
 AP_DECLARE_HOOK(void,test_config,(apr_pool_t *pconf, server_rec *s))
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
 <!DOCTYPE manualpage SYSTEM "./style/manualpage.dtd">
 <?xml-stylesheet type="text/xsl" href="./style/manual.fr.xsl"?>
-<!-- English Revision : 1142170 -->
+<!-- English Revision : 1212883 -->
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
 
@@ -49,6 +49,8 @@
 <seealso><directive module="core" type="section">Else</directive></seealso>
 <seealso><directive module="mod_rewrite">RewriteCond</directive></seealso>
 <seealso><directive module="mod_setenvif">SetEnvIfExpr</directive></seealso>
+<seealso><directive module="mod_headers">Header</directive></seealso>
+<seealso><directive module="mod_headers">RequestHeader</directive></seealso>
 <seealso><directive module="mod_filter">FilterProvider</directive></seealso>
 <seealso><a href="mod/mod_authz_core.html#reqexpr">Require expr</a></seealso>
 <seealso><directive module="mod_ssl">SSLRequire</directive></seealso>
@@ -168,7 +170,7 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
     <tr><td><code>REQUEST_SCHEME</code></td>
         <td>Le protocole associ&eacute; &agrave; l'URI de la requ&ecirc;te</td></tr>
     <tr><td><code>REQUEST_URI</code></td>
-        <td>L'URI de la requ&ecirc;te</td></tr>
+        <td>La partie chemin de l'URI de la requ&ecirc;te</td></tr>
     <tr><td><code>DOCUMENT_URI</code></td>
         <td>Idem REQUEST_URI</td></tr>
     <tr><td><code>REQUEST_FILENAME</code></td>
@@ -247,6 +249,9 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
         <td>L'identifiant du message d'erreur associ&eacute; &agrave; la connexion
 	(voir la directive <directive
 	module="core">ErrorLogFormat</directive>)</td></tr>
+    <tr><td><code>CONN_REMOTE_ADDR</code></td>
+        <td>L'adresse IP du correspondant pour la connexion (voir le module
+	<module>mod_remoteip</module>)</td></tr>
 
     </table>
 
@@ -386,6 +391,9 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
         <td>L'argument est trait&eacute; comme un nom de fichier. Vrai si le
 	fichier existe et correspond &agrave; un fichier
 	r&eacute;gulier</td><td>oui</td></tr>
+    <tr><td><code>-s</code></td>
+        <td>L'argument est trait&eacute; comme un nom de fichier. Vrai si le
+	fichier existe et n'est pas vide</td><td>oui</td></tr>
     <tr><td><code>-L</code></td>
         <td>L'argument est trait&eacute; comme un nom de fichier. Vrai si le
 	fichier existe et correspond &agrave; un lien
@@ -460,8 +468,9 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
     <tr><td><code>escape</code></td>
         <td>Echappe les caract&egrave;res sp&eacute;ciaux en codage hexad&eacute;cimal</td><td></td></tr>
     <tr><td><code>unescape</code></td>
-        <td>"D&eacute;s&eacute;chappe" les cha&icirc;nes cod&eacute;es en hexad&eacute;cimal en conservant
-	le codage des caract&egrave;res sp&eacute;ciaux aux URLs (XXX: describe better)</td><td></td></tr>
+        <td>"D&eacute;s&eacute;chappe" les cha&icirc;nes cod&eacute;es
+	en hexad&eacute;cimal, en ne gardant encod&eacute;s que les slashes; renvoie la cha&icirc;ne vide
+	si la s&eacute;quence %00 est rencontr&eacute;e</td><td></td></tr>
     <tr><td><code>file</code></td>
         <td>Lit le contenu d'un fichier</td><td>oui</td></tr>
     <tr><td><code>filesize</code></td>
@@ -523,6 +532,15 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
 	modules permettent de les utiliser de mani&egrave;re sp&eacute;ciale.</p>
     </section>
 
+</section>
+
+<section id="sslrequire">
+    <title>Comparaison avec SSLRequire</title>
+    <p>La syntaxe <em>ap_expr</em> consiste principalement en une
+    surcouche de la syntaxe de la directive obsol&egrave;te <directive
+    module="mod_ssl">SSLRequire</directive>. Vous pouvez consulter la
+    liste de leur diff&eacute;rences dans la documentation de la directive
+    <directive module="mod_ssl">SSLRequire</directive>.</p>
 </section>
 
 </manualpage>

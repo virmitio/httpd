@@ -31,6 +31,7 @@
 #include "apr_optional.h"
 #include "util_filter.h"
 #include "ap_expr.h"
+#include "apr_tables.h"
 
 #include "http_config.h"
 
@@ -87,7 +88,7 @@ extern "C" {
 /** @} */
 
 /**
- * @defgroup get_remote_host Remote Host Resolution 
+ * @defgroup get_remote_host Remote Host Resolution
  * @ingroup APACHE_CORE_HTTPD
  * @{
  */
@@ -151,7 +152,7 @@ AP_DECLARE(int) ap_allow_overrides(request_rec *r);
 /**
  * Retrieve the document root for this server
  * @param r The current request
- * @warning Don't use this!  If your request went through a Userdir, or 
+ * @warning Don't use this!  If your request went through a Userdir, or
  * something like that, it'll screw you.  But it's back-compatible...
  * @return The document root
  */
@@ -174,10 +175,10 @@ AP_DECLARE(const char *) ap_document_root(request_rec *r);
  *                     never forced.
  *     REMOTE_DOUBLE_REV will always force a DNS lookup, and also force
  *                   a double reverse lookup, regardless of the HostnameLookups
- *                   setting.  The result is the (double reverse checked) 
+ *                   setting.  The result is the (double reverse checked)
  *                   hostname, or NULL if any of the lookups fail.
  * </pre>
- * @param str_is_ip unless NULL is passed, this will be set to non-zero on output when an IP address 
+ * @param str_is_ip unless NULL is passed, this will be set to non-zero on output when an IP address
  *        string is returned
  * @return The remote hostname
  */
@@ -227,7 +228,7 @@ AP_DECLARE(const char *) ap_get_server_name_for_url(request_rec *r);
 AP_DECLARE(apr_port_t) ap_get_server_port(const request_rec *r);
 
 /**
- * Return the limit on bytes in request msg body 
+ * Return the limit on bytes in request msg body
  * @param r The current request
  * @return the maximum number of bytes in the request msg body
  */
@@ -238,7 +239,7 @@ AP_DECLARE(apr_off_t) ap_get_limit_req_body(const request_rec *r);
  * @param r The current request
  * @return the maximum number of bytes in XML request msg body
  */
-AP_DECLARE(size_t) ap_get_limit_xml_body(const request_rec *r);
+AP_DECLARE(apr_size_t) ap_get_limit_xml_body(const request_rec *r);
 
 /**
  * Install a custom response handler for a given status
@@ -275,8 +276,8 @@ AP_DECLARE_NONSTD(int) ap_core_translate(request_rec *r);
 /** @see require_line */
 typedef struct require_line require_line;
 
-/** 
- * @brief A structure to keep track of authorization requirements 
+/**
+ * @brief A structure to keep track of authorization requirements
 */
 struct require_line {
     /** Where the require line is in the config file. */
@@ -284,7 +285,7 @@ struct require_line {
     /** The complete string from the command line */
     char *requirement;
 };
-     
+
 /**
  * Return the type of authorization required for this request
  * @param r The current request
@@ -297,7 +298,7 @@ AP_DECLARE(const char *) ap_auth_type(request_rec *r);
  * @param r The current request
  * @return The current authorization realm
  */
-AP_DECLARE(const char *) ap_auth_name(request_rec *r);     
+AP_DECLARE(const char *) ap_auth_name(request_rec *r);
 
 /**
  * How the requires lines must be met.
@@ -354,10 +355,10 @@ AP_DECLARE(apr_socket_t *) ap_get_conn_socket(conn_rec *c);
 #endif
 
 /**
- * @brief  Per-request configuration 
+ * @brief  Per-request configuration
 */
 typedef struct {
-    /** bucket brigade used by getline for look-ahead and 
+    /** bucket brigade used by getline for look-ahead and
      * ap_get_client_block for holding left-over request body */
     struct apr_bucket_brigade *bb;
 
@@ -445,7 +446,7 @@ AP_DECLARE(void **) ap_get_request_note(request_rec *r, apr_size_t note_num);
 
 
 typedef unsigned char allow_options_t;
-typedef unsigned char overrides_t;
+typedef unsigned int overrides_t;
 
 /*
  * Bits of info that go into making an ETag for a file
@@ -460,8 +461,9 @@ typedef unsigned long etag_components_t;
 #define ETAG_MTIME (1 << 1)
 #define ETAG_INODE (1 << 2)
 #define ETAG_SIZE  (1 << 3)
-#define ETAG_BACKWARD (ETAG_MTIME | ETAG_INODE | ETAG_SIZE)
 #define ETAG_ALL   (ETAG_MTIME | ETAG_INODE | ETAG_SIZE)
+/* This is the default value used */
+#define ETAG_BACKWARD (ETAG_MTIME | ETAG_SIZE)
 
 /**
  * @brief Server Signature Enumeration
@@ -473,8 +475,8 @@ typedef enum {
     srv_sig_withmail
 } server_signature_e;
 
-/** 
- * @brief Per-directory configuration 
+/**
+ * @brief Per-directory configuration
  */
 typedef struct {
     /** path of the directory/regex/etc. see also d_is_fnmatch/absolute below */
@@ -494,21 +496,21 @@ typedef struct {
     allow_options_t opts_remove;
     overrides_t override;
     allow_options_t override_opts;
-    
+
     /* Custom response config. These can contain text or a URL to redirect to.
      * if response_code_strings is NULL then there are none in the config,
      * if it's not null then it's allocated to sizeof(char*)*RESPONSE_CODES.
      * This lets us do quick merges in merge_core_dir_configs().
      */
-  
+
     char **response_code_strings; /* from ErrorDocument, not from
                                    * ap_custom_response() */
 
     /* Hostname resolution etc */
-#define HOSTNAME_LOOKUP_OFF	0
-#define HOSTNAME_LOOKUP_ON	1
-#define HOSTNAME_LOOKUP_DOUBLE	2
-#define HOSTNAME_LOOKUP_UNSET	3
+#define HOSTNAME_LOOKUP_OFF     0
+#define HOSTNAME_LOOKUP_ON      1
+#define HOSTNAME_LOOKUP_DOUBLE  2
+#define HOSTNAME_LOOKUP_UNSET   3
     unsigned int hostname_lookups : 4;
 
     unsigned int content_md5 : 2;  /* calculate Content-MD5? */
@@ -601,6 +603,20 @@ typedef struct {
     /** per-dir log config */
     struct ap_logconf *log;
 
+    /** Table of directives allowed per AllowOverrideList */
+    apr_table_t *override_list;
+
+#define AP_MAXRANGES_UNSET     -1
+#define AP_MAXRANGES_DEFAULT   -2
+#define AP_MAXRANGES_UNLIMITED -3
+#define AP_MAXRANGES_NORANGES   0
+    /** Number of Ranges before returning HTTP_OK. **/
+    int max_ranges;
+    /** Max number of Range overlaps (merges) allowed **/
+    int max_overlaps;
+    /** Max number of Range reversals (eg: 200-300, 100-125) allowed **/
+    int max_reversals;
+
 } core_dir_config;
 
 /* macro to implement off by default behaviour */
@@ -610,7 +626,7 @@ typedef struct {
 /* Per-server core configuration */
 
 typedef struct {
-  
+
     char *gprof_dir;
 
     /* Name translations --- we want the core to be able to do *something*
@@ -618,7 +634,7 @@ typedef struct {
      * can be tested that way).  But let's keep it to the bare minimum:
      */
     const char *ap_document_root;
-  
+
     /* Access control */
 
     char *access_name;
@@ -760,14 +776,17 @@ typedef struct ap_errorlog_info {
     /** r->main if r is a subrequest, otherwise equal to r */
     const request_rec *rmain;
 
-    /** name of source file where the log message was produced. */
+    /** pool passed to ap_log_perror, NULL otherwise */
+    apr_pool_t *pool;
+
+    /** name of source file where the log message was produced, NULL if N/A. */
     const char *file;
     /** line number in the source file, 0 if N/A */
     int line;
 
     /** module index of module that produced the log message, APLOG_NO_MODULE if N/A. */
     int module_index;
-    /** log level of error message, -1 if N/A */
+    /** log level of error message (flags like APLOG_STARTUP have been removed), -1 if N/A */
     int level;
 
     /** apr error status related to the log message, 0 if no error */
@@ -827,6 +846,19 @@ typedef struct {
     /** only log item if the message's log level is higher than this */
     unsigned int min_loglevel;
 } ap_errorlog_format_item;
+
+/**
+ * hook method to log error messages
+ * @ingroup hooks
+ * @param info pointer to ap_errorlog_info struct which contains all
+ *        the details
+ * @param errstr the (unformatted) message to log
+ * @warning Allocating from the usual pools (pool, info->c->pool, info->p->pool)
+ *          must be avoided because it can cause memory leaks.
+ *          Use a subpool if necessary.
+ */
+AP_DECLARE_HOOK(void, error_log, (const ap_errorlog_info *info,
+                                  const char *errstr))
 
 AP_CORE_DECLARE(void) ap_register_log_hooks(apr_pool_t *p);
 AP_CORE_DECLARE(void) ap_register_config_hooks(apr_pool_t *p);
@@ -909,5 +941,5 @@ AP_DECLARE(int) ap_state_query(int query_code);
 }
 #endif
 
-#endif	/* !APACHE_HTTP_CORE_H */
+#endif  /* !APACHE_HTTP_CORE_H */
 /** @} */

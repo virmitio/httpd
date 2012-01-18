@@ -49,6 +49,7 @@
 #include "http_main.h"
 #include "http_vhost.h"
 #include "util_cfgtree.h"
+#include "util_varbuf.h"
 #include "mpm_common.h"
 
 #define APLOG_UNSET   (APLOG_NO_MODULE - 1)
@@ -432,7 +433,7 @@ AP_CORE_DECLARE(int) ap_invoke_handler(request_rec *r)
     r->handler = old_handler;
 
     if (result == DECLINED && r->handler && r->filename) {
-        ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, APLOGNO(00523)
             "handler \"%s\" not found for: %s", r->handler, r->filename);
     }
     if ((result != OK) && (result != DONE) && (result != DECLINED) && (result != SUSPENDED)
@@ -446,7 +447,7 @@ AP_CORE_DECLARE(int) ap_invoke_handler(request_rec *r)
          */
         ignore = apr_table_get(r->notes, "HTTP_IGNORE_RANGE");
         if (!ignore) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00524)
                           "Handler for %s returned invalid result code %d",
                           r->handler, result);
             result = HTTP_INTERNAL_SERVER_ERROR;
@@ -665,7 +666,7 @@ AP_DECLARE(void) ap_remove_module(module *m)
 
         if (!modp) {
             /* Uh-oh, this module doesn't exist */
-            ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL,
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0, NULL, APLOGNO(00525)
                          "Cannot remove module %s: not found in module list",
                          m->name);
             return;
@@ -771,10 +772,10 @@ AP_DECLARE(const char *) ap_setup_prelinked_modules(process_rec *process)
     ap_loaded_modules = (module **)apr_palloc(process->pool,
         sizeof(module *) * conf_vector_length);
     if (!ap_module_short_names)
-        ap_module_short_names = calloc(sizeof(char *), conf_vector_length);
+        ap_module_short_names = ap_calloc(sizeof(char *), conf_vector_length);
 
     if (!merger_func_cache)
-        merger_func_cache = calloc(sizeof(merger_func), conf_vector_length);
+        merger_func_cache = ap_calloc(sizeof(merger_func), conf_vector_length);
 
     if (ap_loaded_modules == NULL || ap_module_short_names == NULL
         || merger_func_cache == NULL)
@@ -838,11 +839,28 @@ AP_DECLARE(module *) ap_find_linked_module(const char *name)
 static const char *invoke_cmd(const command_rec *cmd, cmd_parms *parms,
                               void *mconfig, const char *args)
 {
+    int override_list_ok = 0;
     char *w, *w2, *w3;
     const char *errmsg = NULL;
 
-    if ((parms->override & cmd->req_override) == 0)
-        return apr_pstrcat(parms->pool, cmd->name, " not allowed here", NULL);
+    /** Have we been provided a list of acceptable directives? */
+    if(parms->override_list != NULL)
+         if(apr_table_get(parms->override_list, cmd->name) != NULL)
+              override_list_ok = 1;
+
+    if ((parms->override & cmd->req_override) == 0 && !override_list_ok) {
+        if (parms->override & NONFATAL_OVERRIDE) {
+            ap_log_perror(APLOG_MARK, APLOG_WARNING, 0, parms->temp_pool,
+                          APLOGNO(02295)
+                          "%s in .htaccess forbidden by AllowOverride",
+                          cmd->name);
+            return NULL;
+        }
+        else {
+            return apr_pstrcat(parms->pool, cmd->name,
+                               " not allowed here", NULL);
+        }
+    }
 
     parms->info = cmd->cmd_data;
     parms->cmd = cmd;
@@ -1180,6 +1198,9 @@ static const char *ap_build_config_sub(apr_pool_t *p, apr_pool_t *temp_pool,
     return retval;
 }
 
+#define VARBUF_INIT_LEN 200
+#define VARBUF_MAX_LEN  (16*1024*1024)
+
 AP_DECLARE(const char *) ap_build_cont_config(apr_pool_t *p,
                                               apr_pool_t *temp_pool,
                                               cmd_parms *parms,
@@ -1187,27 +1208,26 @@ AP_DECLARE(const char *) ap_build_cont_config(apr_pool_t *p,
                                               ap_directive_t **curr_parent,
                                               char *orig_directive)
 {
-    char *l;
     char *bracket;
     const char *retval;
     ap_directive_t *sub_tree = NULL;
     apr_status_t rc;
-
-    /* Since this function can be called recursively, allocate
-     * the temporary 8k string buffer from the temp_pool rather
-     * than the stack to avoid over-running a fixed length stack.
-     */
-    l = apr_palloc(temp_pool, MAX_STRING_LEN);
+    struct ap_varbuf vb;
+    apr_size_t max_len = VARBUF_MAX_LEN;
+    if (p == temp_pool)
+        max_len = HUGE_STRING_LEN; /* lower limit for .htaccess */
 
     bracket = apr_pstrcat(temp_pool, orig_directive + 1, ">", NULL);
-    while ((rc = ap_cfg_getline(l, MAX_STRING_LEN, parms->config_file))
+    ap_varbuf_init(temp_pool, &vb, VARBUF_INIT_LEN);
+
+    while ((rc = ap_varbuf_cfg_getline(&vb, parms->config_file, max_len))
            == APR_SUCCESS) {
-        if (!memcmp(l, "</", 2)
-            && (strcasecmp(l + 2, bracket) == 0)
+        if (!memcmp(vb.buf, "</", 2)
+            && (strcasecmp(vb.buf + 2, bracket) == 0)
             && (*curr_parent == NULL)) {
             break;
         }
-        retval = ap_build_config_sub(p, temp_pool, l, parms, current,
+        retval = ap_build_config_sub(p, temp_pool, vb.buf, parms, current,
                                      curr_parent, &sub_tree);
         if (retval != NULL)
             return retval;
@@ -1220,6 +1240,7 @@ AP_DECLARE(const char *) ap_build_cont_config(apr_pool_t *p,
             sub_tree = *current;
         }
     }
+    ap_varbuf_free(&vb);
     if (rc != APR_EOF && rc != APR_SUCCESS)
         return ap_pcfg_strerror(temp_pool, parms->config_file, rc);
 
@@ -1233,7 +1254,7 @@ static const char *ap_walk_config_sub(const ap_directive_t *current,
 {
     const command_rec *cmd;
     ap_mod_list *ml;
-    char *dir = apr_pstrdup(parms->pool, current->directive);
+    char *dir = apr_pstrdup(parms->temp_pool, current->directive);
 
     ap_str_tolower(dir);
 
@@ -1241,11 +1262,20 @@ static const char *ap_walk_config_sub(const ap_directive_t *current,
 
     if (ml == NULL) {
         parms->err_directive = current;
-        return apr_pstrcat(parms->pool, "Invalid command '",
-                           current->directive,
-                           "', perhaps misspelled or defined by a module "
-                           "not included in the server configuration",
-                           NULL);
+        if (parms->override & NONFATAL_UNKNOWN) {
+            ap_log_perror(APLOG_MARK, APLOG_WARNING, 0, parms->temp_pool,
+                          APLOGNO(02296) "Unknown directive %s "
+                          "perhaps misspelled or defined by a module "
+                          "not included in the server configuration", dir);
+            return NULL;
+        }
+        else {
+            return apr_pstrcat(parms->pool, "Invalid command '",
+                               current->directive,
+                               "', perhaps misspelled or defined by a module "
+                               "not included in the server configuration",
+                               NULL);
+        }
     }
 
     for ( ; ml != NULL; ml = ml->next) {
@@ -1313,10 +1343,15 @@ AP_DECLARE(const char *) ap_build_config(cmd_parms *parms,
 {
     ap_directive_t *current = *conftree;
     ap_directive_t *curr_parent = NULL;
-    char *l = apr_palloc (temp_pool, MAX_STRING_LEN);
     const char *errmsg;
     ap_directive_t **last_ptr = NULL;
     apr_status_t rc;
+    struct ap_varbuf vb;
+    apr_size_t max_len = VARBUF_MAX_LEN;
+    if (p == temp_pool)
+        max_len = HUGE_STRING_LEN; /* lower limit for .htaccess */
+
+    ap_varbuf_init(temp_pool, &vb, VARBUF_INIT_LEN);
 
     if (current != NULL) {
         /* If we have to traverse the whole tree again for every included
@@ -1340,9 +1375,9 @@ AP_DECLARE(const char *) ap_build_config(cmd_parms *parms,
         }
     }
 
-    while ((rc = ap_cfg_getline(l, MAX_STRING_LEN, parms->config_file))
+    while ((rc = ap_varbuf_cfg_getline(&vb, parms->config_file, max_len))
            == APR_SUCCESS) {
-        errmsg = ap_build_config_sub(p, temp_pool, l, parms,
+        errmsg = ap_build_config_sub(p, temp_pool, vb.buf, parms,
                                      &current, &curr_parent, conftree);
         if (errmsg != NULL)
             return errmsg;
@@ -1355,6 +1390,7 @@ AP_DECLARE(const char *) ap_build_config(cmd_parms *parms,
             *conftree = current;
         }
     }
+    ap_varbuf_free(&vb);
     if (rc != APR_EOF && rc != APR_SUCCESS)
         return ap_pcfg_strerror(temp_pool, parms->config_file, rc);
 
@@ -1506,7 +1542,7 @@ AP_DECLARE(void) ap_set_module_loglevel(apr_pool_t *pool, struct ap_logconf *l,
  */
 
 static cmd_parms default_parms =
-{NULL, 0, 0, -1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+{NULL, 0, 0, NULL, -1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
 AP_DECLARE(char *) ap_server_root_relative(apr_pool_t *p, const char *file)
 {
@@ -1526,17 +1562,22 @@ AP_DECLARE(char *) ap_server_root_relative(apr_pool_t *p, const char *file)
 
 AP_DECLARE(const char *) ap_soak_end_container(cmd_parms *cmd, char *directive)
 {
-    char l[MAX_STRING_LEN];
+    struct ap_varbuf vb;
     const char *args;
     char *cmd_name;
     apr_status_t rc;
+    apr_size_t max_len = VARBUF_MAX_LEN;
+    if (cmd->pool == cmd->temp_pool)
+        max_len = HUGE_STRING_LEN; /* lower limit for .htaccess */
 
-    while((rc = ap_cfg_getline(l, MAX_STRING_LEN, cmd->config_file))
+    ap_varbuf_init(cmd->temp_pool, &vb, VARBUF_INIT_LEN);
+
+    while((rc = ap_varbuf_cfg_getline(&vb, cmd->config_file, max_len))
           == APR_SUCCESS) {
 #if RESOLVE_ENV_PER_TOKEN
-        args = l;
+        args = vb.buf;
 #else
-        args = ap_resolve_env(cmd->temp_pool, l);
+        args = ap_resolve_env(cmd->temp_pool, vb.buf);
 #endif
 
         cmd_name = ap_getword_conf(cmd->temp_pool, &args);
@@ -1550,6 +1591,7 @@ AP_DECLARE(const char *) ap_soak_end_container(cmd_parms *cmd, char *directive)
                                        cmd_name, ">", NULL);
                 }
 
+                ap_varbuf_free(&vb);
                 return NULL; /* found end of container */
             }
             else {
@@ -1626,7 +1668,7 @@ typedef struct {
 
 
 /* arr_elts_getstr() returns the next line from the string array. */
-static apr_status_t arr_elts_getstr(void *buf, size_t bufsiz, void *param)
+static apr_status_t arr_elts_getstr(void *buf, apr_size_t bufsiz, void *param)
 {
     arr_elts_param_t *arr_param = (arr_elts_param_t *)param;
     char *elt;
@@ -1991,12 +2033,11 @@ AP_DECLARE(int) ap_process_config_tree(server_rec *s,
     errmsg = ap_walk_config(conftree, &parms, s->lookup_defaults);
     if (errmsg) {
         if (parms.err_directive)
-            ap_log_perror(APLOG_MARK, APLOG_STARTUP, 0, p,
+            ap_log_perror(APLOG_MARK, APLOG_STARTUP, 0, p, APLOGNO(00526)
                           "Syntax error on line %d of %s:",
                           parms.err_directive->line_num,
                           parms.err_directive->filename);
-        ap_log_perror(APLOG_MARK, APLOG_STARTUP, 0, p,
-                     "%s", errmsg);
+        ap_log_perror(APLOG_MARK, APLOG_STARTUP, 0, p, "%s", errmsg);
         return HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -2005,7 +2046,7 @@ AP_DECLARE(int) ap_process_config_tree(server_rec *s,
 
 AP_CORE_DECLARE(int) ap_parse_htaccess(ap_conf_vector_t **result,
                                        request_rec *r, int override,
-                                       int override_opts,
+                                       int override_opts, apr_table_t *override_list,
                                        const char *d, const char *access_name)
 {
     ap_configfile_t *f = NULL;
@@ -2027,6 +2068,7 @@ AP_CORE_DECLARE(int) ap_parse_htaccess(ap_conf_vector_t **result,
     parms = default_parms;
     parms.override = override;
     parms.override_opts = override_opts;
+    parms.override_list = override_list;
     parms.pool = r->pool;
     parms.temp_pool = r->pool;
     parms.server = r->server;
@@ -2067,9 +2109,9 @@ AP_CORE_DECLARE(int) ap_parse_htaccess(ap_conf_vector_t **result,
         else {
             if (!APR_STATUS_IS_ENOENT(status)
                 && !APR_STATUS_IS_ENOTDIR(status)) {
-                ap_log_rerror(APLOG_MARK, APLOG_CRIT, status, r,
+                ap_log_rerror(APLOG_MARK, APLOG_CRIT, status, r, APLOGNO(00529)
                               "%s pcfg_openfile: unable to check htaccess file, "
-                              "ensure it is readable and that '%s' " 
+                              "ensure it is readable and that '%s' "
                               "is executable",
                               filename, d);
                 apr_table_setn(r->notes, "error-notes",
@@ -2255,10 +2297,10 @@ static server_rec *init_server_config(process_rec *process, apr_pool_t *p)
 
     /* NOT virtual host; don't match any real network interface */
     rv = apr_sockaddr_info_get(&s->addrs->host_addr,
-                               NULL, APR_INET, 0, 0, p);
+                               NULL, APR_UNSPEC, 0, 0, p);
     if (rv != APR_SUCCESS) {
         /* should we test here for rv being an EAIERR? */
-        ap_log_error(APLOG_MARK, APLOG_STARTUP|APLOG_CRIT, rv, NULL,
+        ap_log_error(APLOG_MARK, APLOG_STARTUP|APLOG_CRIT, rv, NULL, APLOGNO(00530)
                      "initialisation: bug or getaddrinfo fail");
         return NULL;
     }
@@ -2335,7 +2377,7 @@ AP_DECLARE(server_rec*) ap_read_config(process_rec *process, apr_pool_t *ptemp,
 
     if (!confname) {
         ap_log_error(APLOG_MARK, APLOG_STARTUP|APLOG_CRIT,
-                     APR_EBADPATH, NULL, "Invalid config file path %s",
+                     APR_EBADPATH, NULL, APLOGNO(00532) "Invalid config file path %s",
                      filename);
         return NULL;
     }
@@ -2349,7 +2391,7 @@ AP_DECLARE(server_rec*) ap_read_config(process_rec *process, apr_pool_t *ptemp,
 
     error = ap_check_mpm();
     if (error) {
-        ap_log_error(APLOG_MARK, APLOG_STARTUP|APLOG_CRIT, 0, NULL,
+        ap_log_error(APLOG_MARK, APLOG_STARTUP|APLOG_CRIT, 0, NULL, APLOGNO(00534)
                      "%s: Configuration error: %s", ap_server_argv0, error);
         return NULL;
     }
@@ -2416,10 +2458,10 @@ static void show_overrides(const command_rec *pc, module *pm)
         printf("anywhere");
     }
     else if (pc->req_override & RSRC_CONF) {
-        printf("only outside <Directory>, <Files> or <Location>");
+        printf("only outside <Directory>, <Files>, <Location>, or <If>");
     }
     else {
-        printf("only inside <Directory>, <Files> or <Location>");
+        printf("only inside <Directory>, <Files>, <Location>, or <If>");
     }
 
     /* Warn if the directive is allowed inside <Directory> or .htaccess

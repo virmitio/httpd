@@ -13,11 +13,11 @@
 <body>
 <div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p>
-<p class="apache">Apache HTTP Server Version 2.3</p>
+<p class="apache">Apache HTTP Server Version 2.5</p>
 <img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
-<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.3</a> &gt; <a href="./">Modules</a></div>
+<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.5</a> &gt; <a href="./">Modules</a></div>
 <div id="page-content">
 <div id="preamble"><h1>Apache Module mod_lbmethod_bybusyness</h1>
 <div class="toplang">
@@ -30,7 +30,9 @@
 <tr><th><a href="module-dict.html#Compatibility">Compatibility:</a></th><td>Split off from <code class="module"><a href="../mod/mod_proxy_balancer.html">mod_proxy_balancer</a></code> in 2.3</td></tr></table>
 <h3>Summary</h3>
 
- <p>This document is still under development.</p>
+<p>This module does not provide any configuration directives of its own.
+It requires the services of <code class="module"><a href="../mod/mod_proxy_balancer.html">mod_proxy_balancer</a></code>, and
+provides the <code>bybusyness</code> load balancing method.</p>
 </div>
 <div id="quickview"><h3 class="directives">Directives</h3>
 <p>This module provides no
@@ -50,23 +52,24 @@
     
 
     <p>Enabled via <code>lbmethod=bybusyness</code>, this scheduler keeps
-    track of how many requests each worker is assigned at present. A new
+    track of how many requests each worker is currently assigned at present. A new
     request is automatically assigned to the worker with the lowest
     number of active requests. This is useful in the case of workers
     that queue incoming requests independently of Apache, to ensure that
     queue length stays even and a request is always given to the worker
-    most likely to service it fastest.</p>
+    most likely to service it the fastest and reduce latency.</p>
 
     <p>In the case of multiple least-busy workers, the statistics (and
     weightings) used by the Request Counting method are used to break the
     tie. Over time, the distribution of work will come to resemble that
-    characteristic of <code>byrequests</code>.</p>
+    characteristic of <code>byrequests</code> (as implemented
+    by <code class="module"><a href="../mod/mod_lbmethod_byrequests.html">mod_lbmethod_byrequests</a></code>).</p>
 
 </div>
 </div>
 <div class="bottomlang">
 <p><span>Available Languages: </span><a href="../en/mod/mod_lbmethod_bybusyness.html" title="English">&nbsp;en&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2011 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2012 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div>
 </body></html>

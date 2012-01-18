@@ -42,8 +42,8 @@
 static char *ssl_var_lookup_ssl(apr_pool_t *p, conn_rec *c, request_rec *r, char *var);
 static char *ssl_var_lookup_ssl_cert(apr_pool_t *p, request_rec *r, X509 *xs, char *var);
 static char *ssl_var_lookup_ssl_cert_dn(apr_pool_t *p, X509_NAME *xsname, char *var);
-static char *ssl_var_lookup_ssl_cert_valid(apr_pool_t *p, ASN1_UTCTIME *tm);
-static char *ssl_var_lookup_ssl_cert_remain(apr_pool_t *p, ASN1_UTCTIME *tm);
+static char *ssl_var_lookup_ssl_cert_valid(apr_pool_t *p, ASN1_TIME *tm);
+static char *ssl_var_lookup_ssl_cert_remain(apr_pool_t *p, ASN1_TIME *tm);
 static char *ssl_var_lookup_ssl_cert_serial(apr_pool_t *p, X509 *xs);
 static char *ssl_var_lookup_ssl_cert_chain(apr_pool_t *p, STACK_OF(X509) *sk, char *var);
 static char *ssl_var_lookup_ssl_cert_PEM(apr_pool_t *p, X509 *xs);
@@ -96,7 +96,7 @@ static int ssl_expr_lookup(ap_expr_lookup_parms *parms)
             *parms->data = "PeerExtList";
             return OK;
         }
-	break;
+        break;
     }
     return DECLINED;
 }
@@ -112,7 +112,7 @@ void ssl_var_register(apr_pool_t *p)
 
     /* Perform once-per-process library version determination: */
     var_library = apr_pstrdup(p, SSL_LIBRARY_DYNTEXT);
-    
+
     if ((cp = strchr(var_library, ' ')) != NULL) {
         *cp = '/';
         if ((cp2 = strchr(cp, ' ')) != NULL)
@@ -187,6 +187,8 @@ char *ssl_var_lookup(apr_pool_t *p, server_rec *s, conn_rec *c, request_rec *r, 
                 result = r->uri;
             else if (strcEQ(var, "REQUEST_FILENAME"))
                 result = r->filename;
+            else if (strcEQ(var, "REMOTE_ADDR"))
+                result = r->useragent_ip;
             else if (strcEQ(var, "REMOTE_HOST"))
                 result = ap_get_remote_host(r->connection, r->per_dir_config,
                                             REMOTE_NAME, NULL);
@@ -203,7 +205,7 @@ char *ssl_var_lookup(apr_pool_t *p, server_rec *s, conn_rec *c, request_rec *r, 
             if (strcEQ(var, "SERVER_ADMIN"))
                 result = r->server->server_admin;
             else if (strcEQ(var, "SERVER_NAME"))
-                result = ap_get_server_name(r);
+                result = ap_get_server_name_for_url(r);
             else if (strcEQ(var, "SERVER_PORT"))
                 result = apr_psprintf(p, "%u", ap_get_server_port(r));
             else if (strcEQ(var, "SERVER_PROTOCOL"))
@@ -242,8 +244,6 @@ char *ssl_var_lookup(apr_pool_t *p, server_rec *s, conn_rec *c, request_rec *r, 
         if (strlen(var) > 4 && strcEQn(var, "SSL_", 4)
             && sslconn && sslconn->ssl)
             result = ssl_var_lookup_ssl(p, c, r, var+4);
-        else if (strcEQ(var, "REMOTE_ADDR"))
-            result = c->remote_ip;
         else if (strcEQ(var, "HTTPS")) {
             if (sslconn && sslconn->ssl)
                 result = "on";
@@ -335,14 +335,22 @@ static char *ssl_var_lookup_ssl(apr_pool_t *p, conn_rec *c, request_rec *r,
         char buf[SSL_SESSION_ID_STRING_LEN];
         SSL_SESSION *pSession = SSL_get_session(ssl);
         if (pSession) {
-            result = apr_pstrdup(p, SSL_SESSION_id2sz(
-                                     SSL_SESSION_get_session_id(pSession),
-                                     SSL_SESSION_get_session_id_length(pSession),
-                                     buf, sizeof(buf)));
+            unsigned char *id;
+            unsigned int idlen;
+
+#ifdef OPENSSL_NO_SSL_INTERN
+            id = (unsigned char *)SSL_SESSION_get_id(pSession, &idlen);
+#else
+            id = pSession->session_id;
+            idlen = pSession->session_id_length;
+#endif
+
+            result = apr_pstrdup(p, SSL_SESSION_id2sz(id, idlen,
+                                                      buf, sizeof(buf)));
         }
     }
     else if(ssl != NULL && strcEQ(var, "SESSION_RESUMED")) {
-        if (SSL_session_reused(ssl) == 1) 
+        if (SSL_session_reused(ssl) == 1)
             result = "Resumed";
         else
             result = "Initial";
@@ -386,7 +394,7 @@ static char *ssl_var_lookup_ssl(apr_pool_t *p, conn_rec *c, request_rec *r,
         flag = SSL_get_secure_renegotiation_support(ssl);
 #endif
         result = apr_pstrdup(p, flag ? "true" : "false");
-    }                             
+    }
 
     return result;
 }
@@ -394,7 +402,7 @@ static char *ssl_var_lookup_ssl(apr_pool_t *p, conn_rec *c, request_rec *r,
 static char *ssl_var_lookup_ssl_cert_dn_oneline(apr_pool_t *p, request_rec *r,
                                                 X509_NAME *xsname)
 {
-    char *result;
+    char *result = NULL;
     SSLDirConfigRec *dc;
     int legacy_format = 0;
     if (r) {
@@ -404,7 +412,7 @@ static char *ssl_var_lookup_ssl_cert_dn_oneline(apr_pool_t *p, request_rec *r,
     if (legacy_format) {
         char *cp = X509_NAME_oneline(xsname, NULL, 0);
         result = apr_pstrdup(p, cp);
-        modssl_free(cp);
+        OPENSSL_free(cp);
     }
     else {
         BIO* bio;
@@ -414,9 +422,11 @@ static char *ssl_var_lookup_ssl_cert_dn_oneline(apr_pool_t *p, request_rec *r,
             return NULL;
         X509_NAME_print_ex(bio, xsname, 0, flags);
         n = BIO_pending(bio);
-        result = apr_palloc(p, n+1);
-        n = BIO_read(bio, result, n);
-        result[n] = NUL;
+        if (n > 0) {
+            result = apr_palloc(p, n+1);
+            n = BIO_read(bio, result, n);
+            result[n] = NUL;
+        }
         BIO_free(bio);
     }
     return result;
@@ -471,13 +481,13 @@ static char *ssl_var_lookup_ssl_cert(apr_pool_t *p, request_rec *r, X509 *xs,
         resdup = FALSE;
     }
     else if (strcEQ(var, "A_SIG")) {
-        nid = OBJ_obj2nid((ASN1_OBJECT *)X509_get_signature_algorithm(xs));
+        nid = OBJ_obj2nid((ASN1_OBJECT *)(xs->cert_info->signature->algorithm));
         result = apr_pstrdup(p,
                              (nid == NID_undef) ? "UNKNOWN" : OBJ_nid2ln(nid));
         resdup = FALSE;
     }
     else if (strcEQ(var, "A_KEY")) {
-        nid = OBJ_obj2nid((ASN1_OBJECT *)X509_get_key_algorithm(xs));
+        nid = OBJ_obj2nid((ASN1_OBJECT *)(xs->cert_info->key->algor->algorithm));
         result = apr_pstrdup(p,
                              (nid == NID_undef) ? "UNKNOWN" : OBJ_nid2ln(nid));
         resdup = FALSE;
@@ -540,10 +550,10 @@ static char *ssl_var_lookup_ssl_cert_dn(apr_pool_t *p, X509_NAME *xsname, char *
         if (strEQn(var, ssl_var_lookup_ssl_cert_dn_rec[i].name, varlen)
             && strlen(ssl_var_lookup_ssl_cert_dn_rec[i].name) == varlen) {
             for (j = 0; j < sk_X509_NAME_ENTRY_num((STACK_OF(X509_NAME_ENTRY) *)
-                                                 X509_NAME_get_entries(xsname));
+                                                   xsname->entries);
                  j++) {
                 xsne = sk_X509_NAME_ENTRY_value((STACK_OF(X509_NAME_ENTRY) *)
-                                             X509_NAME_get_entries(xsname), j);
+                                                xsname->entries, j);
 
                 n =OBJ_obj2nid((ASN1_OBJECT *)X509_NAME_ENTRY_get_object(xsne));
 
@@ -558,7 +568,7 @@ static char *ssl_var_lookup_ssl_cert_dn(apr_pool_t *p, X509_NAME *xsname, char *
     return result;
 }
 
-static char *ssl_var_lookup_ssl_cert_valid(apr_pool_t *p, ASN1_UTCTIME *tm)
+static char *ssl_var_lookup_ssl_cert_valid(apr_pool_t *p, ASN1_TIME *tm)
 {
     char *result;
     BIO* bio;
@@ -566,7 +576,7 @@ static char *ssl_var_lookup_ssl_cert_valid(apr_pool_t *p, ASN1_UTCTIME *tm)
 
     if ((bio = BIO_new(BIO_s_mem())) == NULL)
         return NULL;
-    ASN1_UTCTIME_print(bio, tm);
+    ASN1_TIME_print(bio, tm);
     n = BIO_pending(bio);
     result = apr_pcalloc(p, n+1);
     n = BIO_read(bio, result, n);
@@ -579,27 +589,36 @@ static char *ssl_var_lookup_ssl_cert_valid(apr_pool_t *p, ASN1_UTCTIME *tm)
 
 /* Return a string giving the number of days remaining until 'tm', or
  * "0" if this can't be determined. */
-static char *ssl_var_lookup_ssl_cert_remain(apr_pool_t *p, ASN1_UTCTIME *tm)
+static char *ssl_var_lookup_ssl_cert_remain(apr_pool_t *p, ASN1_TIME *tm)
 {
     apr_time_t then, now = apr_time_now();
     apr_time_exp_t exp = {0};
     long diff;
+    unsigned char *dp;
 
-    /* Fail if the time isn't a valid ASN.1 UTCTIME; RFC3280 mandates
+    /* Fail if the time isn't a valid ASN.1 TIME; RFC3280 mandates
      * that the seconds digits are present even though ASN.1
      * doesn't. */
-    if (tm->length < 11 || !ASN1_UTCTIME_check(tm)) {
+    if ((tm->type == V_ASN1_UTCTIME && tm->length < 11) ||
+        (tm->type == V_ASN1_GENERALIZEDTIME && tm->length < 13) ||
+        !ASN1_TIME_check(tm)) {
         return apr_pstrdup(p, "0");
     }
 
-    exp.tm_year = DIGIT2NUM(tm->data);
-    exp.tm_mon = DIGIT2NUM(tm->data + 2) - 1;
-    exp.tm_mday = DIGIT2NUM(tm->data + 4) + 1;
-    exp.tm_hour = DIGIT2NUM(tm->data + 6);
-    exp.tm_min = DIGIT2NUM(tm->data + 8);
-    exp.tm_sec = DIGIT2NUM(tm->data + 10);
+    if (tm->type == V_ASN1_UTCTIME) {
+        exp.tm_year = DIGIT2NUM(tm->data);
+        if (exp.tm_year <= 50) exp.tm_year += 100;
+        dp = tm->data + 2;
+    } else {
+        exp.tm_year = DIGIT2NUM(tm->data) * 100 + DIGIT2NUM(tm->data + 2) - 1900;
+        dp = tm->data + 4;
+    }
 
-    if (exp.tm_year <= 50) exp.tm_year += 100;
+    exp.tm_mon = DIGIT2NUM(dp) - 1;
+    exp.tm_mday = DIGIT2NUM(dp + 2) + 1;
+    exp.tm_hour = DIGIT2NUM(dp + 4);
+    exp.tm_min = DIGIT2NUM(dp + 6);
+    exp.tm_sec = DIGIT2NUM(dp + 8);
 
     if (apr_time_exp_gmt_get(&then, &exp) != APR_SUCCESS) {
         return apr_pstrdup(p, "0");
@@ -758,13 +777,13 @@ static char *ssl_var_lookup_ssl_version(apr_pool_t *p, char *var)
     }
     return NULL;
 }
-  
+
 /* Add each RDN in 'xn' to the table 't' where the NID is present in
  * 'nids', using key prefix 'pfx'.  */
-static void extract_dn(apr_table_t *t, apr_hash_t *nids, const char *pfx, 
+static void extract_dn(apr_table_t *t, apr_hash_t *nids, const char *pfx,
                        X509_NAME *xn, apr_pool_t *p)
 {
-    STACK_OF(X509_NAME_ENTRY) *ents = X509_NAME_get_entries(xn);
+    STACK_OF(X509_NAME_ENTRY) *ents = xn->entries;
     X509_NAME_ENTRY *xsne;
     apr_hash_t *count;
     int i, nid;
@@ -823,7 +842,7 @@ void modssl_var_extract_dns(apr_table_t *t, SSL *ssl, apr_pool_t *p)
                          ssl_var_lookup_ssl_cert_dn_rec[n].name);
         }
     }
-    
+
     /* Extract the server cert DNS -- note that the refcount does NOT
      * increase: */
     xs = SSL_get_certificate(ssl);
@@ -831,7 +850,7 @@ void modssl_var_extract_dns(apr_table_t *t, SSL *ssl, apr_pool_t *p)
         extract_dn(t, nids, "SSL_SERVER_S_DN_", X509_get_subject_name(xs), p);
         extract_dn(t, nids, "SSL_SERVER_I_DN_", X509_get_issuer_name(xs), p);
     }
-    
+
     /* Extract the client cert DNs -- note that the refcount DOES
      * increase: */
     xs = SSL_get_peer_certificate(ssl);
@@ -851,7 +870,7 @@ static int dump_extn_value(BIO *bio, ASN1_OCTET_STRING *str)
     MODSSL_D2I_ASN1_type_bytes_CONST unsigned char *pp = str->data;
     ASN1_STRING *ret = ASN1_STRING_new();
     int rv = 0;
-    
+
     /* This allows UTF8String, IA5String, VisibleString, or BMPString;
      * conversion to UTF-8 is forced. */
     if (d2i_DISPLAYTEXT(&ret, &pp, str->length)) {
@@ -884,7 +903,7 @@ apr_array_header_t *ssl_ext_list(apr_pool_t *p, conn_rec *c, int peer,
      */
     oid = OBJ_txt2obj(extension, 0);
     if (!oid) {
-        ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, c,
+        ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, c, APLOGNO(01970)
                       "could not parse OID '%s'", extension);
         ERR_clear_error();
         return NULL;
@@ -920,7 +939,7 @@ apr_array_header_t *ssl_ext_list(apr_pool_t *p, conn_rec *c, int peer,
                 BIO_get_mem_ptr(bio, &buf);
                 *ptr = apr_pstrmemdup(p, buf->data, buf->length);
             } else {
-                ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, c,
+                ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, c, APLOGNO(01971)
                               "Found an extension '%s', but failed to "
                               "create a string from it", extension);
             }
@@ -944,12 +963,15 @@ apr_array_header_t *ssl_ext_list(apr_pool_t *p, conn_rec *c, int peer,
 static char *ssl_var_lookup_ssl_compress_meth(SSL *ssl)
 {
     char *result = "NULL";
-#ifdef OPENSSL_VERSION_NUMBER
-#if (OPENSSL_VERSION_NUMBER >= 0x00908000)
+#if (OPENSSL_VERSION_NUMBER >= 0x00908000) && !defined(OPENSSL_NO_COMP)
     SSL_SESSION *pSession = SSL_get_session(ssl);
 
     if (pSession) {
+#ifdef OPENSSL_NO_SSL_INTERN
+        switch (SSL_SESSION_get_compress_id(pSession)) {
+#else
         switch (pSession->compress_meth) {
+#endif
         case 0:
             /* default "NULL" already set */
             break;
@@ -969,7 +991,6 @@ static char *ssl_var_lookup_ssl_compress_meth(SSL *ssl)
             break;
         }
     }
-#endif
 #endif
     return result;
 }

@@ -72,7 +72,7 @@ static int authn_cache_precfg(apr_pool_t *pconf, apr_pool_t *plog, apr_pool_t *p
     apr_status_t rv = ap_mutex_register(pconf, authn_cache_id,
                                         NULL, APR_LOCK_DEFAULT, 0);
     if (rv != APR_SUCCESS) {
-        ap_log_perror(APLOG_MARK, APLOG_CRIT, rv, plog,
+        ap_log_perror(APLOG_MARK, APLOG_CRIT, rv, plog, APLOGNO(01673)
                       "failed to register %s mutex", authn_cache_id);
         return 500; /* An HTTP status would be a misnomer! */
     }
@@ -93,16 +93,17 @@ static int authn_cache_post_config(apr_pool_t *pconf, apr_pool_t *plog,
         return OK;    /* don't waste the overhead of creating mutex & cache */
     }
     if (socache_provider == NULL) {
-        ap_log_perror(APLOG_MARK, APLOG_CRIT, 0, plog,
+        ap_log_perror(APLOG_MARK, APLOG_CRIT, 0, plog, APLOGNO(01674)
                       "Please select a socache provider with AuthnCacheSOCache "
-                      "(no default found on this platform)");
+                      "(no default found on this platform). Maybe you need to "
+                      "load mod_socache_shmcb or another socache module first");
         return 500; /* An HTTP status would be a misnomer! */
     }
 
     rv = ap_global_mutex_create(&authn_cache_mutex, NULL,
                                 authn_cache_id, NULL, s, pconf, 0);
     if (rv != APR_SUCCESS) {
-        ap_log_perror(APLOG_MARK, APLOG_CRIT, rv, plog,
+        ap_log_perror(APLOG_MARK, APLOG_CRIT, rv, plog, APLOGNO(01675)
                       "failed to create %s mutex", authn_cache_id);
         return 500; /* An HTTP status would be a misnomer! */
     }
@@ -110,14 +111,14 @@ static int authn_cache_post_config(apr_pool_t *pconf, apr_pool_t *plog,
 
     errmsg = socache_provider->create(&socache_instance, NULL, ptmp, pconf);
     if (errmsg) {
-        ap_log_perror(APLOG_MARK, APLOG_CRIT, rv, plog, "%s", errmsg);
+        ap_log_perror(APLOG_MARK, APLOG_CRIT, rv, plog, APLOGNO(01676) "%s", errmsg);
         return 500; /* An HTTP status would be a misnomer! */
     }
 
     rv = socache_provider->init(socache_instance, authn_cache_id,
                                 &authn_cache_hints, s, pconf);
     if (rv != APR_SUCCESS) {
-        ap_log_perror(APLOG_MARK, APLOG_CRIT, rv, plog,
+        ap_log_perror(APLOG_MARK, APLOG_CRIT, rv, plog, APLOGNO(01677)
                       "failed to initialise %s cache", authn_cache_id);
         return 500; /* An HTTP status would be a misnomer! */
     }
@@ -134,7 +135,7 @@ static void authn_cache_child_init(apr_pool_t *p, server_rec *s)
     lock = apr_global_mutex_lockfile(authn_cache_mutex);
     rv = apr_global_mutex_child_init(&authn_cache_mutex, lock, p);
     if (rv != APR_SUCCESS) {
-        ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s,
+        ap_log_error(APLOG_MARK, APLOG_CRIT, rv, s, APLOGNO(01678)
                      "failed to initialise mutex in child_init");
     }
 }
@@ -143,11 +144,23 @@ static const char *authn_cache_socache(cmd_parms *cmd, void *CFG,
                                        const char *arg)
 {
     const char *errmsg = ap_check_cmd_context(cmd, GLOBAL_ONLY);
+    if (errmsg)
+        return errmsg;
     socache_provider = ap_lookup_provider(AP_SOCACHE_PROVIDER_GROUP, arg,
                                           AP_SOCACHE_PROVIDER_VERSION);
     if (socache_provider == NULL) {
-        errmsg = "Unknown socache provider";
+        errmsg = apr_psprintf(cmd->pool,
+                              "Unknown socache provider '%s'. Maybe you need "
+                              "to load the appropriate socache module "
+                              "(mod_socache_%s?)", arg, arg);
     }
+    return errmsg;
+}
+
+static const char *authn_cache_enable(cmd_parms *cmd, void *CFG)
+{
+    const char *errmsg = ap_check_cmd_context(cmd, GLOBAL_ONLY);
+    configured = 1;
     return errmsg;
 }
 
@@ -205,6 +218,8 @@ static const command_rec authn_cache_cmds[] =
     /* global stuff: cache and mutex */
     AP_INIT_TAKE1("AuthnCacheSOCache", authn_cache_socache, NULL, RSRC_CONF,
                   "socache provider for authn cache"),
+    AP_INIT_NO_ARGS("AuthnCacheEnable", authn_cache_enable, NULL, RSRC_CONF,
+                    "enable socache configuration in htaccess even if not enabled anywhere else"),
     /* per-dir stuff */
     AP_INIT_ITERATE("AuthnCacheProvideFor", authn_cache_setprovider, NULL,
                     OR_AUTHCFG, "Determine what authn providers to cache for"),
@@ -222,8 +237,13 @@ static const char *construct_key(request_rec *r, const char *context,
     /* handle "special" context values */
     if (!strcmp(context, "directory")) {
         /* FIXME: are we at risk of this blowing up? */
+        char *new_context;
         char *slash = strrchr(r->uri, '/');
-        context = apr_pstrndup(r->pool, r->uri, slash - r->uri + 1);
+        new_context = apr_palloc(r->pool, slash - r->uri +
+                                 strlen(r->server->server_hostname) + 1);
+        strcpy(new_context, r->server->server_hostname);
+        strncat(new_context, r->uri, slash - r->uri);
+        context = new_context;
     }
     else if (!strcmp(context, "server")) {
         context = r->server->server_hostname;
@@ -250,7 +270,7 @@ static void ap_authn_cache_store(request_rec *r, const char *module,
 
     /* first check whether we're cacheing for this module */
     dcfg = ap_get_module_config(r->per_dir_config, &authn_socache_module);
-    if (!dcfg->providers) {
+    if (!configured || !dcfg->providers) {
         return;
     }
     for (i = 0; i < dcfg->providers->nelts; ++i) {
@@ -267,12 +287,12 @@ static void ap_authn_cache_store(request_rec *r, const char *module,
     rv = apr_global_mutex_trylock(authn_cache_mutex);
     if (APR_STATUS_IS_EBUSY(rv)) {
         /* don't wait around; just abandon it */
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, rv, r,
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, rv, r, APLOGNO(01679)
                       "authn credentials for %s not cached (mutex busy)", user);
         return;
     }
     else if (rv != APR_SUCCESS) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01680)
                       "Failed to cache authn credentials for %s in %s",
                       module, dcfg->context);
         return;
@@ -288,12 +308,12 @@ static void ap_authn_cache_store(request_rec *r, const char *module,
                                  (unsigned char*)key, strlen(key), expiry,
                                  (unsigned char*)data, strlen(data), r->pool);
     if (rv == APR_SUCCESS) {
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01681)
                       "Cached authn credentials for %s in %s",
                       user, dcfg->context);
     }
     else {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01682)
                       "Failed to cache authn credentials for %s in %s",
                       module, dcfg->context);
     }
@@ -301,7 +321,7 @@ static void ap_authn_cache_store(request_rec *r, const char *module,
     /* We're done with the mutex */
     rv = apr_global_mutex_unlock(authn_cache_mutex);
     if (rv != APR_SUCCESS) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, "Failed to release mutex!");
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01683) "Failed to release mutex!");
     }
     return;
 }
@@ -314,7 +334,7 @@ static authn_status check_password(request_rec *r, const char *user,
     /* construct key
      * look it up
      * if found, test password
-     * 
+     *
      * mutexing here would be a big performance drag.
      * It's definitely unnecessary with some backends (like ndbm or gdbm)
      * Is there a risk in the general case?  I guess the only risk we
@@ -327,7 +347,7 @@ static authn_status check_password(request_rec *r, const char *user,
     unsigned char val[MAX_VAL_LEN];
     unsigned int vallen = MAX_VAL_LEN - 1;
     dcfg = ap_get_module_config(r->per_dir_config, &authn_socache_module);
-    if (!dcfg->providers) {
+    if (!configured || !dcfg->providers) {
         return AUTH_USER_NOT_FOUND;
     }
     key = construct_key(r, dcfg->context, user, NULL);
@@ -337,20 +357,20 @@ static authn_status check_password(request_rec *r, const char *user,
 
     if (APR_STATUS_IS_NOTFOUND(rv)) {
         /* not found - just return */
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01684)
                       "Authn cache: no credentials found for %s", user);
         return AUTH_USER_NOT_FOUND;
     }
     else if (rv == APR_SUCCESS) {
         /* OK, we got a value */
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01685)
                       "Authn cache: found credentials for %s", user);
         val[vallen] = 0;
     }
     else {
         /* error: give up and pass the buck */
         /* FIXME: getting this for NOTFOUND - prolly a bug in mod_socache */
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01686)
                       "Error accessing authentication cache");
         return AUTH_USER_NOT_FOUND;
     }
@@ -372,7 +392,7 @@ static authn_status get_realm_hash(request_rec *r, const char *user,
     unsigned char val[MAX_VAL_LEN];
     unsigned int vallen = MAX_VAL_LEN - 1;
     dcfg = ap_get_module_config(r->per_dir_config, &authn_socache_module);
-    if (!dcfg->providers) {
+    if (!configured || !dcfg->providers) {
         return AUTH_USER_NOT_FOUND;
     }
     key = construct_key(r, dcfg->context, user, realm);
@@ -382,24 +402,23 @@ static authn_status get_realm_hash(request_rec *r, const char *user,
 
     if (APR_STATUS_IS_NOTFOUND(rv)) {
         /* not found - just return */
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01687)
                       "Authn cache: no credentials found for %s", user);
         return AUTH_USER_NOT_FOUND;
     }
     else if (rv == APR_SUCCESS) {
         /* OK, we got a value */
-        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01688)
                       "Authn cache: found credentials for %s", user);
-        val[vallen] = 0;
     }
     else {
         /* error: give up and pass the buck */
         /* FIXME: getting this for NOTFOUND - prolly a bug in mod_socache */
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01689)
                       "Error accessing authentication cache");
         return AUTH_USER_NOT_FOUND;
     }
-    *rethash = (char*)val;
+    *rethash = apr_pstrmemdup(r->pool, (char *)val, vallen);
 
     return AUTH_USER_FOUND;
 }

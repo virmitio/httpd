@@ -3,7 +3,7 @@
 <?xml-stylesheet type="text/xsl" href="./style/manual.fr.xsl"?>
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
-<!-- English Revision: 927046 -->
+<!-- English Revision : 1174747 -->
 
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
@@ -47,7 +47,8 @@ que la mani&egrave;re dont ces modules sont utilis&eacute;s par le serveur HTTP 
 
     <p>Le serveur HTTP Apache 2.0 a &eacute;tendu cette conception modulaire aux
     fonctions les plus
-    &eacute;l&eacute;mentaires d'un serveur web. Certains Modules Multi-Processus (MPMs)
+    &eacute;l&eacute;mentaires d'un serveur web. Le serveur est fourni avec une vari&eacute;t&eacute; de
+    Modules Multi-Processus (MPMs) qui
     sont responsables de l'association aux ports r&eacute;seau de la machine,
     acceptent les requ&ecirc;tes, et se chargent de r&eacute;partir ces derni&egrave;res
     entre les diff&eacute;rents processus enfants.</p>
@@ -77,7 +78,7 @@ que la mani&egrave;re dont ces modules sont utilis&eacute;s par le serveur HTTP 
     autres modules Apache httpd. La principale diff&eacute;rence r&eacute;side dans le fait qu'un
     et un seul MPM &agrave; la fois doit &ecirc;tre charg&eacute;
     lorsque le serveur s'ex&eacute;cute. La liste des
-    MPMs disponibles est fournie dans <a href="mod/">l'indexe des
+    MPMs disponibles est fournie dans <a href="mod/">l'index des
     modules</a>.</p>
 
 </section>
@@ -117,7 +118,7 @@ souhaitez changer de module MPM.</p>
     a &eacute;t&eacute; choisi &agrave; l'aide de la commande <code>./httpd -l</code>.
     Cette commande fournit la liste de tous les modules compil&eacute;s
     avec le serveur, y compris le MPM.</p>
-    
+
 </section>
 
 <section id="dynamic"><title>Compiler un module MPM en tant que module

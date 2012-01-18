@@ -43,6 +43,8 @@
 <seealso><directive module="core" type="section">Else</directive></seealso>
 <seealso><directive module="mod_rewrite">RewriteCond</directive></seealso>
 <seealso><directive module="mod_setenvif">SetEnvIfExpr</directive></seealso>
+<seealso><directive module="mod_headers">Header</directive></seealso>
+<seealso><directive module="mod_headers">RequestHeader</directive></seealso>
 <seealso><directive module="mod_filter">FilterProvider</directive></seealso>
 <seealso><a href="mod/mod_authz_core.html#reqexpr">Require expr</a></seealso>
 <seealso><directive module="mod_ssl">SSLRequire</directive></seealso>
@@ -160,7 +162,7 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
     <tr><td><code>REQUEST_SCHEME</code></td>
         <td>The scheme part of the request's URI</td></tr>
     <tr><td><code>REQUEST_URI</code></td>
-        <td>The URI of the request</td></tr>
+        <td>The path part of the request's URI</td></tr>
     <tr><td><code>DOCUMENT_URI</code></td>
         <td>Same as REQUEST_URI</td></tr>
     <tr><td><code>REQUEST_FILENAME</code></td>
@@ -235,6 +237,9 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
     <tr><td><code>CONN_LOG_ID</code></td>
         <td>The error log id of the connection (see
             <directive module="core">ErrorLogFormat</directive>)</td></tr>
+    <tr><td><code>CONN_REMOTE_ADDR</code></td>
+        <td>The peer IP address of the connection (see the
+            <module>mod_remoteip</module> module)</td></tr>
 
     </table>
 
@@ -369,6 +374,9 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
     <tr><td><code>-f</code></td>
         <td>The argument is treated as a filename.
             True if the file exists and is regular file</td><td>yes</td></tr>
+    <tr><td><code>-s</code></td>
+        <td>The argument is treated as a filename.
+            True if the file exists and is not empty</td><td>yes</td></tr>
     <tr><td><code>-L</code></td>
         <td>The argument is treated as a filename.
             True if the file exists and is symlink</td><td>yes</td></tr>
@@ -436,8 +444,8 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
     <tr><td><code>escape</code></td>
         <td>Escape special characters in %hex encoding</td><td></td></tr>
     <tr><td><code>unescape</code></td>
-        <td>Unescape %hex encoded string, leaving URL-special characters
-            encoded (XXX: describe better)</td><td></td></tr>
+        <td>Unescape %hex encoded string, leaving encoded slashes alone;
+            return empty string if %00 is found</td><td></td></tr>
     <tr><td><code>file</code></td>
         <td>Read contents from a file</td><td>yes</td></tr>
     <tr><td><code>filesize</code></td>
@@ -493,6 +501,14 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
         uses.</p>
     </section>
 
+</section>
+
+<section id="sslrequire">
+    <title>Comparison with SSLRequire</title>
+    <p>The <em>ap_expr</em> syntax is mostly a superset of the syntax of the
+    deprecated <directive module="mod_ssl">SSLRequire</directive> directive.
+    The differences are described in <directive
+    module="mod_ssl">SSLRequire</directive>'s documentation.</p>
 </section>
 
 </manualpage>

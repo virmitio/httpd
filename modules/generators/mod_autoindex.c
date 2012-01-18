@@ -583,8 +583,8 @@ static const command_rec autoindex_cmds[] =
                   "{Ascending,Descending} {Name,Size,Description,Date}"),
     AP_INIT_ITERATE("IndexIgnore", add_ignore, NULL, DIR_CMD_PERMS,
                     "one or more file extensions"),
-    AP_INIT_FLAG("IndexIgnoreReset", ap_set_flag_slot, 
-                 (void *)APR_OFFSETOF(autoindex_config_rec, ign_noinherit), 
+    AP_INIT_FLAG("IndexIgnoreReset", ap_set_flag_slot,
+                 (void *)APR_OFFSETOF(autoindex_config_rec, ign_noinherit),
                  DIR_CMD_PERMS,
                  "Reset the inherited list of IndexIgnore filenames"),
     AP_INIT_ITERATE2("AddDescription", add_desc, BY_PATH, DIR_CMD_PERMS,
@@ -1101,16 +1101,16 @@ static void emit_head(request_rec *r, char *header_fname, int suppress_amble,
     if (emit_amble) {
         emit_preamble(r, emit_xhtml, title);
     }
-    
+
     d = (autoindex_config_rec *) ap_get_module_config(r->per_dir_config, &autoindex_module);
-    
+
     if (emit_H1) {
         if (d->style_sheet != NULL) {
-    	    /* Insert style id if stylesheet used */
-    	    ap_rvputs(r, "  <h1 id=\"indextitle\">Index of ", title, "</h1>\n", NULL);
-    	} else {
-        ap_rvputs(r, "<h1>Index of ", title, "</h1>\n", NULL);
-    }
+            /* Insert style id if stylesheet used */
+            ap_rvputs(r, "  <h1 id=\"indextitle\">Index of ", title, "</h1>\n", NULL);
+        } else {
+            ap_rvputs(r, "<h1>Index of ", title, "</h1>\n", NULL);
+        }
     }
     if (rr != NULL) {
         ap_destroy_sub_req(rr);
@@ -1209,7 +1209,7 @@ static char *find_title(request_rec *r)
         }
         n = sizeof(char) * (MAX_STRING_LEN - 1);
         apr_file_read(thefile, titlebuf, &n);
-        if (n <= 0) {
+        if (n == 0) {
             apr_file_close(thefile);
             return NULL;
         }
@@ -1286,8 +1286,8 @@ static struct ent *make_parent_entry(apr_int32_t autoindex_opts,
         }
         if (!(p->alt = find_default_alt(d, testpath))) {
             if (!(p->alt = find_default_alt(d, "^^DIRECTORY^^"))) {
-            	/* Special alt text for parent dir to distinguish it from other directories
-            	   this is essential when trying to style this dir entry via AddAltClass */
+                /* Special alt text for parent dir to distinguish it from other directories
+                   this is essential when trying to style this dir entry via AddAltClass */
                 p->alt = "PARENTDIR";
             }
         }
@@ -2023,7 +2023,7 @@ static int index_directory(request_rec *r,
     char *charset;
 
     if ((status = apr_dir_open(&thedir, name, r->pool)) != APR_SUCCESS) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, status, r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, status, r, APLOGNO(01275)
                       "Can't open directory for index: %s", r->filename);
         return HTTP_FORBIDDEN;
     }
@@ -2308,9 +2308,14 @@ static int handle_autoindex(request_rec *r)
         return index_directory(r, d);
     }
     else {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
-                      "Directory index forbidden by "
-                      "Options directive: %s", r->filename);
+        const char *index_names = apr_table_get(r->notes, "dir-index-names");
+
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01276)
+                      "Cannot serve directory %s: No matching DirectoryIndex (%s) found, and "
+                      "server-generated directory index forbidden by "
+                      "Options directive",
+                       r->filename,
+                       index_names ? index_names : "none");
         return HTTP_FORBIDDEN;
     }
 }

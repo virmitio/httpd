@@ -1,4 +1,4 @@
-<?xml version="1.0"?> 
+<?xml version="1.0"?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.en.xsl"?>
 <!-- $LastChangedRevision$ -->
@@ -94,6 +94,23 @@ the load on backends</description>
 </section>
 
 <directivesynopsis>
+<name>AuthnCacheEnable</name>
+<description>Enable Authn caching configured anywhere</description>
+<syntax>AuthnCacheEnable</syntax>
+<contextlist><context>server config</context></contextlist>
+<override>None</override>
+
+<usage>
+    <p>This directive is not normally necessary: it is implied if
+    authentication cacheing is enabled anywhere in <var>httpd.conf</var>.
+    However, if it is not enabled anywhere in <var>httpd.conf</var>
+    it will by default not be initialised, and is therefore not
+    available in a <var>.htaccess</var> context.  This directive
+    ensures it is initialised so it can be used in <var>.htaccess</var>.</p>
+</usage>
+</directivesynopsis>
+
+<directivesynopsis>
 <name>AuthnCacheSOCache</name>
 <description>Select socache backend provider to use</description>
 <syntax>AuthnCacheSOCache <var>provider-name</var></syntax>
@@ -103,7 +120,7 @@ the load on backends</description>
 <usage>
     <p>This is a server-wide setting to select a provider for the
     <a href="../socache.html">shared object cache</a>.
-    Values are "dbm", "dc", "mc", or "shmcb", each subject to the
+    Values are "dbm", "dc", "memcache", or "shmcb", each subject to the
     appropriate module being loaded.  If not set, your platform's
        default will be used.</p>
 </usage>
@@ -183,6 +200,6 @@ the load on backends</description>
     is not permitted in <var>.htaccess</var> contexts.</p>
 </usage>
 </directivesynopsis>
- 
+
 </modulesynopsis>
 

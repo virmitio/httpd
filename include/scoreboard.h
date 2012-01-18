@@ -43,7 +43,7 @@ extern "C" {
 #define DEFAULT_SCOREBOARD "logs/apache_runtime_status"
 #endif
 
-/* Scoreboard info on a process is, for now, kept very brief --- 
+/* Scoreboard info on a process is, for now, kept very brief ---
  * just status value and pid (the latter so that the caretaker process
  * can properly update the scoreboard when a process dies).  We may want
  * to eventually add a separate set of long_score structures which would
@@ -54,17 +54,17 @@ extern "C" {
  */
 
 #define SERVER_DEAD 0
-#define SERVER_STARTING 1	/* Server Starting up */
-#define SERVER_READY 2		/* Waiting for connection (or accept() lock) */
-#define SERVER_BUSY_READ 3	/* Reading a client request */
-#define SERVER_BUSY_WRITE 4	/* Processing a client request */
-#define SERVER_BUSY_KEEPALIVE 5	/* Waiting for more requests via keepalive */
-#define SERVER_BUSY_LOG 6	/* Logging the request */
-#define SERVER_BUSY_DNS 7	/* Looking up a hostname */
-#define SERVER_CLOSING 8	/* Closing the connection */
-#define SERVER_GRACEFUL 9	/* server is gracefully finishing request */
+#define SERVER_STARTING 1       /* Server Starting up */
+#define SERVER_READY 2          /* Waiting for connection (or accept() lock) */
+#define SERVER_BUSY_READ 3      /* Reading a client request */
+#define SERVER_BUSY_WRITE 4     /* Processing a client request */
+#define SERVER_BUSY_KEEPALIVE 5 /* Waiting for more requests via keepalive */
+#define SERVER_BUSY_LOG 6       /* Logging the request */
+#define SERVER_BUSY_DNS 7       /* Looking up a hostname */
+#define SERVER_CLOSING 8        /* Closing the connection */
+#define SERVER_GRACEFUL 9       /* server is gracefully finishing request */
 #define SERVER_IDLE_KILL 10     /* Server is cleaning up idle children. */
-#define SERVER_NUM_STATUS 11	/* number of status settings */
+#define SERVER_NUM_STATUS 11    /* number of status settings */
 
 /* Type used for generation indicies.  Startup and every restart cause a
  * new generation of children to be spawned.  Children within the same
@@ -77,7 +77,7 @@ extern "C" {
  */
 typedef int ap_generation_t;
 
-/* Is the scoreboard shared between processes or not? 
+/* Is the scoreboard shared between processes or not?
  * Set by the MPM when the scoreboard is created.
  */
 typedef enum {
@@ -112,15 +112,14 @@ struct worker_score {
 #ifdef HAVE_TIMES
     struct tms times;
 #endif
-    char client[32];		/* Keep 'em small... */
-    char request[64];		/* We just want an idea... */
-    char vhost[32];	        /* What virtual host is being accessed? */
+    char client[32];            /* Keep 'em small... */
+    char request[64];           /* We just want an idea... */
+    char vhost[32];             /* What virtual host is being accessed? */
 };
 
 typedef struct {
     int             server_limit;
     int             thread_limit;
-    ap_scoreboard_e sb_type;
     ap_generation_t running_generation; /* the generation of children which
                                          * should still be serving requests.
                                          */
@@ -131,7 +130,7 @@ typedef struct {
 typedef struct process_score process_score;
 struct process_score {
     pid_t pid;
-    ap_generation_t generation;	/* generation of this child */
+    ap_generation_t generation; /* generation of this child */
     char quiescing;         /* the process whose pid is stored above is
                              * going down gracefully
                              */
@@ -168,7 +167,7 @@ apr_status_t ap_cleanup_scoreboard(void *d);
 
 AP_DECLARE(void) ap_create_sb_handle(ap_sb_handle_t **new_sbh, apr_pool_t *p,
                                      int child_num, int thread_num);
-    
+
 AP_DECLARE(int) ap_find_child_by_pid(apr_proc_t *pid);
 AP_DECLARE(int) ap_update_child_status(ap_sb_handle_t *sbh, int status, request_rec *r);
 AP_DECLARE(int) ap_update_child_status_from_indexes(int child_num, int thread_num,
@@ -198,10 +197,10 @@ const char *ap_set_reqtail(cmd_parms *cmd, void *dummy, int arg);
 /**
   * Hook for post scoreboard creation, pre mpm.
   * @param p       Apache pool to allocate from.
-  * @param sb_type 
+  * @param sb_type
   * @ingroup hooks
   * @return OK or DECLINE on success; anything else is a error
-  */  
+  */
 AP_DECLARE_HOOK(int, pre_mpm, (apr_pool_t *p, ap_scoreboard_e sb_type))
 
 /* for time_process_request() in http_main.c */
@@ -212,4 +211,4 @@ AP_DECLARE_HOOK(int, pre_mpm, (apr_pool_t *p, ap_scoreboard_e sb_type))
 }
 #endif
 
-#endif	/* !APACHE_SCOREBOARD_H */
+#endif  /* !APACHE_SCOREBOARD_H */

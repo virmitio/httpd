@@ -13,11 +13,11 @@
 <body>
 <div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p>
-<p class="apache">Serveur Apache HTTP Version 2.3</p>
+<p class="apache">Serveur Apache HTTP Version 2.5</p>
 <img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
-<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.3</a> &gt; <a href="./">Modules</a></div>
+<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.5</a> &gt; <a href="./">Modules</a></div>
 <div id="page-content">
 <div id="preamble"><h1>Module Apache mod_cache</h1>
 <div class="toplang">
@@ -109,7 +109,7 @@
     inclut un module de gestion de stockage :</p>
     <dl>
     <dt><code class="module"><a href="../mod/mod_cache_disk.html">mod_cache_disk</a></code></dt>
-    
+
     <dd>implémente un gestionnaire de stockage sur disque. Les en-têtes
     et corps sont stockés séparément sur le disque dans une structure de
     répertoires basée sur le condensé md5 de l'URL mise en cache.
@@ -427,14 +427,14 @@ lorsqu'aucune date d'expiration n'a été spécifiée.</td></tr>
   en-tête <strong>X-Cache-Detail</strong> est ajouté à la réponse et
   contient les raisons précises d'une décision d'utilisation du cache
   vis à vis de cette dernière.</p>
-   
+
   <p>Ceci peut s'avérer utile au cours du développement de services
   RESTful mis en cache pour obtenir des informations supplémentaires à
   propos des décisions vis à vis du cache écrites dans les en-têtes de
   la réponse. Il est ainsi possible de vérifier si
   <code>Cache-Control</code> et d'autres en-têtes ont été correctement
   utilisés par le service et le client.</p>
-  
+
   <p>Si le gestionnaire normal est utilisé, cette directive peut se
   situer dans une section <code class="directive"><a href="../mod/core.html#&lt;directory&gt;">&lt;Directory&gt;</a></code> ou <code class="directive"><a href="../mod/core.html#&lt;location&gt;">&lt;Location&gt;</a></code>. Si c'est le gestionnaire
   rapide qui est utilisé, elle doit se situer dans un contexte de
@@ -1001,6 +1001,8 @@ document</td></tr>
 <tr><th><a href="directive-dict.html#Context">Contexte:</a></th><td>configuration du serveur, serveur virtuel</td></tr>
 <tr><th><a href="directive-dict.html#Status">Statut:</a></th><td>Extension</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_cache</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibilité:</a></th><td>Disponible à partir de la version 2.3.3 du serveur HTTP
+  Apache</td></tr>
 </table>
     <p>La directive <code class="directive"><a href="#cachequickhandler">CacheQuickHandler</a></code> permet de contrôler
     la phase au cours de laquelle la mise en cache est effectuée.</p>
@@ -1179,6 +1181,6 @@ marquées comme privées</td></tr>
 <a href="../ja/mod/mod_cache.html" hreflang="ja" rel="alternate" title="Japanese">&nbsp;ja&nbsp;</a> |
 <a href="../ko/mod/mod_cache.html" hreflang="ko" rel="alternate" title="Korean">&nbsp;ko&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2011 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2012 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p></div>
 </body></html>

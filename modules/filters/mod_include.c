@@ -117,7 +117,6 @@ typedef struct {
     const char *default_time_fmt;
     const char *undefined_echo;
     xbithack_t  xbithack;
-    signed char accessenable;
     signed char lastmodified;
     signed char etag;
     signed char legacy_expr;
@@ -197,7 +196,6 @@ struct ssi_internal_ctx {
     const char   *undefined_echo;
     apr_size_t    undefined_echo_len;
 
-    char         accessenable;    /* is using the access tests allowed? */
     char         legacy_expr;     /* use ap_expr or legacy mod_include
                                     expression parser? */
 
@@ -661,25 +659,22 @@ static const char *get_include_var(const char *var, include_ctx_t *ctx)
          * v.s. empty strings on an empty match is deliberate.
          */
         if (!re || !re->have_match) {
-            ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, APLOGNO(01329)
                 "regex capture $%" APR_SIZE_T_FMT " refers to no regex in %s",
                 idx, r->filename);
             return NULL;
         }
         else if (re->nsub < idx || idx >= AP_MAX_REG_MATCH) {
-            ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, APLOGNO(01330)
                           "regex capture $%" APR_SIZE_T_FMT
                           " is out of range (last regex was: '%s') in %s",
                           idx, re->rexp, r->filename);
             return NULL;
         }
         else if (re->match[idx].rm_so < 0 || re->match[idx].rm_eo < 0) {
-            /* I don't think this can happen if have_match is true.
-             * But let's not risk a regression by dropping this
-             */
+            /* This particular subpattern was not used by the regex */
             return NULL;
         }
-
         else {
             val = apr_pstrmemdup(ctx->dpool, re->source + re->match[idx].rm_so,
                                  re->match[idx].rm_eo - re->match[idx].rm_so);
@@ -833,7 +828,7 @@ static char *ap_ssi_parse_string(include_ctx_t *ctx, const char *in, char *out,
             if (*++p == '{') {
                 ep = ap_strchr_c(++p, '}');
                 if (!ep) {
-                    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "Missing '}' on "
+                    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01331) "Missing '}' on "
                                   "variable \"%s\" in %s", p, r->filename);
                     break;
                 }
@@ -1079,7 +1074,7 @@ static int get_ptoken(include_ctx_t *ctx, const char **parse, token_t *token, to
         TYPE_TOKEN(token, TOKEN_LT);
         return 0;
     case '-':
-        if (**parse == 'A' && (ctx->intern->accessenable)) {
+        if (**parse == 'A') {
             TYPE_TOKEN(token, TOKEN_ACCESS);
             ++*parse;
             return 0;
@@ -1387,7 +1382,7 @@ static int parse_expr(include_ctx_t *ctx, const char *expr, int *was_error)
         case TOKEN_AND:
         case TOKEN_OR:
             if (!current->left || !current->right) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01332)
                               "Invalid expression \"%s\" in file %s",
                               expr, r->filename);
                 *was_error = 1;
@@ -1452,7 +1447,7 @@ static int parse_expr(include_ctx_t *ctx, const char *expr, int *was_error)
                 current->left->token.type != TOKEN_STRING ||
                 (current->right->token.type != TOKEN_STRING &&
                  current->right->token.type != TOKEN_RE)) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01333)
                             "Invalid expression \"%s\" in file %s",
                             expr, r->filename);
                 *was_error = 1;
@@ -1487,7 +1482,7 @@ static int parse_expr(include_ctx_t *ctx, const char *expr, int *was_error)
             if (!current->left || !current->right ||
                 current->left->token.type != TOKEN_STRING ||
                 current->right->token.type != TOKEN_STRING) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01334)
                               "Invalid expression \"%s\" in file %s",
                               expr, r->filename);
                 *was_error = 1;
@@ -1535,7 +1530,7 @@ static int parse_expr(include_ctx_t *ctx, const char *expr, int *was_error)
             if (current->left || !current->right ||
                 (current->right->token.type != TOKEN_STRING &&
                  current->right->token.type != TOKEN_RE)) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01335)
                             "Invalid expression \"%s\" in file %s: Token '-A' must be followed by a URI string.",
                             expr, r->filename);
                 *was_error = 1;
@@ -1551,7 +1546,7 @@ static int parse_expr(include_ctx_t *ctx, const char *expr, int *was_error)
             }
             else {
                 current->value = 0;
-                ap_log_rerror(APLOG_MARK, APLOG_DEBUG, rr->status, r, 
+                ap_log_rerror(APLOG_MARK, APLOG_DEBUG, rr->status, r, APLOGNO(01336)
                               "mod_include: The tested "
                               "subrequest -A \"%s\" returned an error code.",
                               current->right->token.value);
@@ -1601,7 +1596,7 @@ static int parse_ap_expr(include_ctx_t *ctx, const char *expr, int *was_error)
     err = ap_expr_parse(ctx->r->pool, ctx->r->pool, &expr_info, expr,
                         include_expr_lookup);
     if (err) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, ctx->r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, ctx->r, APLOGNO(01337)
                       "Could not parse expr \"%s\" in %s: %s", expr,
                       ctx->r->filename, err);
         *was_error = 1;
@@ -1637,7 +1632,7 @@ static int parse_ap_expr(include_ctx_t *ctx, const char *expr, int *was_error)
     eval_ctx->info = &expr_info;
     ret = ap_expr_exec_ctx(eval_ctx);
     if (ret < 0) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, ctx->r,
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, ctx->r, APLOGNO(01338)
                       "Could not evaluate expr \"%s\" in %s: %s", expr,
                       ctx->r->filename, ctx->intern->expr_err);
         *was_error = 1;
@@ -1748,7 +1743,7 @@ static int find_file(request_rec *r, const char *directive, const char *tag,
             return 0;
         }
         else {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "unable to get "
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01339) "unable to get "
                           "information about \"%s\" in parsed file %s",
                           tag_val, r->filename);
             ap_destroy_sub_req(rr);
@@ -1756,7 +1751,7 @@ static int find_file(request_rec *r, const char *directive, const char *tag,
         }
     }
     else {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "unknown parameter \"%s\" "
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01340) "unknown parameter \"%s\" "
                       "to tag %s in %s", tag, directive, r->filename);
         return -1;
     }
@@ -1781,7 +1776,8 @@ static apr_status_t handle_include(include_ctx_t *ctx, ap_filter_t *f,
         ap_log_rerror(APLOG_MARK,
                       (ctx->flags & SSI_FLAG_PRINTING)
                           ? APLOG_ERR : APLOG_WARNING,
-                      0, r, "missing argument for include element in %s",
+                      0, r, APLOGNO(01341)
+                      "missing argument for include element in %s",
                       r->filename);
     }
 
@@ -1809,7 +1805,7 @@ static apr_status_t handle_include(include_ctx_t *ctx, ap_filter_t *f,
 
         if (strcmp(tag, "virtual") && strcmp(tag, "file") && strcmp(tag,
                 "onerror")) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "unknown parameter "
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01342) "unknown parameter "
                           "\"%s\" to tag include in %s", tag, r->filename);
             SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
             break;
@@ -1911,7 +1907,8 @@ static apr_status_t handle_echo(include_ctx_t *ctx, ap_filter_t *f,
         ap_log_rerror(APLOG_MARK,
                       (ctx->flags & SSI_FLAG_PRINTING)
                           ? APLOG_ERR : APLOG_WARNING,
-                      0, r, "missing argument for echo element in %s",
+                      0, r, APLOGNO(01343)
+                      "missing argument for echo element in %s",
                       r->filename);
     }
 
@@ -1960,6 +1957,11 @@ static apr_status_t handle_echo(include_ctx_t *ctx, ap_filter_t *f,
                         ap_unescape_url(buf);
                         echo_text = buf;
                     }
+                    else if (!strcasecmp(token, "urlencoded")) {
+                        char *buf = apr_pstrdup(ctx->pool, echo_text);
+                        ap_unescape_urlencoded(buf);
+                        echo_text = buf;
+                    }
                     else if (!strcasecmp(token, "entity")) {
                         char *buf = apr_pstrdup(ctx->pool, echo_text);
                         decodehtml(buf);
@@ -1969,7 +1971,7 @@ static apr_status_t handle_echo(include_ctx_t *ctx, ap_filter_t *f,
                         echo_text = ap_pbase64decode(ctx->dpool, echo_text);
                     }
                     else {
-                        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "unknown value "
+                        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01344) "unknown value "
                                       "\"%s\" to parameter \"decoding\" of tag echo in "
                                       "%s", token, r->filename);
                         SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
@@ -1989,6 +1991,9 @@ static apr_status_t handle_echo(include_ctx_t *ctx, ap_filter_t *f,
                     else if (!strcasecmp(token, "url")) {
                         echo_text = ap_escape_uri(ctx->dpool, echo_text);
                     }
+                    else if (!strcasecmp(token, "urlencoded")) {
+                        echo_text = ap_escape_urlencoded(ctx->dpool, echo_text);
+                    }
                     else if (!strcasecmp(token, "entity")) {
                         echo_text = ap_escape_html2(ctx->dpool, echo_text, 0);
                     }
@@ -1998,7 +2003,7 @@ static apr_status_t handle_echo(include_ctx_t *ctx, ap_filter_t *f,
                         echo_text = buf;
                     }
                     else {
-                        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "unknown value "
+                        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01345) "unknown value "
                                       "\"%s\" to parameter \"encoding\" of tag echo in "
                                       "%s", token, r->filename);
                         SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
@@ -2030,7 +2035,7 @@ static apr_status_t handle_echo(include_ctx_t *ctx, ap_filter_t *f,
             encoding = tag_val;
         }
         else {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "unknown parameter "
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01346) "unknown parameter "
                           "\"%s\" in tag echo of %s", tag, r->filename);
             SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
             break;
@@ -2054,7 +2059,8 @@ static apr_status_t handle_config(include_ctx_t *ctx, ap_filter_t *f,
         ap_log_rerror(APLOG_MARK,
                       (ctx->flags & SSI_FLAG_PRINTING)
                           ? APLOG_ERR : APLOG_WARNING,
-                      0, r, "missing argument for config element in %s",
+                      0, r, APLOGNO(01347)
+                      "missing argument for config element in %s",
                       r->filename);
     }
 
@@ -2111,7 +2117,7 @@ static apr_status_t handle_config(include_ctx_t *ctx, ap_filter_t *f,
                 ctx->flags &= SSI_FLAG_SIZE_ABBREV;
             }
             else {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "unknown value "
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01348) "unknown value "
                               "\"%s\" to parameter \"sizefmt\" of tag config "
                               "in %s", parsed_string, r->filename);
                 SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
@@ -2119,7 +2125,7 @@ static apr_status_t handle_config(include_ctx_t *ctx, ap_filter_t *f,
             }
         }
         else {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "unknown parameter "
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01349) "unknown parameter "
                           "\"%s\" to tag config in %s", tag, r->filename);
             SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
             break;
@@ -2141,7 +2147,8 @@ static apr_status_t handle_fsize(include_ctx_t *ctx, ap_filter_t *f,
         ap_log_rerror(APLOG_MARK,
                       (ctx->flags & SSI_FLAG_PRINTING)
                           ? APLOG_ERR : APLOG_WARNING,
-                      0, r, "missing argument for fsize element in %s",
+                      0, r, APLOGNO(01350)
+                      "missing argument for fsize element in %s",
                       r->filename);
     }
 
@@ -2228,7 +2235,8 @@ static apr_status_t handle_flastmod(include_ctx_t *ctx, ap_filter_t *f,
         ap_log_rerror(APLOG_MARK,
                       (ctx->flags & SSI_FLAG_PRINTING)
                           ? APLOG_ERR : APLOG_WARNING,
-                      0, r, "missing argument for flastmod element in %s",
+                      0, r, APLOGNO(01351)
+                      "missing argument for flastmod element in %s",
                       r->filename);
     }
 
@@ -2289,9 +2297,10 @@ static apr_status_t handle_if(include_ctx_t *ctx, ap_filter_t *f,
         ap_log_rerror(APLOG_MARK,
                       (ctx->flags & SSI_FLAG_PRINTING)
                           ? APLOG_ERR : APLOG_WARNING,
-                      0, r, (ctx->argc)
-                                ? "too many arguments for if element in %s"
-                                : "missing expr argument for if element in %s",
+                      0, r,
+                      (ctx->argc)
+                      ? APLOGNO(01352) "too many arguments for if element in %s"
+                      : APLOGNO(01353) "missing expr argument for if element in %s",
                       r->filename);
     }
 
@@ -2308,14 +2317,14 @@ static apr_status_t handle_if(include_ctx_t *ctx, ap_filter_t *f,
     ap_ssi_get_tag_and_value(ctx, &tag, &expr, SSI_VALUE_RAW);
 
     if (strcmp(tag, "expr")) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "unknown parameter \"%s\" "
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01354) "unknown parameter \"%s\" "
                       "to tag if in %s", tag, r->filename);
         SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
         return APR_SUCCESS;
     }
 
     if (!expr) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "missing expr value for if "
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01355) "missing expr value for if "
                       "element in %s", r->filename);
         SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
         return APR_SUCCESS;
@@ -2361,9 +2370,10 @@ static apr_status_t handle_elif(include_ctx_t *ctx, ap_filter_t *f,
     if (ctx->argc != 1) {
         ap_log_rerror(APLOG_MARK,
                       (!(ctx->if_nesting_level)) ? APLOG_ERR : APLOG_WARNING,
-                      0, r, (ctx->argc)
-                                ? "too many arguments for if element in %s"
-                                : "missing expr argument for if element in %s",
+                      0, r,
+                      (ctx->argc)
+                      ? APLOGNO(01356) "too many arguments for if element in %s"
+                      : APLOGNO(01357) "missing expr argument for if element in %s",
                       r->filename);
     }
 
@@ -2379,14 +2389,14 @@ static apr_status_t handle_elif(include_ctx_t *ctx, ap_filter_t *f,
     ap_ssi_get_tag_and_value(ctx, &tag, &expr, SSI_VALUE_RAW);
 
     if (strcmp(tag, "expr")) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "unknown parameter \"%s\" "
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01358) "unknown parameter \"%s\" "
                       "to tag if in %s", tag, r->filename);
         SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
         return APR_SUCCESS;
     }
 
     if (!expr) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "missing expr in elif "
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01359) "missing expr in elif "
                       "statement: %s", r->filename);
         SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
         return APR_SUCCESS;
@@ -2430,7 +2440,8 @@ static apr_status_t handle_else(include_ctx_t *ctx, ap_filter_t *f,
     if (ctx->argc) {
         ap_log_rerror(APLOG_MARK,
                       (!(ctx->if_nesting_level)) ? APLOG_ERR : APLOG_WARNING,
-                      0, r, "else directive does not take tags in %s",
+                      0, r, APLOGNO(01360)
+                      "else directive does not take tags in %s",
                       r->filename);
     }
 
@@ -2469,7 +2480,8 @@ static apr_status_t handle_endif(include_ctx_t *ctx, ap_filter_t *f,
     if (ctx->argc) {
         ap_log_rerror(APLOG_MARK,
                       (!(ctx->if_nesting_level)) ? APLOG_ERR : APLOG_WARNING,
-                      0, r, "endif directive does not take tags in %s",
+                      0, r, APLOGNO(01361)
+                      "endif directive does not take tags in %s",
                       r->filename);
     }
 
@@ -2507,7 +2519,8 @@ static apr_status_t handle_set(include_ctx_t *ctx, ap_filter_t *f,
         ap_log_rerror(APLOG_MARK,
                       (ctx->flags & SSI_FLAG_PRINTING)
                           ? APLOG_ERR : APLOG_WARNING,
-                      0, r, "missing argument for set element in %s",
+                      0, r,
+                      APLOGNO(01362) "missing argument for set element in %s",
                       r->filename);
     }
 
@@ -2553,7 +2566,7 @@ static apr_status_t handle_set(include_ctx_t *ctx, ap_filter_t *f,
             char *parsed_string;
 
             if (!var) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "variable must "
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01363) "variable must "
                               "precede value in set directive in %s",
                               r->filename);
                 SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
@@ -2579,6 +2592,11 @@ static apr_status_t handle_set(include_ctx_t *ctx, ap_filter_t *f,
                         ap_unescape_url(buf);
                         parsed_string = buf;
                     }
+                    else if (!strcasecmp(token, "urlencoded")) {
+                        char *buf = apr_pstrdup(ctx->pool, parsed_string);
+                        ap_unescape_urlencoded(buf);
+                        parsed_string = buf;
+                    }
                     else if (!strcasecmp(token, "entity")) {
                         char *buf = apr_pstrdup(ctx->pool, parsed_string);
                         decodehtml(buf);
@@ -2588,7 +2606,7 @@ static apr_status_t handle_set(include_ctx_t *ctx, ap_filter_t *f,
                         parsed_string = ap_pbase64decode(ctx->dpool, parsed_string);
                     }
                     else {
-                        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "unknown value "
+                        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01364) "unknown value "
                                       "\"%s\" to parameter \"decoding\" of tag set in "
                                       "%s", token, r->filename);
                         SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
@@ -2608,6 +2626,9 @@ static apr_status_t handle_set(include_ctx_t *ctx, ap_filter_t *f,
                     else if (!strcasecmp(token, "url")) {
                         parsed_string = ap_escape_uri(ctx->dpool, parsed_string);
                     }
+                    else if (!strcasecmp(token, "urlencoded")) {
+                        parsed_string = ap_escape_urlencoded(ctx->dpool, parsed_string);
+                    }
                     else if (!strcasecmp(token, "entity")) {
                         parsed_string = ap_escape_html2(ctx->dpool, parsed_string, 0);
                     }
@@ -2617,7 +2638,7 @@ static apr_status_t handle_set(include_ctx_t *ctx, ap_filter_t *f,
                         parsed_string = buf;
                     }
                     else {
-                        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "unknown value "
+                        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01365) "unknown value "
                                       "\"%s\" to parameter \"encoding\" of tag set in "
                                       "%s", token, r->filename);
                         SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
@@ -2637,7 +2658,7 @@ static apr_status_t handle_set(include_ctx_t *ctx, ap_filter_t *f,
                            apr_pstrdup(p, parsed_string));
         }
         else {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "Invalid tag for set "
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01366) "Invalid tag for set "
                           "directive in %s", r->filename);
             SSI_CREATE_ERROR_BUCKET(ctx, f, bb);
             break;
@@ -2662,7 +2683,8 @@ static apr_status_t handle_printenv(include_ctx_t *ctx, ap_filter_t *f,
         ap_log_rerror(APLOG_MARK,
                       (ctx->flags & SSI_FLAG_PRINTING)
                           ? APLOG_ERR : APLOG_WARNING,
-                      0, r, "printenv directive does not take tags in %s",
+                      0, r,
+                      APLOGNO(01367) "printenv directive does not take tags in %s",
                       r->filename);
     }
 
@@ -2680,36 +2702,18 @@ static apr_status_t handle_printenv(include_ctx_t *ctx, ap_filter_t *f,
 
     for (i = 0; i < arr->nelts; ++i) {
         const char *key_text, *val_text;
-        char *key_val, *next;
-        apr_size_t k_len, v_len, kv_length;
 
         /* get key */
         key_text = ap_escape_html(ctx->dpool, elts[i].key);
-        k_len = strlen(key_text);
 
         /* get value */
         val_text = elts[i].val;
-        if (val_text == LAZY_VALUE) {
+        if (val_text == LAZY_VALUE)
             val_text = add_include_vars_lazy(r, elts[i].key, ctx->time_str);
-        }
         val_text = ap_escape_html(ctx->dpool, val_text);
-        v_len = strlen(val_text);
 
-        /* assemble result */
-        kv_length = k_len + v_len + sizeof("=\n");
-        key_val = apr_palloc(ctx->pool, kv_length);
-        next = key_val;
-
-        memcpy(next, key_text, k_len);
-        next += k_len;
-        *next++ = '=';
-        memcpy(next, val_text, v_len);
-        next += v_len;
-        *next++ = '\n';
-        *next = 0;
-
-        APR_BRIGADE_INSERT_TAIL(bb, apr_bucket_pool_create(key_val, kv_length-1,
-                                ctx->pool, f->c->bucket_alloc));
+        apr_brigade_putstrs(bb, NULL, NULL, key_text, "=", val_text, "\n",
+                            NULL);
     }
 
     ctx->flush_now = 1;
@@ -3052,7 +3056,7 @@ static apr_size_t find_directive(include_ctx_t *ctx, const char *data,
 
         if (!intern->directive_len) {
             intern->error = 1;
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, ctx->r, "missing "
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, ctx->r, APLOGNO(01368) "missing "
                           "directive name in parsed document %s",
                           ctx->r->filename);
         }
@@ -3188,7 +3192,7 @@ static apr_size_t find_argument(include_ctx_t *ctx, const char *data,
             intern->current_arg->name_len = 0;
             intern->error = 1;
 
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, ctx->r, "missing "
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, ctx->r, APLOGNO(01369) "missing "
                           "argument name for value to tag %s in %s",
                           apr_pstrmemdup(ctx->r->pool, intern->directive,
                                          intern->directive_len),
@@ -3220,7 +3224,7 @@ static apr_size_t find_argument(include_ctx_t *ctx, const char *data,
                                                  intern->current_arg->name_len);
         if (!intern->current_arg->name_len) {
             intern->error = 1;
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, ctx->r, "missing "
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, ctx->r, APLOGNO(01370) "missing "
                           "argument name for value to tag %s in %s",
                           apr_pstrmemdup(ctx->r->pool, intern->directive,
                                          intern->directive_len),
@@ -3696,7 +3700,7 @@ static apr_status_t send_parsed_content(ap_filter_t *f, apr_bucket_brigade *bb)
                     }
                 }
                 else {
-                    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01371)
                                   "unknown directive \"%s\" in parsed doc %s",
                                   apr_pstrmemdup(r->pool, intern->directive,
                                                  intern->directive_len),
@@ -3733,7 +3737,7 @@ static apr_status_t send_parsed_content(ap_filter_t *f, apr_bucket_brigade *bb)
             }
         }
         else if (PARSE_PRE_HEAD != intern->state) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01372)
                           "SSI directive was not properly finished at the end "
                           "of parsed document %s", r->filename);
             if (ctx->flags & SSI_FLAG_PRINTING) {
@@ -3742,7 +3746,7 @@ static apr_status_t send_parsed_content(ap_filter_t *f, apr_bucket_brigade *bb)
         }
 
         if (!(ctx->flags & SSI_FLAG_PRINTING)) {
-            ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r,
+            ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, APLOGNO(01373)
                           "missing closing endif directive in parsed document"
                           " %s", r->filename);
         }
@@ -3805,7 +3809,6 @@ static int includes_setup(ap_filter_t *f)
 static apr_status_t includes_filter(ap_filter_t *f, apr_bucket_brigade *b)
 {
     request_rec *r = f->r;
-    include_ctx_t *ctx = f->ctx;
     request_rec *parent;
     include_dir_config *conf = ap_get_module_config(r->per_dir_config,
                                                     &include_module);
@@ -3814,7 +3817,7 @@ static apr_status_t includes_filter(ap_filter_t *f, apr_bucket_brigade *b)
                                                        &include_module);
 
     if (!(ap_allow_options(r) & OPT_INCLUDES)) {
-        ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r,
+        ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, APLOGNO(01374)
                       "mod_include: Options +Includes (or IncludesNoExec) "
                       "wasn't set, INCLUDES filter removed");
         ap_remove_output_filter(f);
@@ -3823,6 +3826,7 @@ static apr_status_t includes_filter(ap_filter_t *f, apr_bucket_brigade *b)
 
     if (!f->ctx) {
         struct ssi_internal_ctx *intern;
+        include_ctx_t *ctx;
 
         /* create context for this filter */
         f->ctx = ctx = apr_palloc(r->pool, sizeof(*ctx));
@@ -3839,7 +3843,6 @@ static apr_status_t includes_filter(ap_filter_t *f, apr_bucket_brigade *b)
         if ((ap_allow_options(r) & OPT_INC_WITH_EXEC) == 0) {
             ctx->flags |= SSI_FLAG_NO_EXEC;
         }
-        intern->accessenable = (conf->accessenable > 0);
         intern->legacy_expr = (conf->legacy_expr > 0);
         intern->expr_eval_ctx = NULL;
         intern->expr_err = NULL;
@@ -4000,7 +4003,6 @@ static void *create_includes_dir_config(apr_pool_t *p, char *dummy)
     include_dir_config *result = apr_pcalloc(p, sizeof(include_dir_config));
 
     result->xbithack          = XBITHACK_UNSET;
-    result->accessenable      = UNSET;
     result->lastmodified      = UNSET;
     result->etag              = UNSET;
     result->legacy_expr       = UNSET;
@@ -4018,7 +4020,6 @@ static void *merge_includes_dir_config(apr_pool_t *p, void *basev, void *overrid
     MERGE(base, over, new, default_time_fmt,  NULL);
     MERGE(base, over, new, undefined_echo,    NULL);
     MERGE(base, over, new, xbithack,          XBITHACK_UNSET);
-    MERGE(base, over, new, accessenable,      UNSET);
     MERGE(base, over, new, lastmodified,      UNSET);
     MERGE(base, over, new, etag,              UNSET);
     MERGE(base, over, new, legacy_expr,       UNSET);
@@ -4170,9 +4171,6 @@ static const command_rec includes_cmds[] =
                   "SSI End String Tag"),
     AP_INIT_TAKE1("SSIUndefinedEcho", set_undefined_echo, NULL, OR_ALL,
                   "String to be displayed if an echoed variable is undefined"),
-    AP_INIT_FLAG("SSIAccessEnable", ap_set_flag_slot_char,
-                  (void *)APR_OFFSETOF(include_dir_config, accessenable),
-                  OR_LIMIT, "Whether testing access is enabled. Limited to 'on' or 'off'"),
     AP_INIT_FLAG("SSILegacyExprParser", ap_set_flag_slot_char,
                   (void *)APR_OFFSETOF(include_dir_config, legacy_expr),
                   OR_LIMIT,

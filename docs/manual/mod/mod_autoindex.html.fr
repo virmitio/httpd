@@ -13,11 +13,11 @@
 <body>
 <div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p>
-<p class="apache">Serveur Apache HTTP Version 2.3</p>
+<p class="apache">Serveur Apache HTTP Version 2.5</p>
 <img alt="" src="../images/feather.gif" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
-<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.3</a> &gt; <a href="./">Modules</a></div>
+<a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.5</a> &gt; <a href="./">Modules</a></div>
 <div id="page-content">
 <div id="preamble"><h1>Module Apache mod_autoindex</h1>
 <div class="toplang">
@@ -307,7 +307,7 @@ fichier en fonction de son type MIME</td></tr>
     (<code>"</code>).</p>
 
     <div class="example"><h3>Exemple</h3><p><code>
-      AddDescription "La planète Mars" /web/pics/mars.gif
+      AddDescription "La planète Mars" mars.gif
     </code></p></div>
 
     <p>La taille par défaut, habituelle du champ de description est de
@@ -339,6 +339,15 @@ fichier en fonction de son type MIME</td></tr>
       exemple couper la fin d'une phrase en caractères gras), le
       résultat pourrait en affecter toute la suite du listing du
       répertoire.</p>
+    </div>
+
+    <div class="note"><h3>Arguments avec chemins</h3>
+      <p>Les chemins absolus ne sont actuellement pas supportés et ne
+      peuvent correspondre à aucun chemin réel à l'exécution. Les
+      arguments contenant des chemins relatifs, qui ne devraient être
+      normalement utilisés que dans les fichiers htaccess, sont
+      implicitement préfixés par '*/' afin d'éviter toute association
+      avec des noms de répertoires partiels.</p>
     </div>
 
 </div>
@@ -572,6 +581,12 @@ de l'index d'un répertoire</td></tr>
       IndexIgnore .??* *~ *# HEADER* README* RCS CVS *,v *,t
     </code></p></div>
 
+    <div class="note"><h3>Expressions rationnelles</h3>
+      <p>Cette directive est actuellement incompatible avec les sections
+      de configuration qui comportent des arguments avec expressions
+      rationnelles comme  <code class="directive"><a href="../mod/core.html#directorymatch">&lt;DirectoryMatch&gt;</a></code></p>
+    </div>
+
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="IndexIgnoreReset" id="IndexIgnoreReset">IndexIgnoreReset</a> <a name="indexignorereset" id="indexignorereset">Directive</a></h2>
@@ -638,7 +653,7 @@ répertoire</td></tr>
       défini par une des différentes directives <code>AddAlt*</code>.
       </dd>
 
-    
+
       <dt><a name="indexoptions.charset" id="indexoptions.charset">Charset=<var>jeu de caractères</var></a> (<em>Versions 2.0.61 et
       supérieures du serveur HTTP Apache</em>)</dt>
 
@@ -1056,23 +1071,22 @@ répertoire</td></tr>
     l'ensemble de la table et les classes suivantes sont associées aux
     différentes parties du listing :</p>
 
-    <table>
-    <tr><th>Classe</th><th>Définition</th></tr>
-    <tr><td>tr.indexhead</td><td>Ligne d'en-tête du listing</td></tr>
-    <tr><td>th.indexcolicon and td.indexcolicon</td> <td>Colonne de
+    <table class="bordered"><tr class="header"><th>Classe</th><th>Définition</th></tr>
+<tr><td>tr.indexhead</td><td>Ligne d'en-tête du listing</td></tr>
+<tr class="odd"><td>th.indexcolicon and td.indexcolicon</td> <td>Colonne de
     l'icône</td></tr>
-    <tr><td>th.indexcolname and td.indexcolname</td> <td>Colonne du nom
+<tr><td>th.indexcolname and td.indexcolname</td> <td>Colonne du nom
     du fichier</td></tr>
-    <tr><td>th.indexcollastmod and td.indexcollastmod</td> <td>Colonne
+<tr class="odd"><td>th.indexcollastmod and td.indexcollastmod</td> <td>Colonne
     de la date de dernière modification</td></tr>
-    <tr><td>th.indexcolsize and td.indexcolsize</td> <td>Colonne de la
+<tr><td>th.indexcolsize and td.indexcolsize</td> <td>Colonne de la
     taille du fichier</td></tr>
-    <tr><td>th.indexcoldesc and td.indexcoldesc</td> <td>Colonne de la
+<tr class="odd"><td>th.indexcoldesc and td.indexcoldesc</td> <td>Colonne de la
     description</td></tr>
-    <tr><td>tr.breakrow</td> <td>Pied de page</td></tr>
-    <tr><td>tr.odd and tr.even</td> <td>Alternance des lignes paires et
+<tr><td>tr.breakrow</td> <td>Pied de page</td></tr>
+<tr class="odd"><td>tr.odd and tr.even</td> <td>Alternance des lignes paires et
     impaires</td></tr>
-    </table>
+</table>
 
 
 </div>
@@ -1115,6 +1129,6 @@ l'index</td></tr>
 <a href="../ko/mod/mod_autoindex.html" hreflang="ko" rel="alternate" title="Korean">&nbsp;ko&nbsp;</a> |
 <a href="../tr/mod/mod_autoindex.html" hreflang="tr" rel="alternate" title="Türkçe">&nbsp;tr&nbsp;</a></p>
 </div><div id="footer">
-<p class="apache">Copyright 2011 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2012 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="../faq/">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p></div>
 </body></html>

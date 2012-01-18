@@ -26,7 +26,7 @@ typedef struct recycled_pool
 struct fd_queue_info_t
 {
     apr_int32_t idlers;      /**
-                                  * 0 or positive: number of idle worker threads
+                              * 0 or positive: number of idle worker threads
                               * negative: number of threads blocked waiting
                               *           for an idle worker
                               */
@@ -364,7 +364,7 @@ apr_status_t ap_queue_init(fd_queue_t * queue, int queue_capacity,
  *               to reserve an idle worker thread
  */
 apr_status_t ap_queue_push(fd_queue_t * queue, apr_socket_t * sd,
-                           conn_state_t * cs, apr_pool_t * p)
+                           event_conn_state_t * ecs, apr_pool_t * p)
 {
     fd_queue_elem_t *elem;
     apr_status_t rv;
@@ -381,7 +381,7 @@ apr_status_t ap_queue_push(fd_queue_t * queue, apr_socket_t * sd,
     if (queue->in >= queue->bounds)
         queue->in -= queue->bounds;
     elem->sd = sd;
-    elem->cs = cs;
+    elem->ecs = ecs;
     elem->p = p;
     queue->nelts++;
 
@@ -397,21 +397,21 @@ apr_status_t ap_queue_push(fd_queue_t * queue, apr_socket_t * sd,
 apr_status_t ap_queue_push_timer(fd_queue_t * queue, timer_event_t *te)
 {
     apr_status_t rv;
-    
+
     if ((rv = apr_thread_mutex_lock(queue->one_big_mutex)) != APR_SUCCESS) {
         return rv;
     }
-    
+
     AP_DEBUG_ASSERT(!queue->terminated);
 
     APR_RING_INSERT_TAIL(&queue->timers, te, timer_event_t, link);
 
     apr_thread_cond_signal(queue->not_empty);
-    
+
     if ((rv = apr_thread_mutex_unlock(queue->one_big_mutex)) != APR_SUCCESS) {
         return rv;
     }
-    
+
     return APR_SUCCESS;
 }
 
@@ -422,7 +422,7 @@ apr_status_t ap_queue_push_timer(fd_queue_t * queue, timer_event_t *te)
  * 'sd'.
  */
 apr_status_t ap_queue_pop_something(fd_queue_t * queue, apr_socket_t ** sd,
-                                    conn_state_t ** cs, apr_pool_t ** p,
+                                    event_conn_state_t ** ecs, apr_pool_t ** p,
                                     timer_event_t ** te_out)
 {
     fd_queue_elem_t *elem;
@@ -465,14 +465,14 @@ apr_status_t ap_queue_pop_something(fd_queue_t * queue, apr_socket_t ** sd,
             queue->out -= queue->bounds;
         queue->nelts--;
         *sd = elem->sd;
-        *cs = elem->cs;
+        *ecs = elem->ecs;
         *p = elem->p;
 #ifdef AP_DEBUG
         elem->sd = NULL;
         elem->p = NULL;
 #endif /* AP_DEBUG */
     }
-    
+
     rv = apr_thread_mutex_unlock(queue->one_big_mutex);
     return rv;
 }

@@ -43,7 +43,7 @@ apr_status_t simple_core_init_once(void)
     if (g_simple_core) {
         return APR_SUCCESS;
     }
-    
+
     sc = g_simple_core = ap_retained_data_create(userdata_key, sizeof(*g_simple_core));
 
     apr_pool_create(&sc->pool, ap_pglobal);
@@ -64,7 +64,7 @@ apr_status_t simple_core_init_once(void)
     rv = apr_thread_mutex_create(&sc->mtx, 0, sc->pool);
 
     if (rv) {
-        ap_log_error(APLOG_MARK, APLOG_CRIT, rv, NULL,
+        ap_log_error(APLOG_MARK, APLOG_CRIT, rv, NULL, APLOGNO(00246)
                      "simple_core_init_once: apr_thread_mutex_create failed.");
         return rv;
     }

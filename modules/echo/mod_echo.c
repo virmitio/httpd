@@ -92,7 +92,7 @@ static apr_status_t brigade_peek(apr_bucket_brigade *bbIn,
 }
 
 
-static int update_echo_child_status(ap_sb_handle_t *sbh, 
+static int update_echo_child_status(ap_sb_handle_t *sbh,
                                     int status, conn_rec *c,
                                     apr_bucket_brigade *last_echoed)
 {
@@ -108,7 +108,7 @@ static int update_echo_child_status(ap_sb_handle_t *sbh,
 
     /* initial pass only, please - in the name of efficiency */
     if (c) {
-        apr_cpystrn(ws->client, 
+        apr_cpystrn(ws->client,
                     ap_get_remote_host(c, c->base_server->lookup_defaults,
                                        REMOTE_NOLOOKUP, NULL),
                     sizeof(ws->client));
@@ -120,7 +120,7 @@ static int update_echo_child_status(ap_sb_handle_t *sbh,
 
     /* each subsequent WRITE pass, let's update what we echoed */
     if (last_echoed) {
-        brigade_peek(last_echoed, ws->request + sizeof("ECHO ") - 1, 
+        brigade_peek(last_echoed, ws->request + sizeof("ECHO ") - 1,
                      sizeof(ws->request) - sizeof("ECHO ") + 1);
     }
 
@@ -138,7 +138,7 @@ static int process_echo_connection(conn_rec *c)
     if (!pConfig->bEnabled) {
         return DECLINED;
     }
-    
+
     ap_time_process_request(c->sbh, START_PREQUEST);
     update_echo_child_status(c->sbh, SERVER_BUSY_READ, c, NULL);
 
@@ -152,18 +152,18 @@ static int process_echo_connection(conn_rec *c)
                                   APR_BLOCK_READ, 0)) != APR_SUCCESS)) {
             apr_brigade_cleanup(bb);
             if (!APR_STATUS_IS_EOF(rv) && ! APR_STATUS_IS_TIMEUP(rv))
-                ap_log_error(APLOG_MARK, APLOG_INFO, rv, c->base_server,
+                ap_log_error(APLOG_MARK, APLOG_INFO, rv, c->base_server, APLOGNO(01611)
                              "ProtocolEcho: Failure reading from %s",
-                             c->remote_ip);
+                             c->client_ip);
             break;
         }
 
         /* Something horribly wrong happened.  Someone didn't block! */
         if (APR_BRIGADE_EMPTY(bb)) {
             apr_brigade_cleanup(bb);
-            ap_log_error(APLOG_MARK, APLOG_INFO, rv, c->base_server,
+            ap_log_error(APLOG_MARK, APLOG_INFO, rv, c->base_server, APLOGNO(01612)
                          "ProtocolEcho: Error - read empty brigade from %s!",
-                         c->remote_ip);
+                         c->client_ip);
             break;
         }
 
@@ -179,10 +179,10 @@ static int process_echo_connection(conn_rec *c)
         APR_BRIGADE_INSERT_TAIL(bb, b);
         rv = ap_pass_brigade(c->output_filters, bb);
         if (rv != APR_SUCCESS) {
-            ap_log_error(APLOG_MARK, APLOG_INFO, rv, c->base_server,
+            ap_log_error(APLOG_MARK, APLOG_INFO, rv, c->base_server, APLOGNO(01613)
                          "ProtocolEcho: Failure writing to %s",
-                         c->remote_ip);
-            break; 
+                         c->client_ip);
+            break;
         }
         apr_brigade_cleanup(bb);
 

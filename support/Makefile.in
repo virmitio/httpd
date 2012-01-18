@@ -3,8 +3,9 @@ DISTCLEAN_TARGETS = apxs apachectl dbmmanage log_server_status \
 
 CLEAN_TARGETS = suexec
 
-PROGRAMS = htpasswd htdigest rotatelogs logresolve ab htdbm htcacheclean httxt2dbm $(NONPORTABLE_SUPPORT)
-TARGETS  = $(PROGRAMS)
+bin_PROGRAMS = htpasswd htdigest htdbm firehose ab logresolve httxt2dbm
+sbin_PROGRAMS = htcacheclean rotatelogs $(NONPORTABLE_SUPPORT)
+TARGETS  = $(bin_PROGRAMS) $(sbin_PROGRAMS)
 
 PROGRAM_LDADD        = $(UTIL_LDFLAGS) $(PROGRAM_DEPENDENCIES) $(EXTRA_LIBS) $(AP_LIBS)
 PROGRAM_DEPENDENCIES = 
@@ -16,7 +17,13 @@ install:
 	@test -d $(DESTDIR)$(sbindir) || $(MKINSTALLDIRS) $(DESTDIR)$(sbindir)
 	@test -d $(DESTDIR)$(libexecdir) || $(MKINSTALLDIRS) $(DESTDIR)$(libexecdir)
 	@cp -p $(top_builddir)/server/httpd.exp $(DESTDIR)$(libexecdir)
-	@for i in apxs apachectl dbmmanage; do \
+	@for i in apxs dbmmanage; do \
+	    if test -f "$(builddir)/$$i"; then \
+	        cp -p $$i $(DESTDIR)$(bindir); \
+	        chmod 755 $(DESTDIR)$(bindir)/$$i; \
+	    fi ; \
+	done
+	@for i in apachectl; do \
 	    if test -f "$(builddir)/$$i"; then \
 	        cp -p $$i $(DESTDIR)$(sbindir); \
 	        chmod 755 $(DESTDIR)$(sbindir)/$$i; \
@@ -73,3 +80,8 @@ httxt2dbm: $(httxt2dbm_OBJECTS)
 fcgistarter_OBJECTS = fcgistarter.lo
 fcgistarter: $(fcgistarter_OBJECTS)
 	$(LINK) $(fcgistarter_LTFLAGS) $(fcgistarter_OBJECTS) $(PROGRAM_LDADD)
+
+firehose_OBJECTS = firehose.lo
+firehose: $(firehose_OBJECTS)
+	$(LINK) $(firehose_LTFLAGS) $(firehose_OBJECTS) $(PROGRAM_LDADD)
+

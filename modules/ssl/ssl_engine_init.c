@@ -27,6 +27,7 @@
                                   see Recursive.''
                                         -- Unknown   */
 #include "ssl_private.h"
+#include "mpm_common.h"
 
 /*  _________________________________________________________________
 **
@@ -34,19 +35,23 @@
 **  _________________________________________________________________
 */
 
+#ifndef OPENSSL_NO_EC
+#define KEYTYPES "RSA, DSA or ECC"
+#else 
+#define KEYTYPES "RSA or DSA"
+#endif
 
 static void ssl_add_version_components(apr_pool_t *p,
                                        server_rec *s)
 {
     char *modver = ssl_var_lookup(p, s, NULL, NULL, "SSL_VERSION_INTERFACE");
     char *libver = ssl_var_lookup(p, s, NULL, NULL, "SSL_VERSION_LIBRARY");
-    char *incver = ssl_var_lookup(p, s, NULL, NULL, 
+    char *incver = ssl_var_lookup(p, s, NULL, NULL,
                                   "SSL_VERSION_LIBRARY_INTERFACE");
 
-    ap_add_version_component(p, modver);
     ap_add_version_component(p, libver);
 
-    ap_log_error(APLOG_MARK, APLOG_INFO, 0, s,
+    ap_log_error(APLOG_MARK, APLOG_INFO, 0, s, APLOGNO(01876)
                  "%s compiled against Server: %s, Library: %s",
                  modver, AP_SERVER_BASEVERSION, incver);
 }
@@ -83,7 +88,7 @@ static int ssl_tmp_key_init_rsa(server_rec *s,
 
     if (FIPS_mode() && bits < 1024) {
         mc->pTmpKeys[idx] = NULL;
-        ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, s, APLOGNO(01877)
                      "Init: Skipping generating temporary "
                      "%d bit RSA private key in FIPS mode", bits);
         return OK;
@@ -99,7 +104,7 @@ static int ssl_tmp_key_init_rsa(server_rec *s,
           || !BN_set_word(bn_f4, RSA_F4)
           || !RSA_generate_key_ex(tkey, bits, bn_f4, NULL))
         {
-            ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0, s, APLOGNO(01878)
                          "Init: Failed to generate temporary "
                          "%d bit RSA private key", bits);
             ssl_log_ssl_error(SSLLOG_MARK, APLOG_ERR, s);
@@ -112,7 +117,7 @@ static int ssl_tmp_key_init_rsa(server_rec *s,
     if (!(mc->pTmpKeys[idx] =
           RSA_generate_key(bits, RSA_F4, NULL, NULL)))
     {
-        ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, s, APLOGNO(01879)
                      "Init: Failed to generate temporary "
                      "%d bit RSA private key", bits);
         ssl_log_ssl_error(SSLLOG_MARK, APLOG_ERR, s);
@@ -132,7 +137,7 @@ static int ssl_tmp_key_init_dh(server_rec *s,
 
     if (FIPS_mode() && bits < 1024) {
         mc->pTmpKeys[idx] = NULL;
-        ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, s, APLOGNO(01880)
                      "Init: Skipping generating temporary "
                      "%d bit DH parameters in FIPS mode", bits);
         return OK;
@@ -143,7 +148,7 @@ static int ssl_tmp_key_init_dh(server_rec *s,
     if (!(mc->pTmpKeys[idx] =
           ssl_dh_GetTmpParam(bits)))
     {
-        ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_ERR, 0, s, APLOGNO(01881)
                      "Init: Failed to generate temporary "
                      "%d bit DH parameters", bits);
         return !OK;
@@ -189,6 +194,14 @@ int ssl_init_Module(apr_pool_t *p, apr_pool_t *plog,
     SSLModConfigRec *mc = myModConfig(base_server);
     SSLSrvConfigRec *sc;
     server_rec *s;
+
+    if (SSLeay() < SSL_LIBRARY_VERSION) {
+        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, base_server, APLOGNO(01882)
+                     "Init: this version of mod_ssl was compiled against "
+                     "a newer library (%s, version currently loaded is %s)"
+                     " - may result in undefined or erroneous behavior",
+                     SSL_LIBRARY_TEXT, SSLeay_version(SSLEAY_VERSION));
+    }
 
     /* We initialize mc->pid per-process in the child init,
      * but it should be initialized for startup before we
@@ -248,7 +261,7 @@ int ssl_init_Module(apr_pool_t *p, apr_pool_t *plog,
             sc->session_cache_timeout = SSL_SESSION_CACHE_TIMEOUT;
         }
 
-        if (sc->server->pphrase_dialog_type == SSL_PPTYPE_UNSET) {
+        if (sc->server && sc->server->pphrase_dialog_type == SSL_PPTYPE_UNSET) {
             sc->server->pphrase_dialog_type = SSL_PPTYPE_BUILTIN;
         }
 
@@ -270,7 +283,7 @@ int ssl_init_Module(apr_pool_t *p, apr_pool_t *plog,
     ssl_init_Engine(base_server, p);
 #endif
 
-    ap_log_error(APLOG_MARK, APLOG_INFO, 0, s,
+    ap_log_error(APLOG_MARK, APLOG_INFO, 0, s, APLOGNO(01883)
                  "Init: Initialized %s library", SSL_LIBRARY_NAME);
 
     /*
@@ -284,18 +297,18 @@ int ssl_init_Module(apr_pool_t *p, apr_pool_t *plog,
     if(sc->fips) {
         if (!FIPS_mode()) {
             if (FIPS_mode_set(1)) {
-                ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, s,
+                ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, s, APLOGNO(01884)
                              "Operating in SSL FIPS mode");
             }
             else {
-                ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, "FIPS mode failed");
+                ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(01885) "FIPS mode failed");
                 ssl_log_ssl_error(SSLLOG_MARK, APLOG_EMERG, s);
                 ssl_die();
             }
         }
     }
     else {
-        ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, s, APLOGNO(01886)
                      "SSL FIPS mode disabled");
     }
 #endif
@@ -330,7 +343,7 @@ int ssl_init_Module(apr_pool_t *p, apr_pool_t *plog,
     /*
      *  initialize servers
      */
-    ap_log_error(APLOG_MARK, APLOG_INFO, 0, base_server,
+    ap_log_error(APLOG_MARK, APLOG_INFO, 0, base_server, APLOGNO(01887)
                  "Init: Initializing (virtual) servers for SSL");
 
     for (s = base_server; s; s = s->next) {
@@ -375,7 +388,7 @@ void ssl_init_Engine(server_rec *s, apr_pool_t *p)
 
     if (mc->szCryptoDevice) {
         if (!(e = ENGINE_by_id(mc->szCryptoDevice))) {
-            ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+            ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(01888)
                          "Init: Failed to load Crypto Device API `%s'",
                          mc->szCryptoDevice);
             ssl_log_ssl_error(SSLLOG_MARK, APLOG_EMERG, s);
@@ -387,14 +400,14 @@ void ssl_init_Engine(server_rec *s, apr_pool_t *p)
         }
 
         if (!ENGINE_set_default(e, ENGINE_METHOD_ALL)) {
-            ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+            ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(01889)
                          "Init: Failed to enable Crypto Device API `%s'",
                          mc->szCryptoDevice);
             ssl_log_ssl_error(SSLLOG_MARK, APLOG_EMERG, s);
             ssl_die();
         }
-        ap_log_error(APLOG_MARK, APLOG_INFO, 0, s, 
-                     "Init: loaded Crypto Device API `%s'", 
+        ap_log_error(APLOG_MARK, APLOG_INFO, 0, s, APLOGNO(01890)
+                     "Init: loaded Crypto Device API `%s'",
                      mc->szCryptoDevice);
 
         ENGINE_free(e);
@@ -412,7 +425,7 @@ static void ssl_init_server_check(server_rec *s,
      * possibility that the user forgot to set them.
      */
     if (!mctx->pks->cert_files[0] && !mctx->pkcs7) {
-        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(01891)
                 "No SSL Certificate set [hint: SSLCertificateFile]");
         ssl_die();
     }
@@ -427,7 +440,7 @@ static void ssl_init_server_check(server_rec *s,
 #endif
         )
     {
-        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(01892)
                 "Illegal attempt to re-initialise SSL for server "
                 "(SSLEngine On should go in the VirtualHost, not in global scope.)");
         ssl_die();
@@ -443,7 +456,7 @@ static void ssl_init_ctx_tls_extensions(server_rec *s,
     /*
      * Configure TLS extensions support
      */
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s,
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s, APLOGNO(01893)
                  "Configuring TLS extension handling");
 
     /*
@@ -452,7 +465,7 @@ static void ssl_init_ctx_tls_extensions(server_rec *s,
     if (!SSL_CTX_set_tlsext_servername_callback(mctx->ssl_ctx,
                           ssl_callback_ServerNameIndication) ||
         !SSL_CTX_set_tlsext_servername_arg(mctx->ssl_ctx, mctx)) {
-        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(01894)
                      "Unable to initialize TLS servername extension "
                      "callback (incompatible OpenSSL version?)");
         ssl_log_ssl_error(SSLLOG_MARK, APLOG_EMERG, s);
@@ -485,15 +498,18 @@ static void ssl_init_ctx_protocol(server_rec *s,
      *  Create the new per-server SSL context
      */
     if (protocol == SSL_PROTOCOL_NONE) {
-        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(02231)
                 "No SSL protocols available [hint: SSLProtocol]");
         ssl_die();
     }
 
     cp = apr_pstrcat(p,
-                     (protocol & SSL_PROTOCOL_SSLV2 ? "SSLv2, " : ""),
                      (protocol & SSL_PROTOCOL_SSLV3 ? "SSLv3, " : ""),
                      (protocol & SSL_PROTOCOL_TLSV1 ? "TLSv1, " : ""),
+#ifdef HAVE_TLSV1_X
+                     (protocol & SSL_PROTOCOL_TLSV1_1 ? "TLSv1.1, " : ""),
+                     (protocol & SSL_PROTOCOL_TLSV1_2 ? "TLSv1.2, " : ""),
+#endif
                      NULL);
     cp[strlen(cp)-2] = NUL;
 
@@ -505,18 +521,23 @@ static void ssl_init_ctx_protocol(server_rec *s,
             SSLv3_client_method() : /* proxy */
             SSLv3_server_method();  /* server */
     }
-#ifndef OPENSSL_NO_SSL2
-    else if (protocol == SSL_PROTOCOL_SSLV2) {
-        method = mctx->pkp ?
-            SSLv2_client_method() : /* proxy */
-            SSLv2_server_method();  /* server */
-    }
-#endif
     else if (protocol == SSL_PROTOCOL_TLSV1) {
         method = mctx->pkp ?
             TLSv1_client_method() : /* proxy */
             TLSv1_server_method();  /* server */
     }
+#ifdef HAVE_TLSV1_X
+    else if (protocol == SSL_PROTOCOL_TLSV1_1) {
+        method = mctx->pkp ?
+            TLSv1_1_client_method() : /* proxy */
+            TLSv1_1_server_method();  /* server */
+    }
+    else if (protocol == SSL_PROTOCOL_TLSV1_2) {
+        method = mctx->pkp ?
+            TLSv1_2_client_method() : /* proxy */
+            TLSv1_2_server_method();  /* server */
+    }
+#endif
     else { /* For multiple protocols, we need a flexible method */
         method = mctx->pkp ?
             SSLv23_client_method() : /* proxy */
@@ -528,9 +549,8 @@ static void ssl_init_ctx_protocol(server_rec *s,
 
     SSL_CTX_set_options(ctx, SSL_OP_ALL);
 
-    if (!(protocol & SSL_PROTOCOL_SSLV2)) {
-        SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
-    }
+    /* always disable SSLv2, as per RFC 6176 */
+    SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
 
     if (!(protocol & SSL_PROTOCOL_SSLV3)) {
         SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv3);
@@ -539,6 +559,16 @@ static void ssl_init_ctx_protocol(server_rec *s,
     if (!(protocol & SSL_PROTOCOL_TLSV1)) {
         SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1);
     }
+
+#ifdef HAVE_TLSV1_X
+    if (!(protocol & SSL_PROTOCOL_TLSV1_1)) {
+        SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1_1);
+    }
+
+    if (!(protocol & SSL_PROTOCOL_TLSV1_2)) {
+        SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1_2);
+    }
+#endif
 
 #ifdef SSL_OP_CIPHER_SERVER_PREFERENCE
     if (sc->cipher_server_pref == TRUE) {
@@ -565,6 +595,12 @@ static void ssl_init_ctx_protocol(server_rec *s,
      * so that an acceptable cipher suite can be negotiated.
      */
     SSL_CTX_set_options(ctx, SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
+#endif
+
+#ifdef SSL_MODE_RELEASE_BUFFERS
+    /* If httpd is configured to reduce mem usage, ask openssl to do so, too */
+    if (ap_max_mem_free != APR_ALLOCATOR_MAX_FREE_UNLIMITED)
+        SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
 #endif
 }
 
@@ -642,10 +678,10 @@ static void ssl_init_ctx_verify(server_rec *s,
                      "Configuring client authentication");
 
         if (!SSL_CTX_load_verify_locations(ctx,
-                         MODSSL_PCHAR_CAST mctx->auth.ca_cert_file,
-                         MODSSL_PCHAR_CAST mctx->auth.ca_cert_path))
+                                           mctx->auth.ca_cert_file,
+                                           mctx->auth.ca_cert_path))
         {
-            ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+            ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(01895)
                     "Unable to configure verify locations "
                     "for client authentication");
             ssl_log_ssl_error(SSLLOG_MARK, APLOG_EMERG, s);
@@ -661,7 +697,7 @@ static void ssl_init_ctx_verify(server_rec *s,
                                           mctx->auth.ca_cert_file,
                                           mctx->auth.ca_cert_path);
         if (sk_X509_NAME_num(ca_list) <= 0) {
-            ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+            ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(01896)
                     "Unable to determine list of acceptable "
                     "CA certificates for client authentication");
             ssl_die();
@@ -678,7 +714,7 @@ static void ssl_init_ctx_verify(server_rec *s,
         ca_list = SSL_CTX_get_client_CA_list(ctx);
 
         if (sk_X509_NAME_num(ca_list) == 0) {
-            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
+            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, APLOGNO(01897)
                          "Init: Oops, you want to request client "
                          "authentication, but no CAs are known for "
                          "verification!?  [Hint: SSLCACertificate*]");
@@ -705,8 +741,8 @@ static void ssl_init_ctx_cipher_suite(server_rec *s,
                  "Configuring permitted SSL ciphers [%s]",
                  suite);
 
-    if (!SSL_CTX_set_cipher_list(ctx, MODSSL_PCHAR_CAST suite)) {
-        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+    if (!SSL_CTX_set_cipher_list(ctx, suite)) {
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(01898)
                 "Unable to configure permitted SSL ciphers");
         ssl_log_ssl_error(SSLLOG_MARK, APLOG_EMERG, s);
         ssl_die();
@@ -718,27 +754,56 @@ static void ssl_init_ctx_crl(server_rec *s,
                              apr_pool_t *ptemp,
                              modssl_ctx_t *mctx)
 {
+    X509_STORE *store = SSL_CTX_get_cert_store(mctx->ssl_ctx);
+    unsigned long crlflags = 0;
+    char *cfgp = mctx->pkp ? "SSLProxy" : "SSL";
+
     /*
      * Configure Certificate Revocation List (CRL) Details
      */
 
     if (!(mctx->crl_file || mctx->crl_path)) {
+        if (mctx->crl_check_mode == SSL_CRLCHECK_LEAF ||
+            mctx->crl_check_mode == SSL_CRLCHECK_CHAIN) {
+            ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(01899)
+                         "Host %s: CRL checking has been enabled, but "
+                         "neither %sCARevocationFile nor %sCARevocationPath "
+                         "is configured", mctx->sc->vhost_id, cfgp, cfgp);
+            ssl_die();
+        }
         return;
     }
 
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s,
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s, APLOGNO(01900)
                  "Configuring certificate revocation facility");
 
-    mctx->crl =
-        SSL_X509_STORE_create((char *)mctx->crl_file,
-                              (char *)mctx->crl_path);
-
-    if (!mctx->crl) {
-        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
-                "Unable to configure X.509 CRL storage "
-                "for certificate revocation");
+    if (!store || !X509_STORE_load_locations(store, mctx->crl_file,
+                                             mctx->crl_path)) {
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(01901)
+                     "Host %s: unable to configure X.509 CRL storage "
+                     "for certificate revocation", mctx->sc->vhost_id);
         ssl_log_ssl_error(SSLLOG_MARK, APLOG_EMERG, s);
         ssl_die();
+    }
+
+    switch (mctx->crl_check_mode) {
+       case SSL_CRLCHECK_LEAF:
+           crlflags = X509_V_FLAG_CRL_CHECK;
+           break;
+       case SSL_CRLCHECK_CHAIN:
+           crlflags = X509_V_FLAG_CRL_CHECK|X509_V_FLAG_CRL_CHECK_ALL;
+           break;
+       default:
+           crlflags = 0;
+    }
+
+    if (crlflags) {
+        X509_STORE_set_flags(store, crlflags);
+    } else {
+        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, APLOGNO(01902)
+                     "Host %s: X.509 CRL storage locations configured, "
+                     "but CRL checking (%sCARevocationCheck) is not "
+                     "enabled", mctx->sc->vhost_id, cfgp);
     }
 }
 
@@ -746,8 +811,15 @@ static void ssl_init_ctx_pkcs7_cert_chain(server_rec *s, modssl_ctx_t *mctx)
 {
     STACK_OF(X509) *certs = ssl_read_pkcs7(s, mctx->pkcs7);
     int n;
+    STACK_OF(X509) *extra_certs = NULL;
 
-    if (!mctx->ssl_ctx->extra_certs)
+#ifdef OPENSSL_NO_SSL_INTERN
+    SSL_CTX_get_extra_chain_certs(mctx->ssl_ctx, &extra_certs);
+#else
+    extra_certs = mctx->ssl_ctx->extra_certs;
+#endif
+
+    if (!extra_certs)
         for (n = 1; n < sk_X509_num(certs); ++n)
              SSL_CTX_add_extra_chain_cert(mctx->ssl_ctx, sk_X509_value(certs, n));
 }
@@ -795,12 +867,12 @@ static void ssl_init_ctx_cert_chain(server_rec *s,
                                       (char *)chain,
                                       skip_first, NULL);
     if (n < 0) {
-        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(01903)
                 "Failed to configure CA certificate chain!");
         ssl_die();
     }
 
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s,
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s, APLOGNO(01904)
                  "Configuring server certificate chain "
                  "(%d CA certificate%s)",
                  n, n == 1 ? "" : "s");
@@ -847,28 +919,28 @@ static int ssl_server_import_cert(server_rec *s,
         return FALSE;
     }
 
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s,
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s, APLOGNO(02232)
                  "Configuring %s server certificate", type);
 
     ptr = asn1->cpData;
     if (!(cert = d2i_X509(NULL, &ptr, asn1->nData))) {
-        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(02233)
                 "Unable to import %s server certificate", type);
         ssl_log_ssl_error(SSLLOG_MARK, APLOG_EMERG, s);
         ssl_die();
     }
 
     if (SSL_CTX_use_certificate(mctx->ssl_ctx, cert) <= 0) {
-        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(02234)
                 "Unable to configure %s server certificate", type);
         ssl_log_ssl_error(SSLLOG_MARK, APLOG_EMERG, s);
         ssl_die();
     }
-  
+
 #ifdef HAVE_OCSP_STAPLING
     if ((mctx->pkp == FALSE) && (mctx->stapling_enabled == TRUE)) {
         if (!ssl_stapling_init_cert(s, mctx, cert)) {
-            ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0, s, APLOGNO(02235)
                          "Unable to configure server certificate for stapling");
         }
     }
@@ -895,27 +967,27 @@ static int ssl_server_import_key(server_rec *s,
     if (idx == SSL_AIDX_ECC)
       pkey_type = EVP_PKEY_EC;
     else
-#endif /* SSL_LIBRARY_VERSION */
+#endif
     pkey_type = (idx == SSL_AIDX_RSA) ? EVP_PKEY_RSA : EVP_PKEY_DSA;
 
     if (!(asn1 = ssl_asn1_table_get(mc->tPrivateKey, id))) {
         return FALSE;
     }
 
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s,
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s, APLOGNO(02236)
                  "Configuring %s server private key", type);
 
     ptr = asn1->cpData;
     if (!(pkey = d2i_PrivateKey(pkey_type, NULL, &ptr, asn1->nData)))
     {
-        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(02237)
                 "Unable to import %s server private key", type);
         ssl_log_ssl_error(SSLLOG_MARK, APLOG_EMERG, s);
         ssl_die();
     }
 
     if (SSL_CTX_use_PrivateKey(mctx->ssl_ctx, pkey) <= 0) {
-        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(02238)
                 "Unable to configure %s server private key", type);
         ssl_log_ssl_error(SSLLOG_MARK, APLOG_EMERG, s);
         ssl_die();
@@ -930,7 +1002,7 @@ static int ssl_server_import_key(server_rec *s,
 
         if (pubkey && EVP_PKEY_missing_parameters(pubkey)) {
             EVP_PKEY_copy_parameters(pubkey, pkey);
-            ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0, s, APLOGNO(02239)
                     "Copying DSA parameters from private key to certificate");
             ssl_log_ssl_error(SSLLOG_MARK, APLOG_ERR, s);
             EVP_PKEY_free(pubkey);
@@ -948,7 +1020,7 @@ static void ssl_check_public_cert(server_rec *s,
                                   int type)
 {
     int is_ca, pathlen;
-    char *cn;
+    apr_array_header_t *ids;
 
     if (!cert) {
         return;
@@ -959,7 +1031,7 @@ static void ssl_check_public_cert(server_rec *s,
      */
 
     if (SSL_X509_isSGC(cert)) {
-        ap_log_error(APLOG_MARK, APLOG_INFO, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_INFO, 0, s, APLOGNO(01905)
                      "%s server certificate enables "
                      "Server Gated Cryptography (SGC)",
                      ssl_asn1_keystr(type));
@@ -967,37 +1039,69 @@ static void ssl_check_public_cert(server_rec *s,
 
     if (SSL_X509_getBC(cert, &is_ca, &pathlen)) {
         if (is_ca) {
-            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
+            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, APLOGNO(01906)
                          "%s server certificate is a CA certificate "
                          "(BasicConstraints: CA == TRUE !?)",
                          ssl_asn1_keystr(type));
         }
 
         if (pathlen > 0) {
-            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
+            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, APLOGNO(01907)
                          "%s server certificate is not a leaf certificate "
                          "(BasicConstraints: pathlen == %d > 0 !?)",
                          ssl_asn1_keystr(type), pathlen);
         }
     }
 
-    if (SSL_X509_getCN(ptemp, cert, &cn)) {
-        int fnm_flags = APR_FNM_PERIOD|APR_FNM_CASE_BLIND;
+    /*
+     * Check if the server name is covered by the certificate.
+     * Consider both dNSName entries in the subjectAltName extension
+     * and, as a fallback, commonName attributes in the subject DN.
+     * (DNS-IDs and CN-IDs as defined in RFC 6125).
+     */
+    if (SSL_X509_getIDs(ptemp, cert, &ids)) {
+        char *cp;
+        int i;
+        char **id = (char **)ids->elts;
+        BOOL is_wildcard, matched = FALSE;
 
-        if (apr_fnmatch_test(cn)) {
-            if (apr_fnmatch(cn, s->server_hostname,
-                            fnm_flags) == APR_FNM_NOMATCH) {
-                ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
-                             "%s server certificate wildcard CommonName "
-                             "(CN) `%s' does NOT match server name!?",
-                             ssl_asn1_keystr(type), cn);
+        for (i = 0; i < ids->nelts; i++) {
+            if (!id[i])
+                continue;
+
+            /*
+             * Determine if it is a wildcard ID - we're restrictive
+             * in the sense that we require the wildcard character to be
+             * THE left-most label (i.e., the ID must start with "*.")
+             */
+            is_wildcard = (*id[i] == '*' && *(id[i]+1) == '.') ? TRUE : FALSE;
+
+            /*
+             * If the ID includes a wildcard character, check if it matches
+             * for the left-most DNS label (i.e., the wildcard character
+             * is not allowed to match a dot). Otherwise, try a simple
+             * string compare, case insensitively.
+             */
+            if ((is_wildcard == TRUE &&
+                 (cp = strchr(s->server_hostname, '.')) &&
+                 !strcasecmp(id[i]+1, cp)) ||
+                !strcasecmp(id[i], s->server_hostname)) {
+                matched = TRUE;
+                ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s, APLOGNO(01908)
+                             "%sID '%s' in %s certificate configured "
+                             "for %s matches server name",
+                             is_wildcard ? "Wildcard " : "",
+                             id[i], ssl_asn1_keystr(type),
+                             (mySrvConfig(s))->vhost_id);
+                break;
             }
         }
-        else if (strNE(s->server_hostname, cn)) {
-            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
-                         "%s server certificate CommonName (CN) `%s' "
-                         "does NOT match server name!?",
-                         ssl_asn1_keystr(type), cn);
+
+        if (matched == FALSE) {
+            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, APLOGNO(01909)
+                         "%s certificate configured for %s does NOT include "
+                         "an ID which matches the server name",
+                         ssl_asn1_keystr(type), (mySrvConfig(s))->vhost_id);
         }
     }
 }
@@ -1035,12 +1139,8 @@ static void ssl_init_server_certs(server_rec *s,
         || have_ecc
 #endif
 )) {
-        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
-#ifndef OPENSSL_NO_EC
-                "Oops, no RSA, DSA or ECC server certificate found "
-#else
-                "Oops, no RSA or DSA server certificate found "
-#endif
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(01910)
+                "Oops, no " KEYTYPES " server certificate found "
                 "for '%s:%d'?!", s->server_hostname, s->port);
         ssl_die();
     }
@@ -1060,15 +1160,68 @@ static void ssl_init_server_certs(server_rec *s,
         || have_ecc
 #endif
           )) {
-        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s,
-#ifndef OPENSSL_NO_EC
-                "Oops, no RSA, DSA or ECC server private key found?!");
-#else
-                "Oops, no RSA or DSA server private key found?!");
-#endif
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(01911)
+                "Oops, no " KEYTYPES " server private key found?!");
         ssl_die();
     }
 }
+
+#ifdef HAVE_TLS_SESSION_TICKETS
+static void ssl_init_ticket_key(server_rec *s,
+                                apr_pool_t *p,
+                                apr_pool_t *ptemp,
+                                modssl_ctx_t *mctx)
+{
+    apr_status_t rv;
+    apr_file_t *fp;
+    apr_size_t len;
+    char buf[TLSEXT_TICKET_KEY_LEN];
+    char *path;
+    modssl_ticket_key_t *ticket_key = mctx->ticket_key;
+
+    if (!ticket_key->file_path) {
+        return;
+    }
+
+    path = ap_server_root_relative(p, ticket_key->file_path);
+
+    rv = apr_file_open(&fp, path, APR_READ|APR_BINARY,
+                       APR_OS_DEFAULT, ptemp);
+
+    if (rv != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(02286)
+                     "Failed to open ticket key file %s: (%d) %pm",
+                     path, rv, &rv);
+        ssl_die();
+    }
+
+    rv = apr_file_read_full(fp, &buf[0], TLSEXT_TICKET_KEY_LEN, &len);
+
+    if (rv != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(02287)
+                     "Failed to read %d bytes from %s: (%d) %pm",
+                     TLSEXT_TICKET_KEY_LEN, path, rv, &rv);
+        ssl_die();
+    }
+
+    memcpy(ticket_key->key_name, buf, 16);
+    memcpy(ticket_key->hmac_secret, buf + 16, 16);
+    memcpy(ticket_key->aes_key, buf + 32, 16);
+
+    if (!SSL_CTX_set_tlsext_ticket_key_cb(mctx->ssl_ctx,
+                                          ssl_callback_SessionTicket)) {
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(01913)
+                     "Unable to initialize TLS session ticket key callback "
+                     "(incompatible OpenSSL version?)");
+        ssl_log_ssl_error(SSLLOG_MARK, APLOG_EMERG, s);
+        ssl_die();
+    }
+
+    ap_log_error(APLOG_MARK, APLOG_INFO, 0, s, APLOGNO(02288)
+                 "TLS session ticket key for %s successfully loaded from %s",
+                 (mySrvConfig(s))->vhost_id, path);
+}
+#endif
 
 static void ssl_init_proxy_certs(server_rec *s,
                                  apr_pool_t *p,
@@ -1078,6 +1231,9 @@ static void ssl_init_proxy_certs(server_rec *s,
     int n, ncerts = 0;
     STACK_OF(X509_INFO) *sk;
     modssl_pk_proxy_t *pkp = mctx->pkp;
+    STACK_OF(X509) *chain;
+    X509_STORE_CTX *sctx;
+    X509_STORE *store = SSL_CTX_get_cert_store(mctx->ssl_ctx);
 
     SSL_CTX_set_client_cert_cb(mctx->ssl_ctx,
                                ssl_callback_proxy_cert);
@@ -1098,7 +1254,7 @@ static void ssl_init_proxy_certs(server_rec *s,
 
     if ((ncerts = sk_X509_INFO_num(sk)) <= 0) {
         sk_X509_INFO_free(sk);
-        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, s, APLOGNO(02206)
                      "no client certs found for SSL proxy");
         return;
     }
@@ -1110,7 +1266,7 @@ static void ssl_init_proxy_certs(server_rec *s,
 
         if (!inf->x509 || !inf->x_pkey) {
             sk_X509_INFO_free(sk);
-            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, s,
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, s, APLOGNO(02252)
                          "incomplete client cert configured for SSL proxy "
                          "(missing or encrypted private key?)");
             ssl_die();
@@ -1118,10 +1274,82 @@ static void ssl_init_proxy_certs(server_rec *s,
         }
     }
 
-    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s,
+    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s, APLOGNO(02207)
                  "loaded %d client certs for SSL proxy",
                  ncerts);
     pkp->certs = sk;
+
+
+    if (!pkp->ca_cert_file || !store) {
+        return;
+    }
+
+    /* Load all of the CA certs and construct a chain */
+    pkp->ca_certs = (STACK_OF(X509) **) apr_pcalloc(p, ncerts * sizeof(sk));
+    sctx = X509_STORE_CTX_new();
+
+    if (!sctx) {
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(02208)
+                     "SSL proxy client cert initialization failed");
+        ssl_log_ssl_error(SSLLOG_MARK, APLOG_EMERG, s);
+        ssl_die();
+    }
+
+    X509_STORE_load_locations(store, pkp->ca_cert_file, NULL);
+
+    for (n = 0; n < ncerts; n++) {
+        int i;
+
+        X509_INFO *inf = sk_X509_INFO_value(pkp->certs, n);
+        X509_STORE_CTX_init(sctx, store, inf->x509, NULL);
+
+        /* Attempt to verify the client cert */
+        if (X509_verify_cert(sctx) != 1) {
+            int err = X509_STORE_CTX_get_error(sctx);
+            ssl_log_xerror(SSLLOG_MARK, APLOG_WARNING, 0, ptemp, s, inf->x509,
+                           APLOGNO(02270) "SSL proxy client cert chain "
+                           "verification failed: %s :",
+                           X509_verify_cert_error_string(err));
+        }
+
+        /* Clear X509_verify_cert errors */
+        ERR_clear_error();
+
+        /* Obtain a copy of the verified chain */
+        chain = X509_STORE_CTX_get1_chain(sctx);
+
+        if (chain != NULL) {
+            /* Discard end entity cert from the chain */
+            X509_free(sk_X509_shift(chain));
+
+            if ((i = sk_X509_num(chain)) > 0) {
+                /* Store the chain for later use */
+                pkp->ca_certs[n] = chain;
+            }
+            else {
+                /* Discard empty chain */
+                sk_X509_pop_free(chain, X509_free);
+                pkp->ca_certs[n] = NULL;
+            }
+
+            ssl_log_xerror(SSLLOG_MARK, APLOG_DEBUG, 0, ptemp, s, inf->x509,
+                           APLOGNO(02271)
+                           "loaded %i intermediate CA%s for cert %i: ",
+                           i, i == 1 ? "" : "s", n);
+            if (i > 0) {
+                int j;
+                for (j = 0; j < i; j++) {
+                    ssl_log_xerror(SSLLOG_MARK, APLOG_DEBUG, 0, ptemp, s,
+                                   sk_X509_value(chain, j), "%i:", j);
+                }
+            }
+        }
+
+        /* get ready for next X509_STORE_CTX_init */
+        X509_STORE_CTX_cleanup(sctx);
+    }
+
+    X509_STORE_CTX_free(sctx);
 }
 
 static void ssl_init_proxy_ctx(server_rec *s,
@@ -1144,6 +1372,10 @@ static void ssl_init_server_ctx(server_rec *s,
     ssl_init_ctx(s, p, ptemp, sc->server);
 
     ssl_init_server_certs(s, p, ptemp, sc->server);
+
+#ifdef HAVE_TLS_SESSION_TICKETS
+    ssl_init_ticket_key(s, p, ptemp, sc->server);
+#endif
 }
 
 /*
@@ -1157,8 +1389,8 @@ void ssl_init_ConfigureServer(server_rec *s,
     /* Initialize the server if SSL is enabled or optional.
      */
     if ((sc->enabled == SSL_ENABLED_TRUE) || (sc->enabled == SSL_ENABLED_OPTIONAL)) {
-        ap_log_error(APLOG_MARK, APLOG_INFO, 0, s,
-                     "Configuring server for SSL protocol");
+        ap_log_error(APLOG_MARK, APLOG_INFO, 0, s, APLOGNO(01914)
+                     "Configuring server %s for SSL protocol", sc->vhost_id);
         ssl_init_server_ctx(s, p, ptemp, sc);
     }
 
@@ -1186,7 +1418,7 @@ void ssl_init_CheckServers(server_rec *base_server, apr_pool_t *p)
 
         if ((sc->enabled == SSL_ENABLED_TRUE) && (s->port == DEFAULT_HTTP_PORT)) {
             ap_log_error(APLOG_MARK, APLOG_WARNING, 0,
-                         base_server,
+                         base_server, APLOGNO(01915)
                          "Init: (%s) You configured HTTPS(%d) "
                          "on the standard HTTP(%d) port!",
                          ssl_util_vhostid(p, s),
@@ -1195,7 +1427,7 @@ void ssl_init_CheckServers(server_rec *base_server, apr_pool_t *p)
 
         if ((sc->enabled == SSL_ENABLED_FALSE) && (s->port == DEFAULT_HTTPS_PORT)) {
             ap_log_error(APLOG_MARK, APLOG_WARNING, 0,
-                         base_server,
+                         base_server, APLOGNO(01916)
                          "Init: (%s) You configured HTTP(%d) "
                          "on the standard HTTPS(%d) port!",
                          ssl_util_vhostid(p, s),
@@ -1225,21 +1457,17 @@ void ssl_init_CheckServers(server_rec *base_server, apr_pool_t *p)
         klen = strlen(key);
 
         if ((ps = (server_rec *)apr_hash_get(table, key, klen))) {
-            ap_log_error(APLOG_MARK, 
 #ifdef OPENSSL_NO_TLSEXT
-                         APLOG_WARNING, 
+            int level = APLOG_WARNING;
+            const char *problem = "conflict";
 #else
-                         APLOG_DEBUG, 
+            int level = APLOG_DEBUG;
+            const char *problem = "overlap";
 #endif
-                         0,
-                         base_server,
-#ifdef OPENSSL_NO_TLSEXT
-                         "Init: SSL server IP/port conflict: "
-#else
-                         "Init: SSL server IP/port overlap: "
-#endif
+            ap_log_error(APLOG_MARK, level, 0, base_server,
+                         "Init: SSL server IP/port %s: "
                          "%s (%s:%d) vs. %s (%s:%d)",
-                         ssl_util_vhostid(p, s),
+                         problem, ssl_util_vhostid(p, s),
                          (s->defn_name ? s->defn_name : "unknown"),
                          s->defn_line_number,
                          ssl_util_vhostid(p, ps),
@@ -1253,11 +1481,12 @@ void ssl_init_CheckServers(server_rec *base_server, apr_pool_t *p)
     }
 
     if (conflict) {
-        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, base_server,
 #ifdef OPENSSL_NO_TLSEXT
+        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, base_server, APLOGNO(01917)
                      "Init: You should not use name-based "
                      "virtual hosts in conjunction with SSL!!");
 #else
+        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, base_server, APLOGNO(02292)
                      "Init: Name-based SSL virtual hosts only "
                      "work for clients with TLS server name indication "
                      "support (RFC 4366)");
@@ -1265,39 +1494,32 @@ void ssl_init_CheckServers(server_rec *base_server, apr_pool_t *p)
     }
 }
 
-#ifdef SSLC_VERSION_NUMBER
-static int ssl_init_FindCAList_X509NameCmp(char **a, char **b)
-{
-    return(X509_NAME_cmp((void*)*a, (void*)*b));
-}
-#else
-static int ssl_init_FindCAList_X509NameCmp(const X509_NAME * const *a, 
+static int ssl_init_FindCAList_X509NameCmp(const X509_NAME * const *a,
                                            const X509_NAME * const *b)
 {
     return(X509_NAME_cmp(*a, *b));
 }
-#endif
 
 static void ssl_init_PushCAList(STACK_OF(X509_NAME) *ca_list,
-                                server_rec *s, const char *file)
+                                server_rec *s, apr_pool_t *ptemp,
+                                const char *file)
 {
     int n;
     STACK_OF(X509_NAME) *sk;
 
     sk = (STACK_OF(X509_NAME) *)
-             SSL_load_client_CA_file(MODSSL_PCHAR_CAST file);
+             SSL_load_client_CA_file(file);
 
     if (!sk) {
         return;
     }
 
     for (n = 0; n < sk_X509_NAME_num(sk); n++) {
-        char name_buf[256];
         X509_NAME *name = sk_X509_NAME_value(sk, n);
 
-        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s,
+        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s, APLOGNO(02209)
                      "CA certificate: %s",
-                     X509_NAME_oneline(name, name_buf, sizeof(name_buf)));
+                     SSL_X509_NAME_to_string(ptemp, name, 0));
 
         /*
          * note that SSL_load_client_CA_file() checks for duplicates,
@@ -1335,13 +1557,13 @@ STACK_OF(X509_NAME) *ssl_init_FindCAList(server_rec *s,
      * Process CA certificate bundle file
      */
     if (ca_file) {
-        ssl_init_PushCAList(ca_list, s, ca_file);
+        ssl_init_PushCAList(ca_list, s, ptemp, ca_file);
         /*
          * If ca_list is still empty after trying to load ca_file
          * then the file failed to load, and users should hear about that.
          */
         if (sk_X509_NAME_num(ca_list) == 0) {
-            ap_log_error(APLOG_MARK, APLOG_ERR, 0, s,
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0, s, APLOGNO(02210)
                     "Failed to load SSLCACertificateFile: %s", ca_file);
             ssl_log_ssl_error(SSLLOG_MARK, APLOG_ERR, s);
         }
@@ -1357,7 +1579,7 @@ STACK_OF(X509_NAME) *ssl_init_FindCAList(server_rec *s,
         apr_status_t rv;
 
         if ((rv = apr_dir_open(&dir, ca_path, ptemp)) != APR_SUCCESS) {
-            ap_log_error(APLOG_MARK, APLOG_EMERG, rv, s,
+            ap_log_error(APLOG_MARK, APLOG_EMERG, rv, s, APLOGNO(02211)
                     "Failed to open Certificate Path `%s'",
                     ca_path);
             ssl_die();
@@ -1369,7 +1591,7 @@ STACK_OF(X509_NAME) *ssl_init_FindCAList(server_rec *s,
                 continue; /* don't try to load directories */
             }
             file = apr_pstrcat(ptemp, ca_path, "/", direntry.name, NULL);
-            ssl_init_PushCAList(ca_list, s, file);
+            ssl_init_PushCAList(ca_list, s, ptemp, file);
         }
 
         apr_dir_close(dir);
@@ -1406,8 +1628,6 @@ void ssl_init_Child(apr_pool_t *p, server_rec *s)
 
 static void ssl_init_ctx_cleanup(modssl_ctx_t *mctx)
 {
-    MODSSL_CFG_ITEM_FREE(X509_STORE_free, mctx->crl);
-
     MODSSL_CFG_ITEM_FREE(SSL_CTX_free, mctx->ssl_ctx);
 }
 

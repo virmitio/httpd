@@ -81,10 +81,10 @@
 %token  T_OP_AND
 %token  T_OP_NOT
 
-%left   T_OP_OR
-%left   T_OP_AND
-%left   T_OP_NOT
-%left   T_OP_CONCAT
+%right  T_OP_OR
+%right  T_OP_AND
+%right  T_OP_NOT
+%right  T_OP_CONCAT
 
 %type   <exVal>   expr
 %type   <exVal>   comparison
@@ -123,6 +123,7 @@ expr      : T_TRUE                       { $$ = ap_expr_make(op_True,        NUL
           | T_OP_UNARY word              { $$ = ap_expr_unary_op_make(       $1,   $2,   ctx); }
           | word T_OP_BINARY word        { $$ = ap_expr_binary_op_make($2,   $1,   $3,   ctx); }
           | '(' expr ')'                 { $$ = $2; }
+          | T_ERROR                      { YYABORT; }
           ;
 
 comparison: word T_OP_EQ word            { $$ = ap_expr_make(op_EQ,      $1, $3, ctx); }
@@ -152,6 +153,7 @@ words     : word                         { $$ = ap_expr_make(op_ListElement, $1,
 
 string    : string strpart               { $$ = ap_expr_make(op_Concat, $1, $2, ctx); }
           | strpart                      { $$ = $1; }
+          | T_ERROR                      { YYABORT; }
           ;
 
 strpart   : T_STRING                     { $$ = ap_expr_make(op_String, $1, NULL, ctx); }
@@ -207,7 +209,7 @@ strfunccall : T_ID '(' word ')' { $$ = ap_expr_str_func_make($1, $3, ctx); }
 
 %%
 
-void yyerror(ap_expr_parse_ctx_t *ctx, char *s)
+void yyerror(ap_expr_parse_ctx_t *ctx, const char *s)
 {
     /* s is allocated on the stack */
     ctx->error = apr_pstrdup(ctx->ptemp, s);

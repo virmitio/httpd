@@ -61,7 +61,10 @@
 #include "http_request.h"
 #include "util_script.h"
 #include "ap_mpm.h"
+#include "mpm_common.h"
+#include "ap_provider.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 typedef struct
 {
@@ -78,6 +81,8 @@ module AP_MODULE_DECLARE_DATA info_module;
 
 /* current file name when doing -DDUMP_CONFIG */
 const char *dump_config_fn_info;
+/* file handle when doing -DDUMP_CONFIG */
+apr_file_t *out = NULL;
 
 static void *create_info_config(apr_pool_t * p, server_rec * s)
 {
@@ -108,13 +113,13 @@ static void put_int_flush_right(request_rec * r, int i, int field)
         if (r)
             ap_rputc('0' + i % 10, r);
         else
-            putchar('0' + i % 10);
+            apr_file_putc('0' + i % 10, out);
     }
     else {
         if (r)
             ap_rputs("&nbsp;", r);
         else
-            printf(" ");
+            apr_file_printf(out, " ");
     }
 }
 
@@ -149,7 +154,7 @@ static void mod_info_indent(request_rec * r, int nest,
                    thisfn);
         }
         else {
-            printf("# In file: %s\n", thisfn);
+            apr_file_printf(out, "# In file: %s\n", thisfn);
         }
         set_fn_info(r, thisfn);
     }
@@ -160,18 +165,18 @@ static void mod_info_indent(request_rec * r, int nest,
         ap_rputs(":&nbsp;", r);
     }
     else if (linenum > 0) {
-    	for (i = 1; i <= nest; ++i)
-            printf("  ");
-        putchar('#');
+        for (i = 1; i <= nest; ++i)
+            apr_file_printf(out, "  ");
+        apr_file_putc('#', out);
         put_int_flush_right(r, linenum, 4);
-        printf(":\n");
+        apr_file_printf(out, ":\n");
     }
 
     for (i = 1; i <= nest; ++i) {
         if (r)
             ap_rputs("&nbsp;&nbsp;", r);
         else
-            printf("  ");
+            apr_file_printf(out, "  ");
     }
 }
 
@@ -184,7 +189,7 @@ static void mod_info_show_cmd(request_rec * r, const ap_directive_t * dir,
                    ap_escape_html(r->pool, dir->directive),
                    ap_escape_html(r->pool, dir->args));
     else
-        printf("%s %s\n", dir->directive, dir->args);
+        apr_file_printf(out, "%s %s\n", dir->directive, dir->args);
 }
 
 static void mod_info_show_open(request_rec * r, const ap_directive_t * dir,
@@ -196,7 +201,7 @@ static void mod_info_show_open(request_rec * r, const ap_directive_t * dir,
                    ap_escape_html(r->pool, dir->directive),
                    ap_escape_html(r->pool, dir->args));
     else
-        printf("%s %s\n", dir->directive, dir->args);
+        apr_file_printf(out, "%s %s\n", dir->directive, dir->args);
 }
 
 static void mod_info_show_close(request_rec * r, const ap_directive_t * dir,
@@ -209,13 +214,13 @@ static void mod_info_show_close(request_rec * r, const ap_directive_t * dir,
             ap_rprintf(r, "&lt;/%s&gt;</tt></dd>",
                        ap_escape_html(r->pool, dirname + 1));
         else
-            printf("</%s>\n", dirname + 1);
+            apr_file_printf(out, "</%s>\n", dirname + 1);
     }
     else {
         if (r)
             ap_rprintf(r, "/%s</tt></dd>", ap_escape_html(r->pool, dirname));
         else
-            printf("/%s\n", dirname);
+            apr_file_printf(out, "/%s\n", dirname);
     }
 }
 
@@ -298,6 +303,10 @@ static hook_lookup_t startup_hooks[] = {
     {"Test Configuration", ap_hook_get_test_config},
     {"Post Configuration", ap_hook_get_post_config},
     {"Open Logs", ap_hook_get_open_logs},
+    {"Pre-MPM", ap_hook_get_pre_mpm},
+    {"MPM", ap_hook_get_mpm},
+    {"Drop Privileges", ap_hook_get_drop_privileges},
+    {"Retrieve Optional Functions", ap_hook_get_optional_fn_retrieve},
     {"Child Init", ap_hook_get_child_init},
     {NULL},
 };
@@ -307,6 +316,7 @@ static hook_lookup_t request_hooks[] = {
     {"Create Connection", ap_hook_get_create_connection},
     {"Process Connection", ap_hook_get_process_connection},
     {"Create Request", ap_hook_get_create_request},
+    {"Pre-Read Request", ap_hook_get_pre_read_request},
     {"Post-Read Request", ap_hook_get_post_read_request},
     {"Header Parse", ap_hook_get_header_parser},
     {"HTTP Scheme", ap_hook_get_http_scheme},
@@ -314,15 +324,34 @@ static hook_lookup_t request_hooks[] = {
     {"Quick Handler", ap_hook_get_quick_handler},
     {"Translate Name", ap_hook_get_translate_name},
     {"Map to Storage", ap_hook_get_map_to_storage},
-    {"Check Access", ap_hook_get_access_checker},
+    {"Check Access", ap_hook_get_access_checker_ex},
+    {"Check Access (legacy)", ap_hook_get_access_checker},
     {"Verify User ID", ap_hook_get_check_user_id},
+    {"Note Authentication Failure", ap_hook_get_note_auth_failure},
     {"Verify User Access", ap_hook_get_auth_checker},
     {"Check Type", ap_hook_get_type_checker},
     {"Fixups", ap_hook_get_fixups},
     {"Insert Filters", ap_hook_get_insert_filter},
     {"Content Handlers", ap_hook_get_handler},
-    {"Logging", ap_hook_get_log_transaction},
+    {"Transaction Logging", ap_hook_get_log_transaction},
     {"Insert Errors", ap_hook_get_insert_error_filter},
+    {"Generate Log ID", ap_hook_get_generate_log_id},
+    {NULL},
+};
+
+static hook_lookup_t other_hooks[] = {
+    {"Monitor", ap_hook_get_monitor},
+    {"Child Status", ap_hook_get_child_status},
+    {"End Generation", ap_hook_get_end_generation},
+    {"Error Logging", ap_hook_get_error_log},
+    {"Query MPM Attributes", ap_hook_get_mpm_query},
+    {"Query MPM Name", ap_hook_get_mpm_get_name},
+    {"Register Timed Callback", ap_hook_get_mpm_register_timed_callback},
+    {"Extend Expression Parser", ap_hook_get_expr_lookup},
+    {"Set Management Items", ap_hook_get_get_mgmt_items},
+#if AP_ENABLE_EXCEPTION_HOOK
+    {"Handle Fatal Exceptions", ap_hook_get_fatal_exception},
+#endif
     {NULL},
 };
 
@@ -644,16 +673,99 @@ static int show_active_hooks(request_rec * r)
         ap_rputs("\n  </tt>\n</dt>\n", r);
     }
 
+    ap_rputs
+        ("</dl>\n<hr />\n<h2><a name=\"other_hooks\">Other Hooks</a></h2>\n<dl>",
+         r);
+
+    for (i = 0; other_hooks[i].name; i++) {
+        ap_rprintf(r, "<dt><strong>%s:</strong>\n <br /><tt>\n",
+                   other_hooks[i].name);
+        dump_a_hook(r, other_hooks[i].get);
+        ap_rputs("\n  </tt>\n</dt>\n", r);
+    }
+
     ap_rputs("</dl>\n<hr />\n", r);
 
     return 0;
 }
 
+static int cmp_provider_groups(const void *a_, const void *b_)
+{
+    const ap_list_provider_groups_t *a = a_, *b = b_;
+    int ret = strcmp(a->provider_group, b->provider_group);
+    if (!ret)
+        ret = strcmp(a->provider_version, b->provider_version);
+    return ret;
+}
+
+static int cmp_provider_names(const void *a_, const void *b_)
+{
+    const ap_list_provider_names_t *a = a_, *b = b_;
+    return strcmp(a->provider_name, b->provider_name);
+}
+
+static void show_providers(request_rec *r)
+{
+    apr_array_header_t *groups = ap_list_provider_groups(r->pool);
+    ap_list_provider_groups_t *group;
+    apr_array_header_t *names;
+    ap_list_provider_names_t *name;
+    int i,j;
+    const char *cur_group = NULL;
+
+    qsort(groups->elts, groups->nelts, sizeof(ap_list_provider_groups_t),
+          cmp_provider_groups);
+    ap_rputs("<h2><a name=\"providers\">Providers</a></h2>\n<dl>", r);
+
+    for (i = 0; i < groups->nelts; i++) {
+        group = &APR_ARRAY_IDX(groups, i, ap_list_provider_groups_t);
+        if (!cur_group || strcmp(cur_group, group->provider_group) != 0) {
+            if (cur_group)
+                ap_rputs("\n</dt>\n", r);
+            cur_group = group->provider_group;
+            ap_rprintf(r, "<dt><strong>%s</strong> (version <tt>%s</tt>):"
+                          "\n <br />\n", cur_group, group->provider_version);
+        }
+        names = ap_list_provider_names(r->pool, group->provider_group,
+                                       group->provider_version);
+        qsort(names->elts, names->nelts, sizeof(ap_list_provider_names_t),
+              cmp_provider_names);
+        for (j = 0; j < names->nelts; j++) {
+            name = &APR_ARRAY_IDX(names, j, ap_list_provider_names_t);
+            ap_rprintf(r, "<tt>&nbsp;&nbsp;%s</tt><br/>", name->provider_name);
+        }
+    }
+    if (cur_group)
+        ap_rputs("\n</dt>\n", r);
+    ap_rputs("</dl>\n<hr />\n", r);
+}
+
+static int cmp_module_name(const void *a_, const void *b_)
+{
+    const module * const *a = a_;
+    const module * const *b = b_;
+    return strcmp((*a)->name, (*b)->name);
+}
+
+static apr_array_header_t *get_sorted_modules(apr_pool_t *p)
+{
+    apr_array_header_t *arr = apr_array_make(p, 64, sizeof(module *));
+    module *modp, **entry;
+    for (modp = ap_top_module; modp; modp = modp->next) {
+        entry = &APR_ARRAY_PUSH(arr, module *);
+        *entry = modp;
+    }
+    qsort(arr->elts, arr->nelts, sizeof(module *), cmp_module_name);
+    return arr;
+}
+
 static int display_info(request_rec * r)
 {
-    module *modp;
+    module *modp = NULL;
     const char *more_info;
     const command_rec *cmd;
+    apr_array_header_t *modules = NULL;
+    int i;
 
     if (strcmp(r->handler, "server-info")) {
         return DECLINED;
@@ -677,22 +789,29 @@ static int display_info(request_rec * r)
             ap_rputs("<dl><dt><tt>Subpages:<br />", r);
             ap_rputs("<a href=\"?config\">Configuration Files</a>, "
                      "<a href=\"?server\">Server Settings</a>, "
-                     "<a href=\"?list\">Module List</a>,  "
-                     "<a href=\"?hooks\">Active Hooks</a>", r);
+                     "<a href=\"?list\">Module List</a>, "
+                     "<a href=\"?hooks\">Active Hooks</a>, "
+                     "<a href=\"?providers\">Available Providers</a>", r);
             ap_rputs("</tt></dt></dl><hr />", r);
 
             ap_rputs("<dl><dt><tt>Sections:<br />", r);
-            ap_rputs("<a href=\"#server\">Server Settings</a>, "
+            ap_rputs("<a href=\"#modules\">Loaded Modules</a>, "
+                     "<a href=\"#server\">Server Settings</a>, "
                      "<a href=\"#startup_hooks\">Startup Hooks</a>, "
-                     "<a href=\"#request_hooks\">Request Hooks</a>", r);
+                     "<a href=\"#request_hooks\">Request Hooks</a>, "
+                     "<a href=\"#other_hooks\">Other Hooks</a>, "
+                     "<a href=\"#providers\">Providers</a>", r);
             ap_rputs("</tt></dt></dl><hr />", r);
 
-            ap_rputs("<dl><dt><tt>Loaded Modules: <br />", r);
-            /* TODO: Sort by Alpha */
-            for (modp = ap_top_module; modp; modp = modp->next) {
+            ap_rputs("<h2><a name=\"modules\">Loaded Modules</a></h2>"
+                    "<dl><dt><tt>", r);
+
+            modules = get_sorted_modules(r->pool);
+            for (i = 0; i < modules->nelts; i++) {
+                modp = APR_ARRAY_IDX(modules, i, module *);
                 ap_rprintf(r, "<a href=\"#%s\">%s</a>", modp->name,
                            modp->name);
-                if (modp->next) {
+                if (i < modules->nelts) {
                     ap_rputs(", ", r);
                 }
             }
@@ -707,6 +826,10 @@ static int display_info(request_rec * r)
             show_active_hooks(r);
         }
 
+        if (!r->args || !strcasecmp(r->args, "providers")) {
+            show_providers(r);
+        }
+
         if (r->args && 0 == strcasecmp(r->args, "config")) {
             ap_rputs("<dl><dt><strong>Configuration:</strong>\n", r);
             mod_info_module_cmds(r, NULL, ap_conftree, 0, 0);
@@ -714,7 +837,10 @@ static int display_info(request_rec * r)
         }
         else {
             int comma = 0;
-            for (modp = ap_top_module; modp; modp = modp->next) {
+            if (!modules)
+                 modules = get_sorted_modules(r->pool);
+            for (i = 0; i < modules->nelts; i++) {
+                modp = APR_ARRAY_IDX(modules, i, module *);
                 if (!r->args || !strcasecmp(modp->name, r->args)) {
                     ap_rprintf(r,
                                "<dl><dt><a name=\"%s\"><strong>Module Name:</strong></a> "
@@ -820,7 +946,9 @@ static int display_info(request_rec * r)
     }
     else {
         ap_rputs("<dl><dt>Server Module List</dt>", r);
-        for (modp = ap_top_module; modp; modp = modp->next) {
+        modules = get_sorted_modules(r->pool);
+        for (i = 0; i < modules->nelts; i++) {
+            modp = APR_ARRAY_IDX(modules, i, module *);
             ap_rputs("<dd>", r);
             ap_rputs(modp->name, r);
             ap_rputs("</dd>", r);
@@ -856,8 +984,10 @@ static const command_rec info_cmds[] = {
 static int check_config(apr_pool_t *pconf, apr_pool_t *plog, apr_pool_t *ptemp,
                         server_rec *s)
 {
-    if (ap_exists_config_define("DUMP_CONFIG"))
+    if (ap_exists_config_define("DUMP_CONFIG")) {
+        apr_file_open_stdout(&out, ptemp);
         mod_info_module_cmds(NULL, NULL, ap_conftree, 0, 0);
+    }
 
     return DECLINED;
 }
