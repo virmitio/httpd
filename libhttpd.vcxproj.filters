@@ -264,6 +264,9 @@
     <ClCompile Include="server\mpm\winnt\service.c">
       <Filter>mpm_winnt</Filter>
     </ClCompile>
+    <ClCompile Include="server\util_regex.c">
+      <Filter>util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="build\win32\httpd.rc">
