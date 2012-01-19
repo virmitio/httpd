@@ -51,7 +51,7 @@ static proxy_worker *find_best_roundrobin(proxy_balancer *balancer,
 
     ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server, APLOGNO(01116)
                  "proxy: Entering roundrobin for BALANCER %s (%d)",
-                 balancer->name, (int)getpid());
+                 balancer->s->name, (int)getpid());
 
     /* The index of the candidate last chosen is stored in ctx->index */
     if (!balancer->context) {
@@ -60,7 +60,7 @@ static proxy_worker *find_best_roundrobin(proxy_balancer *balancer,
         balancer->context = (void *)ctx;
         ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server, APLOGNO(01117)
                  "proxy: Creating roundrobin ctx for BALANCER %s (%d)",
-                 balancer->name, (int)getpid());
+                 balancer->s->name, (int)getpid());
     } else {
         ctx = (rr_data *)balancer->context;
     }

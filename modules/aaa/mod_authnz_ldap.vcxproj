@@ -208,7 +208,7 @@
       <WarningLevel>Level3</WarningLevel>
       <OmitFramePointers>false</OmitFramePointers>
       <AdditionalIncludeDirectories>../ldap;../../include;../../../apr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>AP_HAS_LDAP;NDEBUG;WIN32;_WINDOWS;LDAP_DECLARE_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>APR_HAS_LDAP;AP_HAS_LDAP;NDEBUG;WIN32;_WINDOWS;LDAP_DECLARE_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\Release\</AssemblerListingLocation>
       <PrecompiledHeaderOutputFile>.\Release\mod_authnz_ldap.pch</PrecompiledHeaderOutputFile>
       <ObjectFileName>.\Release\</ObjectFileName>
