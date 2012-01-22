@@ -29,8 +29,13 @@
 #include "apr_tables.h"
 #include "apr_time.h"
 #include "apr_version.h"
+#if APR_MAJOR_VERSION < 2
+/* The LDAP API is currently only present in APR 1.x */
 #include "apr_ldap.h"
 #include "apr_ldap_rebind.h"
+#else
+#define APR_HAS_LDAP 0
+#endif
 
 #if APR_HAS_SHARED_MEMORY
 #include "apr_rmm.h"
