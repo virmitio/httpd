@@ -19,7 +19,7 @@ x86 {
     //uses: x86=@"..\openssl";//depends on zlib
     //uses: x86=@"..\zlib";
     uses: x86=@"..\lua";
-    uses: x86-httpd=@"..\libxml2";
+    uses: x86-vc=@"..\libxml2";
 
 
 
@@ -101,7 +101,7 @@ x64 {
     //uses: x64=@"..\openssl";//depends on zlib
     //uses: x64=@"..\zlib";
     uses: x64=@"..\lua";
-    uses: x64-httpd=@"..\libxml2";
+    uses: x64-vc=@"..\libxml2";
 
     targets: { 
         "x64\Release\httpd.exe",
