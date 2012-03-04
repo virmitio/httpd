@@ -81,13 +81,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>.\Release\</OutDir>
-    <IntDir>.\Release\</IntDir>
+    <OutDir>..\..\output\x86\Release\modules\</OutDir>
+    <IntDir>..\..\output\x86\Release\modules\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>.\x64\Release\</OutDir>
-    <IntDir>.\x64\Release\</IntDir>
+    <OutDir>..\..\output\x64\Release\modules\</OutDir>
+    <IntDir>..\..\output\x64\Release\modules\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -112,9 +112,9 @@
       <OmitFramePointers>false</OmitFramePointers>
       <AdditionalIncludeDirectories>../../include;../../../apr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AssemblerListingLocation>.\Release\</AssemblerListingLocation>
-      <PrecompiledHeaderOutputFile>.\Release\mod_include.pch</PrecompiledHeaderOutputFile>
-      <ObjectFileName>.\Release\</ObjectFileName>
+      <AssemblerListingLocation>..\..\output\x86\Release\modules\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>..\..\output\x86\Release\modules\mod_include.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>..\..\output\x86\Release\modules\</ObjectFileName>
       <ProgramDataBaseFileName>Release\mod_include_src</ProgramDataBaseFileName>
     </ClCompile>
     <PostBuildEvent>
@@ -124,7 +124,7 @@
     <Midl>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <TypeLibraryName>.\Release\mod_include.tlb</TypeLibraryName>
+      <TypeLibraryName>..\..\output\x86\Release\modules\mod_include.tlb</TypeLibraryName>
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <TargetEnvironment>Win32</TargetEnvironment>
     </Midl>
@@ -136,14 +136,14 @@
     </ResourceCompile>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Release\mod_include.bsc</OutputFile>
+      <OutputFile>..\..\output\x86\Release\modules\mod_include.bsc</OutputFile>
     </Bscmake>
     <Link>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <LinkDLL>true</LinkDLL>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>.\Release\mod_include.so</OutputFile>
-      <ImportLibrary>.\Release\mod_include.lib</ImportLibrary>
+      <OutputFile>..\..\output\x86\Release\modules\mod_include.so</OutputFile>
+      <ImportLibrary>..\..\output\x86\Release\modules\mod_include.lib</ImportLibrary>
       <AdditionalDependencies>libapr-2.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_include.so</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
@@ -163,9 +163,9 @@
       <OmitFramePointers>false</OmitFramePointers>
       <AdditionalIncludeDirectories>../../include;../../../apr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AssemblerListingLocation>.\x64\Release\</AssemblerListingLocation>
-      <PrecompiledHeaderOutputFile>.\x64\Release\mod_include.pch</PrecompiledHeaderOutputFile>
-      <ObjectFileName>.\x64\Release\</ObjectFileName>
+      <AssemblerListingLocation>..\..\output\x64\Release\modules\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>..\..\output\x64\Release\modules\mod_include.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>..\..\output\x64\Release\modules\</ObjectFileName>
       <ProgramDataBaseFileName>x64\Release\mod_include_src</ProgramDataBaseFileName>
     </ClCompile>
     <PostBuildEvent>
@@ -175,7 +175,7 @@
     <Midl>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <TypeLibraryName>.\Release\mod_include.tlb</TypeLibraryName>
+      <TypeLibraryName>..\..\output\x86\Release\modules\mod_include.tlb</TypeLibraryName>
       <MkTypLibCompatible>true</MkTypLibCompatible>
     </Midl>
     <ResourceCompile>
@@ -186,14 +186,14 @@
     </ResourceCompile>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Release\mod_include.bsc</OutputFile>
+      <OutputFile>..\..\output\x86\Release\modules\mod_include.bsc</OutputFile>
     </Bscmake>
     <Link>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <LinkDLL>true</LinkDLL>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>.\x64\Release\mod_include.so</OutputFile>
-      <ImportLibrary>.\x64\Release\mod_include.lib</ImportLibrary>
+      <OutputFile>..\..\output\x64\Release\modules\mod_include.so</OutputFile>
+      <ImportLibrary>..\..\output\x64\Release\modules\mod_include.lib</ImportLibrary>
       <AdditionalDependencies>libapr-2.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_include.so</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>

@@ -81,13 +81,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>.\Release\</OutDir>
-    <IntDir>.\Release\</IntDir>
+    <OutDir>..\output\x86\Release\</OutDir>
+    <IntDir>..\output\x86\Release\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>.\x64\Release\</OutDir>
-    <IntDir>.\x64\Release\</IntDir>
+    <OutDir>..\output\x64\Release\</OutDir>
+    <IntDir>..\output\x64\Release\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -112,9 +112,9 @@
       <OmitFramePointers>false</OmitFramePointers>
       <AdditionalIncludeDirectories>../../apr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;APR_DECLARE_STATIC;APU_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AssemblerListingLocation>.\Release\</AssemblerListingLocation>
-      <PrecompiledHeaderOutputFile>.\Release\htdbm.pch</PrecompiledHeaderOutputFile>
-      <ObjectFileName>.\Release\</ObjectFileName>
+      <AssemblerListingLocation>..\output\x86\Release\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>..\output\x86\Release\htdbm.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>..\output\x86\Release\</ObjectFileName>
       <ProgramDataBaseFileName>Release/htdbm_src</ProgramDataBaseFileName>
     </ClCompile>
     <PostBuildEvent>
@@ -122,7 +122,7 @@
       <Message>Embed .manifest</Message>
     </PostBuildEvent>
     <Midl>
-      <TypeLibraryName>.\Release\htdbm.tlb</TypeLibraryName>
+      <TypeLibraryName>..\output\x86\Release\htdbm.tlb</TypeLibraryName>
     </Midl>
     <ResourceCompile>
       <Culture>0x0409</Culture>
@@ -132,12 +132,12 @@
     </ResourceCompile>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Release\htdbm.bsc</OutputFile>
+      <OutputFile>..\output\x86\Release\htdbm.bsc</OutputFile>
     </Bscmake>
     <Link>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>.\Release\htdbm.exe</OutputFile>
+      <OutputFile>..\output\x86\Release\htdbm.exe</OutputFile>
       <AdditionalDependencies>apr-2.lib;wsock32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
@@ -156,9 +156,9 @@
       <OmitFramePointers>false</OmitFramePointers>
       <AdditionalIncludeDirectories>../../apr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;APR_DECLARE_STATIC;APU_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AssemblerListingLocation>.\x64\Release\</AssemblerListingLocation>
-      <PrecompiledHeaderOutputFile>.\x64\Release\htdbm.pch</PrecompiledHeaderOutputFile>
-      <ObjectFileName>.\x64\Release\</ObjectFileName>
+      <AssemblerListingLocation>..\output\x64\Release\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>..\output\x64\Release\htdbm.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>..\output\x64\Release\</ObjectFileName>
       <ProgramDataBaseFileName>x64/Release/htdbm_src</ProgramDataBaseFileName>
     </ClCompile>
     <PostBuildEvent>
@@ -166,7 +166,7 @@
       <Message>Embed .manifest</Message>
     </PostBuildEvent>
     <Midl>
-      <TypeLibraryName>.\Release\htdbm.tlb</TypeLibraryName>
+      <TypeLibraryName>..\output\x86\Release\htdbm.tlb</TypeLibraryName>
     </Midl>
     <ResourceCompile>
       <Culture>0x0409</Culture>
@@ -176,12 +176,12 @@
     </ResourceCompile>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Release\htdbm.bsc</OutputFile>
+      <OutputFile>..\output\x86\Release\htdbm.bsc</OutputFile>
     </Bscmake>
     <Link>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>.\x64\Release\htdbm.exe</OutputFile>
+      <OutputFile>..\output\x64\Release\htdbm.exe</OutputFile>
       <AdditionalDependencies>apr-2.lib;wsock32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>

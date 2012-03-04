@@ -92,15 +92,15 @@
     <NMakeOutput>\Apache2x\bin\httpd.exe</NMakeOutput>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>.\Release\</OutDir>
-    <IntDir>.\Release\</IntDir>
+    <OutDir>.\output\x86\Release\</OutDir>
+    <IntDir>.\output\x86\Release\</IntDir>
     <NMakeBuildCommandLine>NMAKE /f makefile.win INSTDIR="\Apache2x" SHORT=R LONG=Release _install</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>NMAKE /f makefile.win INSTDIR="\Apache2x" SHORT=R LONG=Release _install </NMakeReBuildCommandLine>
     <NMakeOutput>\Apache2x\bin\httpd.exe</NMakeOutput>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>.\Release\</OutDir>
-    <IntDir>.\Release\</IntDir>
+    <OutDir>.\output\x86\Release\</OutDir>
+    <IntDir>.\output\x86\Release\</IntDir>
     <NMakeBuildCommandLine>NMAKE /f makefile.win INSTDIR="\Apache2x" SHORT=R LONG=Release _install</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>NMAKE /f makefile.win INSTDIR="\Apache2x" SHORT=R LONG=Release _install </NMakeReBuildCommandLine>
     <NMakeOutput>\Apache2x\bin\httpd.exe</NMakeOutput>

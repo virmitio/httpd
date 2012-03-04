@@ -85,13 +85,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>.\Release\</OutDir>
-    <IntDir>.\Release\</IntDir>
+    <OutDir>..\..\output\x86\Release\</OutDir>
+    <IntDir>..\..\output\x86\Release\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>.\x64\Release\</OutDir>
-    <IntDir>.\x64\Release\</IntDir>
+    <OutDir>..\..\output\x64\Release\</OutDir>
+    <IntDir>..\..\output\x64\Release\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -116,9 +116,9 @@
       <OmitFramePointers>false</OmitFramePointers>
       <AdditionalIncludeDirectories>../../include;../../../apr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;STRICT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AssemblerListingLocation>.\Release\</AssemblerListingLocation>
-      <PrecompiledHeaderOutputFile>.\Release\ApacheMonitor.pch</PrecompiledHeaderOutputFile>
-      <ObjectFileName>.\Release\</ObjectFileName>
+      <AssemblerListingLocation>..\..\output\x86\Release\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>..\..\output\x86\Release\ApacheMonitor.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>..\..\output\x86\Release\</ObjectFileName>
       <ProgramDataBaseFileName>Release/ApacheMonitor_src</ProgramDataBaseFileName>
       <AdditionalOptions> /EHsc </AdditionalOptions>
     </ClCompile>
@@ -129,7 +129,7 @@
     <Midl>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <TypeLibraryName>.\Release\ApacheMonitor.tlb</TypeLibraryName>
+      <TypeLibraryName>..\..\output\x86\Release\ApacheMonitor.tlb</TypeLibraryName>
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <TargetEnvironment>Win32</TargetEnvironment>
     </Midl>
@@ -140,12 +140,12 @@
     </ResourceCompile>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Release\ApacheMonitor.bsc</OutputFile>
+      <OutputFile>..\..\output\x86\Release\ApacheMonitor.bsc</OutputFile>
     </Bscmake>
     <Link>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>.\Release\ApacheMonitor.exe</OutputFile>
+      <OutputFile>..\..\output\x86\Release\ApacheMonitor.exe</OutputFile>
       <AdditionalDependencies>comctl32.lib;wtsapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
@@ -163,9 +163,9 @@
       <OmitFramePointers>false</OmitFramePointers>
       <AdditionalIncludeDirectories>../../include;../../../apr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;STRICT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AssemblerListingLocation>.\x64\Release\</AssemblerListingLocation>
-      <PrecompiledHeaderOutputFile>.\x64\Release\ApacheMonitor.pch</PrecompiledHeaderOutputFile>
-      <ObjectFileName>.\x64\Release\</ObjectFileName>
+      <AssemblerListingLocation>..\..\output\x64\Release\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>..\..\output\x64\Release\ApacheMonitor.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>..\..\output\x64\Release\</ObjectFileName>
       <ProgramDataBaseFileName>x64/Release/ApacheMonitor_src</ProgramDataBaseFileName>
       <AdditionalOptions> /EHsc </AdditionalOptions>
     </ClCompile>
@@ -176,7 +176,7 @@
     <Midl>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <TypeLibraryName>.\Release\ApacheMonitor.tlb</TypeLibraryName>
+      <TypeLibraryName>..\..\output\x86\Release\ApacheMonitor.tlb</TypeLibraryName>
       <MkTypLibCompatible>true</MkTypLibCompatible>
     </Midl>
     <ResourceCompile>
@@ -186,12 +186,12 @@
     </ResourceCompile>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Release\ApacheMonitor.bsc</OutputFile>
+      <OutputFile>..\..\output\x86\Release\ApacheMonitor.bsc</OutputFile>
     </Bscmake>
     <Link>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>.\x64\Release\ApacheMonitor.exe</OutputFile>
+      <OutputFile>..\..\output\x64\Release\ApacheMonitor.exe</OutputFile>
       <AdditionalDependencies>comctl32.lib;wtsapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>

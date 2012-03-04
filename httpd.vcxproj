@@ -71,13 +71,13 @@
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>.\Release\</OutDir>
-    <IntDir>.\Release\</IntDir>
+    <OutDir>.\output\x86\Release\</OutDir>
+    <IntDir>.\output\x86\Release\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>.\x64\Release\</OutDir>
-    <IntDir>.\x64\Release\</IntDir>
+    <OutDir>.\output\x64\Release\</OutDir>
+    <IntDir>.\output\x64\Release\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -176,9 +176,9 @@
       <OmitFramePointers>false</OmitFramePointers>
       <AdditionalIncludeDirectories>./include;./../apr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AssemblerListingLocation>.\Release\</AssemblerListingLocation>
-      <PrecompiledHeaderOutputFile>.\Release\httpd.pch</PrecompiledHeaderOutputFile>
-      <ObjectFileName>.\Release\</ObjectFileName>
+      <AssemblerListingLocation>.\output\x86\Release\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>.\output\x86\Release\httpd.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>.\output\x86\Release\</ObjectFileName>
       <ProgramDataBaseFileName>Release\httpd</ProgramDataBaseFileName>
     </ClCompile>
     <PostBuildEvent>
@@ -186,7 +186,7 @@
       <Message>Embed .manifest</Message>
     </PostBuildEvent>
     <Midl>
-      <TypeLibraryName>.\Release\httpd.tlb</TypeLibraryName>
+      <TypeLibraryName>.\output\x86\Release\httpd.tlb</TypeLibraryName>
     </Midl>
     <ResourceCompile>
       <Culture>0x0409</Culture>
@@ -195,12 +195,12 @@
     </ResourceCompile>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Release\httpd.bsc</OutputFile>
+      <OutputFile>.\output\x86\Release\httpd.bsc</OutputFile>
     </Bscmake>
     <Link>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>.\Release\httpd.exe</OutputFile>
+      <OutputFile>.\output\x86\Release\httpd.exe</OutputFile>
       <AdditionalDependencies>libapr-2.lib;ws2_32.lib;mswsock.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OptimizeReferences>true</OptimizeReferences>
       <StackReserveSize>262144</StackReserveSize>
@@ -220,9 +220,9 @@
       <OmitFramePointers>false</OmitFramePointers>
       <AdditionalIncludeDirectories>./include;./../apr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AssemblerListingLocation>.\x64\Release\</AssemblerListingLocation>
-      <PrecompiledHeaderOutputFile>.\x64\Release\httpd.pch</PrecompiledHeaderOutputFile>
-      <ObjectFileName>.\x64\Release\</ObjectFileName>
+      <AssemblerListingLocation>.\output\x64\Release\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>.\output\x64\Release\httpd.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>.\output\x64\Release\</ObjectFileName>
       <ProgramDataBaseFileName>x64\Release\httpd</ProgramDataBaseFileName>
     </ClCompile>
     <PostBuildEvent>
@@ -230,7 +230,7 @@
       <Message>Embed .manifest</Message>
     </PostBuildEvent>
     <Midl>
-      <TypeLibraryName>.\Release\httpd.tlb</TypeLibraryName>
+      <TypeLibraryName>.\output\x86\Release\httpd.tlb</TypeLibraryName>
     </Midl>
     <ResourceCompile>
       <Culture>0x0409</Culture>
@@ -239,12 +239,12 @@
     </ResourceCompile>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Release\httpd.bsc</OutputFile>
+      <OutputFile>.\output\x86\Release\httpd.bsc</OutputFile>
     </Bscmake>
     <Link>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>.\x64\Release\httpd.exe</OutputFile>
+      <OutputFile>.\output\x64\Release\httpd.exe</OutputFile>
       <AdditionalDependencies>libapr-2.lib;ws2_32.lib;mswsock.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OptimizeReferences>true</OptimizeReferences>
       <StackReserveSize>262144</StackReserveSize>
