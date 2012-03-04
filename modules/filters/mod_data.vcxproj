@@ -163,9 +163,9 @@
       <OmitFramePointers>false</OmitFramePointers>
       <AdditionalIncludeDirectories>../../include;../../../apr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AssemblerListingLocation>..\..\output\x86\Release\modules\</AssemblerListingLocation>
-      <PrecompiledHeaderOutputFile>..\..\output\x86\Release\modules\mod_data.pch</PrecompiledHeaderOutputFile>
-      <ObjectFileName>..\..\output\x86\Release\modules\</ObjectFileName>
+      <AssemblerListingLocation>..\..\output\x64\Release\modules\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>..\..\output\x64\Release\modules\mod_data.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>..\..\output\x64\Release\modules\</ObjectFileName>
       <ProgramDataBaseFileName>Release\mod_data_src</ProgramDataBaseFileName>
     </ClCompile>
     <PostBuildEvent>
@@ -192,8 +192,8 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <LinkDLL>true</LinkDLL>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>..\..\output\x86\Release\modules\mod_data.so</OutputFile>
-      <ImportLibrary>..\..\output\x86\Release\modules\mod_data.lib</ImportLibrary>
+      <OutputFile>..\..\output\x64\Release\modules\mod_data.so</OutputFile>
+      <ImportLibrary>..\..\output\x64\Release\modules\mod_data.lib</ImportLibrary>
       <AdditionalDependencies>libapr-2.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_data.so</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>

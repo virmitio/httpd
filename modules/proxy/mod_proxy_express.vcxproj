@@ -163,9 +163,9 @@
       <OmitFramePointers>false</OmitFramePointers>
       <AdditionalIncludeDirectories>../../include;../../../apr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AssemblerListingLocation>..\..\output\x86\Release\modules\</AssemblerListingLocation>
-      <PrecompiledHeaderOutputFile>..\..\output\x86\Release\modules\mod_proxy_express.pch</PrecompiledHeaderOutputFile>
-      <ObjectFileName>..\..\output\x86\Release\modules\</ObjectFileName>
+      <AssemblerListingLocation>..\..\output\x64\Release\modules\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>..\..\output\x64\Release\modules\mod_proxy_express.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>..\..\output\x64\Release\modules\</ObjectFileName>
       <ProgramDataBaseFileName>Release\mod_proxy_express_src</ProgramDataBaseFileName>
     </ClCompile>
     <PostBuildEvent>
@@ -192,8 +192,8 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <LinkDLL>true</LinkDLL>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>..\..\output\x86\Release\modules\mod_proxy_express.so</OutputFile>
-      <ImportLibrary>..\..\output\x86\Release\modules\mod_proxy_express.lib</ImportLibrary>
+      <OutputFile>..\..\output\x64\Release\modules\mod_proxy_express.so</OutputFile>
+      <ImportLibrary>..\..\output\x64\Release\modules\mod_proxy_express.lib</ImportLibrary>
       <AdditionalDependencies>libapr-2.lib;ws2_32.lib;mswsock.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_proxy_express.so</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
