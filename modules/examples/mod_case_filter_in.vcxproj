@@ -148,7 +148,7 @@
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_case_filter_in.so</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
-      <AdditionalLibraryDirectories>../../../apr/Release</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../apr/output/x86/Release</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -198,7 +198,7 @@
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_case_filter_in.so</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
-      <AdditionalLibraryDirectories>../../../apr/x64/Release</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../apr/output/x64/Release</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -247,7 +247,7 @@
       <AdditionalDependencies>libapr-2.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_case_filter_in.so</BaseAddress>
       <SubSystem>Windows</SubSystem>
-      <AdditionalLibraryDirectories>../../../apr/Debug</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../apr/output/x86/Debug</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -295,7 +295,7 @@
       <AdditionalDependencies>libapr-2.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_case_filter_in.so</BaseAddress>
       <SubSystem>Windows</SubSystem>
-      <AdditionalLibraryDirectories>../../../apr/x64/Debug</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../apr/output/x64/Debug</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

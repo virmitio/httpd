@@ -124,11 +124,11 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>.\Release\mod_authn_socache.so</OutputFile>
       <ImportLibrary>.\Release\mod_authn_socache.lib</ImportLibrary>
-      <AdditionalDependencies>libapr-2.lib;pcre.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libapr-2.lib;pcre5.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_authn_socache.so</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
-      <AdditionalLibraryDirectories>../../../pcre5/LibR;../../../apr/Release;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../pcre5/output/x86/LibR;../../../apr/output/x86/Release;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -174,11 +174,11 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>.\Release\mod_authn_socache.so</OutputFile>
       <ImportLibrary>.\Release\mod_authn_socache.lib</ImportLibrary>
-      <AdditionalDependencies>libapr-2.lib;pcre.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libapr-2.lib;pcre5.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_authn_socache.so</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
-      <AdditionalLibraryDirectories>../../../pcre5/x64/LibR;../../../apr/x64/Release;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../pcre5/output/x64/LibR;../../../apr/output/x64/Release;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

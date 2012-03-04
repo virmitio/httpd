@@ -91,7 +91,7 @@
       <OutputFile>.\gen_test_char.exe</OutputFile>
       <AdditionalDependencies>libapr-2.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>..\..\apr\Debug</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\apr\output\x86\Debug</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -127,7 +127,7 @@
       <AdditionalDependencies>libapr-2.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>..\..\apr\Release</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\apr\output\x86\Release</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

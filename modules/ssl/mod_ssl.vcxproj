@@ -144,7 +144,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>.\Release\mod_ssl.so</OutputFile>
       <ImportLibrary>.\Release\mod_ssl.lib</ImportLibrary>
-      <AdditionalLibraryDirectories>../../../apr/Release;../../../openssl/out32dll;../../../openssl/out32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../apr/output/x86/Release;../../../openssl/out32dll;../../../openssl/out32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libapr-2.lib;wsock32.lib;ws2_32.lib;libeay32.lib;ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_ssl.so</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
@@ -194,7 +194,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>.\x64\Release\mod_ssl.so</OutputFile>
       <ImportLibrary>.\x64\Release\mod_ssl.lib</ImportLibrary>
-      <AdditionalLibraryDirectories>../../../apr/x64/Release;../../../openssl/out64dll;../../../openssl/out32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../apr/output/x64/Release;../../../openssl/out64dll;../../../openssl/out32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libapr-2.lib;wsock32.lib;ws2_32.lib;libeay32.lib;ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_ssl.so</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
@@ -244,7 +244,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>.\Debug\mod_ssl.so</OutputFile>
       <ImportLibrary>.\Debug\mod_ssl.lib</ImportLibrary>
-      <AdditionalLibraryDirectories>../../../apr/Debug;../../../openssl/out32dll.dbg;../../../openssl/out32.dbg;../../../openssl/out32dll;../../../openssl/out32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../apr/output/x86/Debug;../../../openssl/out32dll.dbg;../../../openssl/out32.dbg;../../../openssl/out32dll;../../../openssl/out32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libapr-2.lib;wsock32.lib;ws2_32.lib;libeay32.lib;ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_ssl.so</BaseAddress>
       <SubSystem>Windows</SubSystem>
@@ -292,7 +292,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>.\x64\Debug\mod_ssl.so</OutputFile>
       <ImportLibrary>.\x64\Debug\mod_ssl.lib</ImportLibrary>
-      <AdditionalLibraryDirectories>../../../apr/x64/Debug;../../../openssl/out64dll.dbg;../../../openssl/out32.dbg;../../../openssl/out32dll;../../../openssl/out32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../apr/output/x64/Debug;../../../openssl/out64dll.dbg;../../../openssl/out32.dbg;../../../openssl/out32dll;../../../openssl/out32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libapr-2.lib;wsock32.lib;ws2_32.lib;libeay32.lib;ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_ssl.so</BaseAddress>
       <SubSystem>Windows</SubSystem>

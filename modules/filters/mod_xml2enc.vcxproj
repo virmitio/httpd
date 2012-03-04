@@ -143,7 +143,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>.\Release\mod_xml2enc.so</OutputFile>
       <ImportLibrary>.\Release\mod_xml2enc.lib</ImportLibrary>
-      <AdditionalLibraryDirectories>../../../apr/Release;../../../libxml2/win32/bin.msvc;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../apr/output/x86/Release;../../../libxml2/x86/bin.msvc;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libapr-2.lib;libxml2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_xml2enc.so</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
@@ -192,7 +192,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>.\Release\mod_xml2enc.so</OutputFile>
       <ImportLibrary>.\Release\mod_xml2enc.lib</ImportLibrary>
-      <AdditionalLibraryDirectories>../../../apr/x64/Release;../../../libxml2/x64/bin.msvc;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../apr/output/x64/Release;../../../libxml2/x64/bin.msvc;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libapr-2.lib;libxml2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_xml2enc.so</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>

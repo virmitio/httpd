@@ -119,7 +119,7 @@
       <AdditionalDependencies>libapr-2.lib;ws2_32.lib;mswsock.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>262144</StackReserveSize>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>../apr/Debug</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../apr/output/x86/Debug</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -161,7 +161,7 @@
       <AdditionalDependencies>libapr-2.lib;ws2_32.lib;mswsock.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>262144</StackReserveSize>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>../apr/x64/Debug</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../apr/output/x64/Debug</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -205,7 +205,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <StackReserveSize>262144</StackReserveSize>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>../apr/Release</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../apr/output/x86/Release</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -249,7 +249,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <StackReserveSize>262144</StackReserveSize>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>../apr/x64/Release</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../apr/output/x64/Release</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

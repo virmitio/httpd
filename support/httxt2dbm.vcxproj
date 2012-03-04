@@ -141,7 +141,7 @@
       <AdditionalDependencies>apr-2.lib;wsock32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>../../apr/LibR</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../apr/output/x86/LibR</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -185,7 +185,7 @@
       <AdditionalDependencies>apr-2.lib;wsock32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>../../apr/x64/LibR</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../apr/output/x64/LibR</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -227,7 +227,7 @@
       <OutputFile>.\Debug\httxt2dbm.exe</OutputFile>
       <AdditionalDependencies>apr-2.lib;wsock32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>../../apr/LibD</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../apr/output/x86/LibD</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -269,7 +269,7 @@
       <OutputFile>.\x64\Debug\httxt2dbm.exe</OutputFile>
       <AdditionalDependencies>apr-2.lib;wsock32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>../../apr/x64/LibD</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../apr/output/x64/LibD</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

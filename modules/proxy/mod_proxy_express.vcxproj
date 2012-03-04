@@ -148,7 +148,7 @@
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_proxy_express.so</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
-      <AdditionalLibraryDirectories>../../../apr/Release;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../apr/output/x86/Release;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -198,7 +198,7 @@
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_proxy_express.so</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
-      <AdditionalLibraryDirectories>../../../apr/x64/Release;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../apr/output/x64/Release;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

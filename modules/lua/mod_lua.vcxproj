@@ -144,8 +144,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>.\Release\mod_lua.so</OutputFile>
       <ImportLibrary>.\Release\mod_lua.lib</ImportLibrary>
-      <AdditionalLibraryDirectories>../../../apr/Release;../../../lua/Release/Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libapr-2.lib;liblua.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../../apr/output/x86/Release;../../../lua/Release/x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libapr-2.lib;lua5.2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_lua.so</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
@@ -194,8 +194,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>.\x64\Release\mod_lua.so</OutputFile>
       <ImportLibrary>.\x64\Release\mod_lua.lib</ImportLibrary>
-      <AdditionalLibraryDirectories>../../../apr/x64/Release;../../../lua/Release/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libapr-2.lib;liblua.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../../apr/output/x64/Release;../../../lua/Release/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libapr-2.lib;lua5.2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_lua.so</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
@@ -244,8 +244,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>.\Debug\mod_lua.so</OutputFile>
       <ImportLibrary>.\Debug\mod_lua.lib</ImportLibrary>
-      <AdditionalLibraryDirectories>../../../apr/Debug;../../../lua/src;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libapr-2.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../../apr/output/x86/Debug;../../../lua/src;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libapr-2.lib;lua5.2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_lua.so</BaseAddress>
       <SubSystem>Windows</SubSystem>
     </Link>
@@ -292,8 +292,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>.\x64\Debug\mod_lua.so</OutputFile>
       <ImportLibrary>.\x64\Debug\mod_lua.lib</ImportLibrary>
-      <AdditionalLibraryDirectories>../../../apr/x64/Debug;../../../lua/src;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libapr-2.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../../apr/output/x64/Debug;../../../lua/src;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libapr-2.lib;lua5.2;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_lua.so</BaseAddress>
       <SubSystem>Windows</SubSystem>
     </Link>
