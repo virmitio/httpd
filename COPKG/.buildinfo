@@ -1,4 +1,5 @@
 /* target information */
+@import "version.inc";
 
 #product-info  {
 	product-name: "httpd";
@@ -8,6 +9,75 @@
 	license: "Apache License";
 	packager: "Hamish C";
 }
+
+test {
+    default : false;
+    uses: release;
+    build-command: @"rem";
+};
+
+package {
+    
+    default : false;
+    uses : sign;
+    
+    targets: { 
+        @"copkg\httpd[vc10]-${package-version}-x86.msi",
+        @"copkg\httpd-dev[vc10]-${package-version}-x86.msi",
+        @"copkg\httpd-dev-common-${package-version}-any.msi",
+        @"copkg\httpd[vc10]-${package-version}-x64.msi",
+        @"copkg\httpd-dev[vc10]-${package-version}-x64.msi"
+    };
+    
+    build-command : @"
+        REM THERE IS SOME GOOFY STUFF IN HERE TO WORK AROUND A COUPLE BUGS IN AUTOPACKAGE.
+        REM FIXES COMING SOON...
+        cd COPKG
+        coapp add-feed %cd%\
+        coapp --force-scan list 
+        autopackage httpd-dev-common.autopkg || goto failed
+        coapp --force-scan list 
+        autopackage httpd[vc10]-x86.autopkg httpd-dev[vc10]-x86.autopkg || goto failed
+        coapp --force-scan list 
+        autopackage httpd[vc10]-x64.autopkg httpd-dev[vc10]-x64.autopkg || goto failed
+        coapp --force-scan list 
+        coapp remove-feed %cd%\
+        ptk update-version
+    ";
+
+	clean-command: @"del COPKG\*.msi COPKG\*.wixpdb";
+	
+};
+
+
+update-version {
+    default : false;
+    
+    build-command : @"
+        REM auto-increment version.inc file...
+        
+        cd COPKG
+        setlocal EnableDelayedExpansion
+        for /F ""tokens=4,5,6,7  delims=.; "" %%v in (version.inc) do (
+            set /a build=%%y + 1
+            set VERSTRING=#define { package-version: %%v.%%w.%%x.!build!; }
+        )
+        echo !VERSTRING! > version.inc
+    ";
+}
+
+release {
+    set: BuildCfg="Release";
+    uses: x86;
+    uses: x64;
+};
+
+sign {
+    default : false;
+    uses: release;
+    build-command: @"simplesigner.exe --nologo --sign output\x86\Release\**.dll output\x64\Release\**.exe output\x86\Release\**.dll output\x64\Release\**.exe";
+};
+
 
 x86 {
     compiler: vc10;

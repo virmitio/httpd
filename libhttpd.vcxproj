@@ -150,7 +150,7 @@
       <OutputFile>.\Debug\libhttpd.dll</OutputFile>
       <ImportLibrary>.\output\x86\Release\libhttpd.lib</ImportLibrary>
       <AdditionalLibraryDirectories>../apr/output/x86/Debug;./../pcre5/output/x86/LibR;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libapr-2.lib;pcre5.lib;ws2_32.lib;mswsock.lib;Debug\buildmark.obj;pcre.lib;Release\buildmark.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libapr-2.lib;libpcre.lib;ws2_32.lib;mswsock.lib;Debug\buildmark.obj;pcre.lib;Release\buildmark.obj;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40"os\win32\BaseAddr.ref",libhttpd.dll /opt:ref</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
@@ -205,7 +205,7 @@
       <OutputFile>.\x64\Debug\libhttpd.dll</OutputFile>
       <ImportLibrary>.\output\x64\Release\libhttpd.lib</ImportLibrary>
       <AdditionalLibraryDirectories>../apr/output/x64/Debug;./../pcre5/output/x64/LibR;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libapr-2.lib;pcre5.lib;ws2_32.lib;mswsock.lib;Debug\buildmark.obj;pcre.lib;Release\buildmark.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libapr-2.lib;libpcre.lib;ws2_32.lib;mswsock.lib;Debug\buildmark.obj;pcre.lib;Release\buildmark.obj;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40"os\win32\BaseAddr.ref",libhttpd.dll /opt:ref</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
@@ -260,7 +260,7 @@
       <OutputFile>.\output\x86\Release\libhttpd.dll</OutputFile>
       <ImportLibrary>.\output\x86\Release\libhttpd.lib</ImportLibrary>
       <AdditionalLibraryDirectories>../apr/output/x86/Release;./../pcre5/output/x86/LibR;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libapr-2.lib;pcre5.lib;ws2_32.lib;mswsock.lib;Release\buildmark.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libapr-2.lib;libpcre.lib;ws2_32.lib;mswsock.lib;Release\buildmark.obj;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40"os\win32\BaseAddr.ref",libhttpd.dll</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
@@ -314,7 +314,7 @@
       <OutputFile>.\output\x64\Release\libhttpd.dll</OutputFile>
       <ImportLibrary>.\output\x64\Release\libhttpd.lib</ImportLibrary>
       <AdditionalLibraryDirectories>../apr/output/x64/Release;./../pcre5/output/x64/LibR;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libapr-2.lib;pcre5.lib;ws2_32.lib;mswsock.lib;x64\Release\buildmark.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libapr-2.lib;libpcre.lib;ws2_32.lib;mswsock.lib;x64\Release\buildmark.obj;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40"os\win32\BaseAddr.ref",libhttpd.dll</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>

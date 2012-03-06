@@ -124,7 +124,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>..\..\output\x86\Release\modules\mod_authn_socache.so</OutputFile>
       <ImportLibrary>..\..\output\x86\Release\modules\mod_authn_socache.lib</ImportLibrary>
-      <AdditionalDependencies>libapr-2.lib;pcre5.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libapr-2.lib;libpcre.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_authn_socache.so</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
@@ -174,7 +174,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>..\..\output\x64\Release\modules\mod_authn_socache.so</OutputFile>
       <ImportLibrary>..\..\output\x64\Release\modules\mod_authn_socache.lib</ImportLibrary>
-      <AdditionalDependencies>libapr-2.lib;pcre5.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libapr-2.lib;libpcre.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>%40..\..\os\win32\BaseAddr.ref,mod_authn_socache.so</BaseAddress>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>

@@ -1,0 +1,10 @@
+// details for x86 version of httpd package
+// build with: autopackage httpd-dev[vc10]-x86.autopkg
+@import "httpd-dev.inc" ;
+
+#define { 
+    flavor: "vc10"; 
+    arch : "x86";
+}
+
+
