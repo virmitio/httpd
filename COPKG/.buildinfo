@@ -48,7 +48,6 @@ package {
 	
 };
 
-
 update-version {
     default : false;
     
@@ -86,13 +85,12 @@ sign {
         PLAT="${PLAT??x86, x64}";
     };
     default : false;
-    uses: release;
     build-command: @"
-    if ""${BUILT}"" neq ""true"" ptk --nologo release || goto failed
-    
-    for %%A in (${PLAT}) do (
-        simplesigner.exe --nologo --sign output\%%A\Release\**.dll output\%%A\Release\**.exe
-    }
+    if ""${BUILT}"" neq ""true"" ptk --nologo release --PLAT=${PLAT}
+
+    for %%P in (${PLAT}) do (
+        simplesigner.exe --nologo --sign output\%%P\Release\**.dll output\%%P\Release\**.exe
+    )
     ";
 };
 
@@ -107,27 +105,16 @@ base {
     compiler: "${COMP}";
     platform: "${PLAT}";
     
-    
     requires: {
         "serf-dev[${COMP}]-1.0.1-${PLAT}-1e373a58e25250cb",
         "pcre-dev[${COMP}]-5.0.0-${PLAT}-1e373a58e25250cb",
-        "libxml2-dev[${COMP}]-2.7.8-${PLAT}-1e373a58e25250cb.msi",
-        "lua-dev[${COMP}]-5.2.0-${PLAT}-1e373a58e25250cb.msi",
+        "libxml2-dev[${COMP}]-2.7.8-${PLAT}-1e373a58e25250cb",
+        "lua-dev[${COMP}]-5.2.0-${PLAT}-1e373a58e25250cb",
         "apr-dev[${COMP}]-2.0.0-${PLAT}-1e373a58e25250cb",
         "openssl-dev[${COMP}]-1.0.0-${PLAT}-1e373a58e25250cb",
         "zlib-dev[${COMP}]-1.2.5-${PLAT}-1e373a58e25250cb",
+        "libiconv-dev[${COMP}]-1.13.1-${PLAT}-1e373a58e25250cb",
     };
-
-    /*
-    uses: x86=@"..\serf";//depends on apr, openssl, zlib    
-    //uses: x86=@"..\apr";//depends on expat
-    uses: x86=@"..\pcre5";
-    //uses: x86=@"..\openssl";//depends on zlib
-    //uses: x86=@"..\zlib";
-    uses: x86=@"..\lua";
-    uses: x86-vc=@"..\libxml2";
-    */
-
 
     targets: { 
 		"output\${PLAT}\${BuildCfg}\modules\mod_access_compat.so",
@@ -254,17 +241,37 @@ base {
         REM this makes it so that DLLs can have their own SxS Activation Context in an embedded resource.
 		echo %CL% | findstr ISOLATION_AWARE || set CL=%CL% /D ISOLATION_AWARE_ENABLED 
 
-        REM Need to add a set of include locations.  Doing this here so I don't need to rewrite every project file right now.
-        set INCLUDE=%INCLUDE%;%AllUsersProfile%\include;%AllUsersProfile%\include\serf;%AllUsersProfile%\include\pcre;%AllUsersProfile%\include\libxml2;%AllUsersProfile%\include\lua;%AllUsersProfile%\include\apr;%AllUsersProfile%\include\openssl;%AllUsersProfile%\include\zlib
+        REM Need to add a set of include locations.  Doing this here so I don't need to rewrite pre-link build steps in every project file right now.
+        set CL=%CL% /I%AllUsersProfile%\include 
+        set CL=%CL% /I%AllUsersProfile%\include\serf 
+        set CL=%CL% /I%AllUsersProfile%\include\pcre 
+        set CL=%CL% /I%AllUsersProfile%\include\libxml2 
+        set CL=%CL% /I%AllUsersProfile%\include\lua 
+        set CL=%CL% /I%AllUsersProfile%\include\apr 
+        set CL=%CL% /I%AllUsersProfile%\include\openssl 
+        set CL=%CL% /I%AllUsersProfile%\include\zlib 
+        set CL=%CL% /I%AllUsersProfile%\include\libiconv 
         
         REM Also need to add a library location.  Same reason as above, only this one needs to be platform specific, and there's only one of them.
-        set LIB=%LIB%;%AllUsersProfile%\lib\${PLAT};
+        set LINK=%LINK% /LIBPATH:%AllUsersProfile%\lib\${PLAT} 
+        
+        REM Need to add a few symlinks to point some of the source files to the includes they need
+        if NOT EXIST ""%AllUsersProfile%\include\libxml"" (
+            set CO_SYMLINKS=%CO_SYMLINKS% libxml
+            coapp create-symlink ""%AllUsersProfile%\include\libxml2"" ""%AllUsersProfile%\include\libxml""
+        )
         
         if ""${PLAT}"" equ ""x86"" (
+            set CL=%CL% /D THIRTY_TWO_BIT 
             msbuild /p:Platform=win32 /p:Configuration=${BuildCfg} Apache-apr2.sln
         ) else (
+            set CL=%CL% /D SIXTY_FOUR_BIT 
             msbuild /p:Platform=${PLAT} /p:Configuration=${BuildCfg} Apache-apr2.sln
         )
+        
+        REM Clean up symlinks
+        for %%D in (%CO_SYMLINKS%) do rd ""%AllUsersProfile%\include\%%D""
+        
 	";
     
     clean-command:@"
@@ -272,354 +279,6 @@ base {
        if exist Release rmdir /s /q Release > nul 2> nul
        if exist Debug rmdir /s /q Debug > nul 2> nul
 	   if exist output rmdir /s /q output > nul 2> nul
-       for /f ""delims="" %%a in ('dir /B/S/AD Release') do rd /s /q ""%%a"" > nul 2> nul
-       for /f ""delims="" %%a in ('dir /B/S/AD Debug') do rd /s /q ""%%a"" > nul 2> nul
-       del /S /Q /A - *.sdf *.suo *.user *.exe *.pdb > NUL 2> NUL
-       del /Q BuildBin.log include\ap_config_layout.h include\ap_ldap.h include\mod_cgi.h include\mod_dav.h include\mod_include.h include\mod_proxy.h include\mod_so.h include\os.h server\test_char.h > nul 2> nul
-    ";
-};
-
-
-x86 {
-    compiler: vc10;
-    platform: x86;
-    
-    
-    requires: {
-        "serf-dev[${COMP}]-1.0.1-${PLAT}-1e373a58e25250cb",
-        "pcre-dev[${COMP}]-5.0.0-${PLAT}-1e373a58e25250cb",
-        "libxml2-dev[${COMP}]-2.7.8-${PLAT}-1e373a58e25250cb.msi",
-        "lua-dev[${COMP}]-5.2.0-${PLAT}-1e373a58e25250cb.msi",
-        /*
-        "apr-dev[${COMP}]-2.0.0-${PLAT}-1e373a58e25250cb",
-        "openssl-dev[${COMP}]-1.0.0-${PLAT}-1e373a58e25250cb",
-        "zlib-dev[${COMP}]-1.2.5-${PLAT}-1e373a58e25250cb",
-        */
-    };
-
-    /*
-    uses: x86=@"..\serf";//depends on apr, openssl, zlib    
-    //uses: x86=@"..\apr";//depends on expat
-    uses: x86=@"..\pcre5";
-    //uses: x86=@"..\openssl";//depends on zlib
-    //uses: x86=@"..\zlib";
-    uses: x86=@"..\lua";
-    uses: x86-vc=@"..\libxml2";
-    */
-
-
-    targets: { 
-		"output\x86\Release\modules\mod_access_compat.so",
- 		"output\x86\Release\modules\mod_actions.so",
- 		"output\x86\Release\modules\mod_alias.so",
- 		"output\x86\Release\modules\mod_asis.so",
- 		"output\x86\Release\modules\mod_authn_anon.so",
- 		"output\x86\Release\modules\mod_authn_core.so",
- 		"output\x86\Release\modules\mod_authn_dbd.so",
- 		"output\x86\Release\modules\mod_authn_dbm.so",
- 		"output\x86\Release\modules\mod_authn_file.so",
- 		"output\x86\Release\modules\mod_authn_socache.so",
- 		"output\x86\Release\modules\mod_authz_core.so",
- 		"output\x86\Release\modules\mod_authz_dbd.so",
- 		"output\x86\Release\modules\mod_authz_dbm.so",
- 		"output\x86\Release\modules\mod_authz_groupfile.so",
- 		"output\x86\Release\modules\mod_authz_host.so",
- 		"output\x86\Release\modules\mod_authz_owner.so",
- 		"output\x86\Release\modules\mod_authz_user.so",
- 		"output\x86\Release\modules\mod_auth_basic.so",
- 		"output\x86\Release\modules\mod_auth_digest.so",
- 		"output\x86\Release\modules\mod_auth_form.so",
- 		"output\x86\Release\modules\mod_autoindex.so",
- 		"output\x86\Release\modules\mod_bucketeer.so",
- 		"output\x86\Release\modules\mod_buffer.so",
- 		"output\x86\Release\modules\mod_cache.so",
- 		"output\x86\Release\modules\mod_cache_disk.so",
- 		"output\x86\Release\modules\mod_case_filter.so",
- 		"output\x86\Release\modules\mod_case_filter_in.so",
- 		"output\x86\Release\modules\mod_cern_meta.so",
- 		"output\x86\Release\modules\mod_cgi.so",
- 		"output\x86\Release\modules\mod_charset_lite.so",
- 		"output\x86\Release\modules\mod_data.so",
- 		"output\x86\Release\modules\mod_dav.so",
- 		"output\x86\Release\modules\mod_dav_fs.so",
- 		"output\x86\Release\modules\mod_dav_lock.so",
- 		"output\x86\Release\modules\mod_dbd.so",
- 		"output\x86\Release\modules\mod_deflate.so",
- 		"output\x86\Release\modules\mod_dir.so",
- 		"output\x86\Release\modules\mod_dumpio.so",
- 		"output\x86\Release\modules\mod_echo.so",
- 		"output\x86\Release\modules\mod_env.so",
- 		"output\x86\Release\modules\mod_example_hooks.so",
- 		"output\x86\Release\modules\mod_example_ipc.so",
- 		"output\x86\Release\modules\mod_expires.so",
- 		"output\x86\Release\modules\mod_ext_filter.so",
- 		"output\x86\Release\modules\mod_file_cache.so",
- 		"output\x86\Release\modules\mod_filter.so",
- 		"output\x86\Release\modules\mod_headers.so",
- 		"output\x86\Release\modules\mod_heartbeat.so",
- 		"output\x86\Release\modules\mod_heartmonitor.so",
- 		"output\x86\Release\modules\mod_ident.so",
- 		"output\x86\Release\modules\mod_imagemap.so",
- 		"output\x86\Release\modules\mod_include.so",
- 		"output\x86\Release\modules\mod_info.so",
- 		"output\x86\Release\modules\mod_isapi.so",
- 		"output\x86\Release\modules\mod_lbmethod_bybusyness.so",
- 		"output\x86\Release\modules\mod_lbmethod_byrequests.so",
- 		"output\x86\Release\modules\mod_lbmethod_bytraffic.so",
- 		"output\x86\Release\modules\mod_lbmethod_heartbeat.so",
- 		"output\x86\Release\modules\mod_logio.so",
- 		"output\x86\Release\modules\mod_log_config.so",
- 		"output\x86\Release\modules\mod_log_debug.so",
- 		"output\x86\Release\modules\mod_log_forensic.so",
- 		"output\x86\Release\modules\mod_lua.so",
- 		"output\x86\Release\modules\mod_mime.so",
- 		"output\x86\Release\modules\mod_mime_magic.so",
- 		"output\x86\Release\modules\mod_negotiation.so",
- 		"output\x86\Release\modules\mod_proxy.so",
- 		"output\x86\Release\modules\mod_proxy_ajp.so",
- 		"output\x86\Release\modules\mod_proxy_balancer.so",
- 		"output\x86\Release\modules\mod_proxy_connect.so",
- 		"output\x86\Release\modules\mod_proxy_express.so",
- 		"output\x86\Release\modules\mod_proxy_fcgi.so",
- 		"output\x86\Release\modules\mod_proxy_ftp.so",
- 		"output\x86\Release\modules\mod_proxy_html.so",
- 		"output\x86\Release\modules\mod_proxy_http.so",
- 		"output\x86\Release\modules\mod_proxy_scgi.so",
- 		"output\x86\Release\modules\mod_ratelimit.so",
- 		"output\x86\Release\modules\mod_reflector.so",
- 		"output\x86\Release\modules\mod_remoteip.so",
- 		"output\x86\Release\modules\mod_reqtimeout.so",
- 		"output\x86\Release\modules\mod_request.so",
- 		"output\x86\Release\modules\mod_rewrite.so",
- 		"output\x86\Release\modules\mod_sed.so",
- 		"output\x86\Release\modules\mod_serf.so",
- 		"output\x86\Release\modules\mod_session.so",
- 		"output\x86\Release\modules\mod_session_cookie.so",
- 		"output\x86\Release\modules\mod_session_dbd.so",
- 		"output\x86\Release\modules\mod_setenvif.so",
- 		"output\x86\Release\modules\mod_slotmem_plain.so",
- 		"output\x86\Release\modules\mod_slotmem_shm.so",
- 		"output\x86\Release\modules\mod_socache_dbm.so",
- 		"output\x86\Release\modules\mod_socache_memcache.so",
- 		"output\x86\Release\modules\mod_socache_shmcb.so",
- 		"output\x86\Release\modules\mod_speling.so",
- 		"output\x86\Release\modules\mod_ssl.so",
- 		"output\x86\Release\modules\mod_status.so",
- 		"output\x86\Release\modules\mod_substitute.so",
- 		"output\x86\Release\modules\mod_unique_id.so",
- 		"output\x86\Release\modules\mod_userdir.so",
- 		"output\x86\Release\modules\mod_usertrack.so",
- 		"output\x86\Release\modules\mod_version.so",
- 		"output\x86\Release\modules\mod_vhost_alias.so",
- 		"output\x86\Release\modules\mod_watchdog.so",
- 		"output\x86\Release\modules\mod_xml2enc.so",
-		"output\x86\Release\ab.exe",
-		"output\x86\Release\abs.exe",
-		"output\x86\Release\ApacheMonitor.exe",
-		"output\x86\Release\htcacheclean.exe",
-		"output\x86\Release\htdbm.exe",
-		"output\x86\Release\httpd.exe",
-		"output\x86\Release\libhttpd.dll",
-		"output\x86\Release\libhttpd.lib",
-		"output\x86\Release\wintty.exe",
-		"output\x86\Release\htdigest.exe",
-		"output\x86\Release\htpasswd.exe",
-		"output\x86\Release\httxt2dbm.exe",
-		"output\x86\Release\logresolve.exe",
-		"output\x86\Release\rotatelogs.exe",
-	};
-	
-    build-command:@"
-       rem best you have your visual studio installed in the default location...
-       call vcvarsall.bat x86
-       msbuild /p:Platform=win32 /p:Configuration=Release Apache-apr2.sln
-	";
-    
-    clean-command:@"
-       if exist ipch rmdir /s /q ipch > nul 2> nul
-       if exist Release rmdir /s /q Release > nul 2> nul
-       if exist Debug rmdir /s /q Debug > nul 2> nul
-	   if exist output rmdir /s /q output > nul 2> nul
-       for /f ""delims="" %%a in ('dir /B/S/AD Release') do rd /s /q ""%%a"" > nul 2> nul
-       for /f ""delims="" %%a in ('dir /B/S/AD Debug') do rd /s /q ""%%a"" > nul 2> nul
-       del /S /Q /A - *.sdf *.suo *.user *.exe *.pdb > NUL 2> NUL
-       del /Q BuildBin.log include\ap_config_layout.h include\ap_ldap.h include\mod_cgi.h include\mod_dav.h include\mod_include.h include\mod_proxy.h include\mod_so.h include\os.h server\test_char.h > nul 2> nul
-    ";
-};
-
-x64prereq {
-    compiler: vc10;
-    platform: x86;
-    
-    uses: x86=@"..\apr";
-
-    targets: { 
-	};
-	
-    build-command:@"
-       msbuild /p:Platform=win32 /p:Configuration=Release server\gen_test_char.vcxproj
-	";
-    
-    clean-command:@"
-       if exist ipch rmdir /s /q ipch > nul 2> nul
-       if exist Release rmdir /s /q Release > nul 2> nul
-       if exist Debug rmdir /s /q Debug > nul 2> nul
-       if exist output rmdir /s /q output > nul 2> nul
-       for /f ""delims="" %%a in ('dir /B/S/AD x64') do rd /s /q ""%%a"" > nul 2> nul
-       for /f ""delims="" %%a in ('dir /B/S/AD Release') do rd /s /q ""%%a"" > nul 2> nul
-       for /f ""delims="" %%a in ('dir /B/S/AD Debug') do rd /s /q ""%%a"" > nul 2> nul
-       del /S /Q /A - *.sdf *.suo *.user *.exe *.pdb > NUL 2> NUL
-       del /Q BuildBin.log include\ap_config_layout.h include\ap_ldap.h include\mod_cgi.h include\mod_dav.h include\mod_include.h include\mod_proxy.h include\mod_so.h include\os.h server\test_char.h > nul 2> nul
-    ";
-};
-
-
-
-x64 {
-    compiler: vc10;
-    platform: x64;
-
-    //to save on build time, skip the dependencies that are already built by other dependencies
-    uses: x64prereq=@".";
-    uses: x64=@"..\serf";//depends on apr, openssl, zlib    
-    //uses: x64=@"..\apr";//depends on expat
-    uses: x64=@"..\pcre5";
-    //uses: x64=@"..\openssl";//depends on zlib
-    //uses: x64=@"..\zlib";
-    uses: x64=@"..\lua";
-    uses: x64-vc=@"..\libxml2";
-
-    targets: { 
-       "output\x64\Release\modules\mod_access_compat.so",
- 		"output\x64\Release\modules\mod_actions.so",
- 		"output\x64\Release\modules\mod_alias.so",
- 		"output\x64\Release\modules\mod_asis.so",
- 		"output\x64\Release\modules\mod_authn_anon.so",
- 		"output\x64\Release\modules\mod_authn_core.so",
- 		"output\x64\Release\modules\mod_authn_dbd.so",
- 		"output\x64\Release\modules\mod_authn_dbm.so",
- 		"output\x64\Release\modules\mod_authn_file.so",
- 		"output\x64\Release\modules\mod_authn_socache.so",
- 		"output\x64\Release\modules\mod_authz_core.so",
- 		"output\x64\Release\modules\mod_authz_dbd.so",
- 		"output\x64\Release\modules\mod_authz_dbm.so",
- 		"output\x64\Release\modules\mod_authz_groupfile.so",
- 		"output\x64\Release\modules\mod_authz_host.so",
- 		"output\x64\Release\modules\mod_authz_owner.so",
- 		"output\x64\Release\modules\mod_authz_user.so",
- 		"output\x64\Release\modules\mod_auth_basic.so",
- 		"output\x64\Release\modules\mod_auth_digest.so",
- 		"output\x64\Release\modules\mod_auth_form.so",
- 		"output\x64\Release\modules\mod_autoindex.so",
- 		"output\x64\Release\modules\mod_bucketeer.so",
- 		"output\x64\Release\modules\mod_buffer.so",
- 		"output\x64\Release\modules\mod_cache.so",
- 		"output\x64\Release\modules\mod_cache_disk.so",
- 		"output\x64\Release\modules\mod_case_filter.so",
- 		"output\x64\Release\modules\mod_case_filter_in.so",
- 		"output\x64\Release\modules\mod_cern_meta.so",
- 		"output\x64\Release\modules\mod_cgi.so",
- 		"output\x64\Release\modules\mod_charset_lite.so",
- 		"output\x64\Release\modules\mod_data.so",
- 		"output\x64\Release\modules\mod_dav.so",
- 		"output\x64\Release\modules\mod_dav_fs.so",
- 		"output\x64\Release\modules\mod_dav_lock.so",
- 		"output\x64\Release\modules\mod_dbd.so",
- 		"output\x64\Release\modules\mod_deflate.so",
- 		"output\x64\Release\modules\mod_dir.so",
- 		"output\x64\Release\modules\mod_dumpio.so",
- 		"output\x64\Release\modules\mod_echo.so",
- 		"output\x64\Release\modules\mod_env.so",
- 		"output\x64\Release\modules\mod_example_hooks.so",
- 		"output\x64\Release\modules\mod_example_ipc.so",
- 		"output\x64\Release\modules\mod_expires.so",
- 		"output\x64\Release\modules\mod_ext_filter.so",
- 		"output\x64\Release\modules\mod_file_cache.so",
- 		"output\x64\Release\modules\mod_filter.so",
- 		"output\x64\Release\modules\mod_headers.so",
- 		"output\x64\Release\modules\mod_heartbeat.so",
- 		"output\x64\Release\modules\mod_heartmonitor.so",
- 		"output\x64\Release\modules\mod_ident.so",
- 		"output\x64\Release\modules\mod_imagemap.so",
- 		"output\x64\Release\modules\mod_include.so",
- 		"output\x64\Release\modules\mod_info.so",
- 		"output\x64\Release\modules\mod_isapi.so",
- 		"output\x64\Release\modules\mod_lbmethod_bybusyness.so",
- 		"output\x64\Release\modules\mod_lbmethod_byrequests.so",
- 		"output\x64\Release\modules\mod_lbmethod_bytraffic.so",
- 		"output\x64\Release\modules\mod_lbmethod_heartbeat.so",
- 		"output\x64\Release\modules\mod_logio.so",
- 		"output\x64\Release\modules\mod_log_config.so",
- 		"output\x64\Release\modules\mod_log_debug.so",
- 		"output\x64\Release\modules\mod_log_forensic.so",
- 		"output\x64\Release\modules\mod_lua.so",
- 		"output\x64\Release\modules\mod_mime.so",
- 		"output\x64\Release\modules\mod_mime_magic.so",
- 		"output\x64\Release\modules\mod_negotiation.so",
- 		"output\x64\Release\modules\mod_proxy.so",
- 		"output\x64\Release\modules\mod_proxy_ajp.so",
- 		"output\x64\Release\modules\mod_proxy_balancer.so",
- 		"output\x64\Release\modules\mod_proxy_connect.so",
- 		"output\x64\Release\modules\mod_proxy_express.so",
- 		"output\x64\Release\modules\mod_proxy_fcgi.so",
- 		"output\x64\Release\modules\mod_proxy_ftp.so",
- 		"output\x64\Release\modules\mod_proxy_html.so",
- 		"output\x64\Release\modules\mod_proxy_http.so",
- 		"output\x64\Release\modules\mod_proxy_scgi.so",
- 		"output\x64\Release\modules\mod_ratelimit.so",
- 		"output\x64\Release\modules\mod_reflector.so",
- 		"output\x64\Release\modules\mod_remoteip.so",
- 		"output\x64\Release\modules\mod_reqtimeout.so",
- 		"output\x64\Release\modules\mod_request.so",
- 		"output\x64\Release\modules\mod_rewrite.so",
- 		"output\x64\Release\modules\mod_sed.so",
- 		"output\x64\Release\modules\mod_serf.so",
- 		"output\x64\Release\modules\mod_session.so",
- 		"output\x64\Release\modules\mod_session_cookie.so",
- 		"output\x64\Release\modules\mod_session_dbd.so",
- 		"output\x64\Release\modules\mod_setenvif.so",
- 		"output\x64\Release\modules\mod_slotmem_plain.so",
- 		"output\x64\Release\modules\mod_slotmem_shm.so",
- 		"output\x64\Release\modules\mod_socache_dbm.so",
- 		"output\x64\Release\modules\mod_socache_memcache.so",
- 		"output\x64\Release\modules\mod_socache_shmcb.so",
- 		"output\x64\Release\modules\mod_speling.so",
- 		"output\x64\Release\modules\mod_ssl.so",
- 		"output\x64\Release\modules\mod_status.so",
- 		"output\x64\Release\modules\mod_substitute.so",
- 		"output\x64\Release\modules\mod_unique_id.so",
- 		"output\x64\Release\modules\mod_userdir.so",
- 		"output\x64\Release\modules\mod_usertrack.so",
- 		"output\x64\Release\modules\mod_version.so",
- 		"output\x64\Release\modules\mod_vhost_alias.so",
- 		"output\x64\Release\modules\mod_watchdog.so",
- 		"output\x64\Release\modules\mod_xml2enc.so",
-		"output\x64\Release\ab.exe",
-		"output\x64\Release\abs.exe",
-		"output\x64\Release\ApacheMonitor.exe",
-		"output\x64\Release\htcacheclean.exe",
-		"output\x64\Release\htdbm.exe",
-		"output\x64\Release\httpd.exe",
-		"output\x64\Release\libhttpd.dll",
-		"output\x64\Release\libhttpd.lib",
-		"output\x64\Release\wintty.exe",
-		"output\x64\Release\htdigest.exe",
-		"output\x64\Release\htpasswd.exe",
-		"output\x64\Release\httxt2dbm.exe",
-		"output\x64\Release\logresolve.exe",
-		"output\x64\Release\rotatelogs.exe",
-	};
-	
-    build-command:@"
-       msbuild /p:Platform=x64 /p:Configuration=Release Apache-apr2.sln
-	";
-    
-    clean-command:@"
-       if exist ipch rmdir /s /q ipch > nul 2> nul
-       if exist Release rmdir /s /q Release > nul 2> nul
-       if exist Debug rmdir /s /q Debug > nul 2> nul
-       if exist output rmdir /s /q output > nul 2> nul
-       for /f ""delims="" %%a in ('dir /B/S/AD x64') do rd /s /q ""%%a"" > nul 2> nul
        for /f ""delims="" %%a in ('dir /B/S/AD Release') do rd /s /q ""%%a"" > nul 2> nul
        for /f ""delims="" %%a in ('dir /B/S/AD Debug') do rd /s /q ""%%a"" > nul 2> nul
        del /S /Q /A - *.sdf *.suo *.user *.exe *.pdb > NUL 2> NUL

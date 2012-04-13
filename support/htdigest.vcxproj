@@ -110,7 +110,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
       <OmitFramePointers>false</OmitFramePointers>
-      <AdditionalIncludeDirectories>../../apr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../apr/include;$(AllUsersProfile)/include;$(AllUsersProfile)/include/serf;$(AllUsersProfile)/include/pcre;$(AllUsersProfile)/include/libxml2;$(AllUsersProfile)/include/lua;$(AllUsersProfile)/include/apr;$(AllUsersProfile)/include/openssl;$(AllUsersProfile)/include/zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;APR_DECLARE_STATIC;APU_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>..\output\x86\Release\</AssemblerListingLocation>
       <PrecompiledHeaderOutputFile>..\output\x86\Release\htdigest.pch</PrecompiledHeaderOutputFile>
@@ -127,7 +127,7 @@
     <ResourceCompile>
       <Culture>0x0409</Culture>
       <ResourceOutputFileName>Release/htdigest.res</ResourceOutputFileName>
-      <AdditionalIncludeDirectories>../include;../../apr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../include;../../apr/include;$(AllUsersProfile)/include;$(AllUsersProfile)/include/serf;$(AllUsersProfile)/include/pcre;$(AllUsersProfile)/include/libxml2;$(AllUsersProfile)/include/lua;$(AllUsersProfile)/include/apr;$(AllUsersProfile)/include/openssl;$(AllUsersProfile)/include/zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;APP_FILE;BIN_NAME=htdigest.exe;LONG_NAME=Apache htdigest command line utility;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <Bscmake>
@@ -154,7 +154,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
       <OmitFramePointers>false</OmitFramePointers>
-      <AdditionalIncludeDirectories>../../apr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../apr/include;$(AllUsersProfile)/include;$(AllUsersProfile)/include/serf;$(AllUsersProfile)/include/pcre;$(AllUsersProfile)/include/libxml2;$(AllUsersProfile)/include/lua;$(AllUsersProfile)/include/apr;$(AllUsersProfile)/include/openssl;$(AllUsersProfile)/include/zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;APR_DECLARE_STATIC;APU_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>..\output\x64\Release\</AssemblerListingLocation>
       <PrecompiledHeaderOutputFile>..\output\x64\Release\htdigest.pch</PrecompiledHeaderOutputFile>
@@ -171,7 +171,7 @@
     <ResourceCompile>
       <Culture>0x0409</Culture>
       <ResourceOutputFileName>Release/htdigest.res</ResourceOutputFileName>
-      <AdditionalIncludeDirectories>../include;../../apr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../include;../../apr/include;$(AllUsersProfile)/include;$(AllUsersProfile)/include/serf;$(AllUsersProfile)/include/pcre;$(AllUsersProfile)/include/libxml2;$(AllUsersProfile)/include/lua;$(AllUsersProfile)/include/apr;$(AllUsersProfile)/include/openssl;$(AllUsersProfile)/include/zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;APP_FILE;BIN_NAME=htdigest.exe;LONG_NAME=Apache htdigest command line utility;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <Bscmake>
@@ -196,7 +196,7 @@
       <Optimization>Disabled</Optimization>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>../../apr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../apr/include;$(AllUsersProfile)/include;$(AllUsersProfile)/include/serf;$(AllUsersProfile)/include/pcre;$(AllUsersProfile)/include/libxml2;$(AllUsersProfile)/include/lua;$(AllUsersProfile)/include/apr;$(AllUsersProfile)/include/openssl;$(AllUsersProfile)/include/zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_CONSOLE;APR_DECLARE_STATIC;APU_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\Debug\</AssemblerListingLocation>
       <PrecompiledHeaderOutputFile>.\Debug\htdigest.pch</PrecompiledHeaderOutputFile>
@@ -214,7 +214,7 @@
     <ResourceCompile>
       <Culture>0x0409</Culture>
       <ResourceOutputFileName>Debug/htdigest.res</ResourceOutputFileName>
-      <AdditionalIncludeDirectories>../include;../../apr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../include;../../apr/include;$(AllUsersProfile)/include;$(AllUsersProfile)/include/serf;$(AllUsersProfile)/include/pcre;$(AllUsersProfile)/include/libxml2;$(AllUsersProfile)/include/lua;$(AllUsersProfile)/include/apr;$(AllUsersProfile)/include/openssl;$(AllUsersProfile)/include/zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;APP_FILE;BIN_NAME=htdigest.exe;LONG_NAME=Apache htdigest command line utility;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <Bscmake>
@@ -238,7 +238,7 @@
       <Optimization>Disabled</Optimization>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>../../apr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../apr/include;$(AllUsersProfile)/include;$(AllUsersProfile)/include/serf;$(AllUsersProfile)/include/pcre;$(AllUsersProfile)/include/libxml2;$(AllUsersProfile)/include/lua;$(AllUsersProfile)/include/apr;$(AllUsersProfile)/include/openssl;$(AllUsersProfile)/include/zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_CONSOLE;APR_DECLARE_STATIC;APU_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\x64\Debug\</AssemblerListingLocation>
       <PrecompiledHeaderOutputFile>.\x64\Debug\htdigest.pch</PrecompiledHeaderOutputFile>
@@ -256,7 +256,7 @@
     <ResourceCompile>
       <Culture>0x0409</Culture>
       <ResourceOutputFileName>Debug/htdigest.res</ResourceOutputFileName>
-      <AdditionalIncludeDirectories>../include;../../apr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../include;../../apr/include;$(AllUsersProfile)/include;$(AllUsersProfile)/include/serf;$(AllUsersProfile)/include/pcre;$(AllUsersProfile)/include/libxml2;$(AllUsersProfile)/include/lua;$(AllUsersProfile)/include/apr;$(AllUsersProfile)/include/openssl;$(AllUsersProfile)/include/zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;APP_FILE;BIN_NAME=htdigest.exe;LONG_NAME=Apache htdigest command line utility;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <Bscmake>
@@ -280,10 +280,10 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\build\win32\httpd.rc">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">\Projects\CoApp-Packages\httpd\build\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">\Projects\CoApp-Packages\httpd\build\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">\Projects\CoApp-Packages\httpd\build\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">\Projects\CoApp-Packages\httpd\build\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">\Projects\CoApp-Packages\httpd\build\win32;$(AllUsersProfile)/include;$(AllUsersProfile)/include/serf;$(AllUsersProfile)/include/pcre;$(AllUsersProfile)/include/libxml2;$(AllUsersProfile)/include/lua;$(AllUsersProfile)/include/apr;$(AllUsersProfile)/include/openssl;$(AllUsersProfile)/include/zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">\Projects\CoApp-Packages\httpd\build\win32;$(AllUsersProfile)/include;$(AllUsersProfile)/include/serf;$(AllUsersProfile)/include/pcre;$(AllUsersProfile)/include/libxml2;$(AllUsersProfile)/include/lua;$(AllUsersProfile)/include/apr;$(AllUsersProfile)/include/openssl;$(AllUsersProfile)/include/zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">\Projects\CoApp-Packages\httpd\build\win32;$(AllUsersProfile)/include;$(AllUsersProfile)/include/serf;$(AllUsersProfile)/include/pcre;$(AllUsersProfile)/include/libxml2;$(AllUsersProfile)/include/lua;$(AllUsersProfile)/include/apr;$(AllUsersProfile)/include/openssl;$(AllUsersProfile)/include/zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">\Projects\CoApp-Packages\httpd\build\win32;$(AllUsersProfile)/include;$(AllUsersProfile)/include/serf;$(AllUsersProfile)/include/pcre;$(AllUsersProfile)/include/libxml2;$(AllUsersProfile)/include/lua;$(AllUsersProfile)/include/apr;$(AllUsersProfile)/include/openssl;$(AllUsersProfile)/include/zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

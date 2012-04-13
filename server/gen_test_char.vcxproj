@@ -112,7 +112,7 @@
       <Optimization>Disabled</Optimization>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>..\include;..\..\apr\include;..\os\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;..\..\apr\include;..\os\win32;$(AllUsersProfile)/include;$(AllUsersProfile)/include/serf;$(AllUsersProfile)/include/pcre;$(AllUsersProfile)/include/libxml2;$(AllUsersProfile)/include/lua;$(AllUsersProfile)/include/apr;$(AllUsersProfile)/include/openssl;$(AllUsersProfile)/include/zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\Debug\</AssemblerListingLocation>
       <PrecompiledHeaderOutputFile>.\Debug\gen_test_char.pch</PrecompiledHeaderOutputFile>
@@ -148,7 +148,7 @@
       <Optimization>Disabled</Optimization>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>..\include;..\..\apr\include;..\os\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;..\..\apr\include;..\os\win32;$(AllUsersProfile)/include;$(AllUsersProfile)/include/serf;$(AllUsersProfile)/include/pcre;$(AllUsersProfile)/include/libxml2;$(AllUsersProfile)/include/lua;$(AllUsersProfile)/include/apr;$(AllUsersProfile)/include/openssl;$(AllUsersProfile)/include/zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\Debug\</AssemblerListingLocation>
       <PrecompiledHeaderOutputFile>.\Debug\gen_test_char.pch</PrecompiledHeaderOutputFile>
@@ -185,7 +185,7 @@
       <Optimization>MaxSpeed</Optimization>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>..\include;..\..\apr\include;..\os\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;..\..\apr\include;..\os\win32;$(AllUsersProfile)/include;$(AllUsersProfile)/include/serf;$(AllUsersProfile)/include/pcre;$(AllUsersProfile)/include/libxml2;$(AllUsersProfile)/include/lua;$(AllUsersProfile)/include/apr;$(AllUsersProfile)/include/openssl;$(AllUsersProfile)/include/zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\Release\</AssemblerListingLocation>
       <PrecompiledHeaderOutputFile>.\Release\gen_test_char.pch</PrecompiledHeaderOutputFile>
@@ -221,7 +221,7 @@
       <Optimization>MaxSpeed</Optimization>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>..\include;..\..\apr\include;..\os\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;..\..\apr\include;..\os\win32;$(AllUsersProfile)/include;$(AllUsersProfile)/include/serf;$(AllUsersProfile)/include/pcre;$(AllUsersProfile)/include/libxml2;$(AllUsersProfile)/include/lua;$(AllUsersProfile)/include/apr;$(AllUsersProfile)/include/openssl;$(AllUsersProfile)/include/zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\Release\</AssemblerListingLocation>
       <PrecompiledHeaderOutputFile>.\Release\gen_test_char.pch</PrecompiledHeaderOutputFile>
