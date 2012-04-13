@@ -33,7 +33,7 @@ requires {
     package: "httpd-dev-common-${package-version}-any-${Package.PublicKeyToken}";
     package: "httpd[${flavor}]-${package-version}-${Package.Architecture}-${Package.PublicKeyToken}";
     package: "libiconv[${flavor}]-1.13.1-${Package.Architecture}-${Package.PublicKeyToken}";
-    package: "zlib[${flavor}]-1.2.54-${Package.Architecture}-${Package.PublicKeyToken}";
+    package: "zlib[${flavor}]-1.2.5-${Package.Architecture}-${Package.PublicKeyToken}";
 	package: "serf[${flavor}]-1.0.1-${Package.Architecture}-${Package.PublicKeyToken}";
 	package: "openssl[${flavor}]-1.0.0-${Package.Architecture}-${Package.PublicKeyToken}";
 	package: "libxml2[${flavor}]-2.7.8-${Package.Architecture}-${Package.PublicKeyToken}";
