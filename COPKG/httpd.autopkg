@@ -138,6 +138,10 @@ package-composition {
         exes => @"${bin}\${each.Name}" = @"${packagedir}\${each.Name}";
     };
 
+    file-copy : {
+        logs => "${etc}\httpd\logs\${each.Name}";
+    };
+    
 	shortcut : { 
         httpdexe => @"${bin}\${each.Name}.lnk" = @"${packagedir}\${each.Name}";
     };
@@ -227,6 +231,6 @@ files[logs] {
     include: {
         "access.log",
     };
-    destination: @"${etc}\logs\httpd\";
+    destination: @"etc\httpd\logs\";
     trim-path: all;
 };
