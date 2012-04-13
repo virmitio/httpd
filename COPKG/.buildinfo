@@ -17,7 +17,11 @@ test {
 };
 
 package {
-    
+    set: {
+        COMP="${COMP??vc10}";
+        PLAT="${PLAT??x86, x64}";
+    };
+
     default : false;
     uses : sign;
     
@@ -30,18 +34,13 @@ package {
     };
     
     build-command : @"
-        REM THERE IS SOME GOOFY STUFF IN HERE TO WORK AROUND A COUPLE BUGS IN AUTOPACKAGE.
-        REM FIXES COMING SOON...
         cd COPKG
-        coapp add-feed %cd%\
-        coapp --force-scan list 
         autopackage httpd-dev-common.autopkg || goto failed
-        coapp --force-scan list 
-        autopackage httpd[vc10]-x86.autopkg httpd-dev[vc10]-x86.autopkg || goto failed
-        coapp --force-scan list 
-        autopackage httpd[vc10]-x64.autopkg httpd-dev[vc10]-x64.autopkg || goto failed
-        coapp --force-scan list 
-        coapp remove-feed %cd%\
+        for %%A in (${COMP}) do (
+            for %%B in (${PLAT}) do (
+                autopackage --comp=%%A --plat=%%B httpd.autopkg httpd-dev.autopkg || goto failed
+            )
+        )
         ptk update-version
     ";
 
@@ -67,22 +66,59 @@ update-version {
 }
 
 release {
-    set: BuildCfg="Release";
-    uses: x86;
-    uses: x64;
+    set: {
+        BuildCfg="Release";
+        COMP="${COMP??vc10}";
+        PLAT="${PLAT??x86, x64}";
+    };
+    
+    build-command: @"
+        for %%A in (${COMP}) do (
+            for %%B in (${PLAT}) do (
+                ptk --nologo base --COMP=%%A --PLAT=%%B || goto failed
+            )
+        )
+    ";
 };
 
 sign {
+    set: {
+        PLAT="${PLAT??x86, x64}";
+    };
     default : false;
     uses: release;
-    build-command: @"simplesigner.exe --nologo --sign output\x86\Release\**.dll output\x64\Release\**.exe output\x86\Release\**.dll output\x64\Release\**.exe";
+    build-command: @"
+    if ""${BUILT}"" neq ""true"" ptk --nologo release || goto failed
+    
+    for %%A in (${PLAT}) do (
+        simplesigner.exe --nologo --sign output\%%A\Release\**.dll output\%%A\Release\**.exe
+    }
+    ";
 };
 
 
-x86 {
-    compiler: vc10;
-    platform: x86;
+base {
+    set: {
+        BuildCfg="${BuildCfg??Debug}";
+        COMP="${COMP??vc10}";
+        PLAT="${PLAT??x86}";
+    };
     
+    compiler: "${COMP}";
+    platform: "${PLAT}";
+    
+    
+    requires: {
+        "serf-dev[${COMP}]-1.0.1-${PLAT}-1e373a58e25250cb",
+        "pcre-dev[${COMP}]-5.0.0-${PLAT}-1e373a58e25250cb",
+        "libxml2-dev[${COMP}]-2.7.8-${PLAT}-1e373a58e25250cb.msi",
+        "lua-dev[${COMP}]-5.2.0-${PLAT}-1e373a58e25250cb.msi",
+        "apr-dev[${COMP}]-2.0.0-${PLAT}-1e373a58e25250cb",
+        "openssl-dev[${COMP}]-1.0.0-${PLAT}-1e373a58e25250cb",
+        "zlib-dev[${COMP}]-1.2.5-${PLAT}-1e373a58e25250cb",
+    };
+
+    /*
     uses: x86=@"..\serf";//depends on apr, openssl, zlib    
     //uses: x86=@"..\apr";//depends on expat
     uses: x86=@"..\pcre5";
@@ -90,7 +126,186 @@ x86 {
     //uses: x86=@"..\zlib";
     uses: x86=@"..\lua";
     uses: x86-vc=@"..\libxml2";
+    */
 
+
+    targets: { 
+		"output\${PLAT}\${BuildCfg}\modules\mod_access_compat.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_actions.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_alias.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_asis.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authn_anon.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authn_core.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authn_dbd.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authn_dbm.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authn_file.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authn_socache.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authz_core.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authz_dbd.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authz_dbm.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authz_groupfile.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authz_host.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authz_owner.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authz_user.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_auth_basic.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_auth_digest.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_auth_form.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_autoindex.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_bucketeer.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_buffer.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_cache.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_cache_disk.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_case_filter.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_case_filter_in.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_cern_meta.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_cgi.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_charset_lite.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_data.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_dav.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_dav_fs.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_dav_lock.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_dbd.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_deflate.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_dir.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_dumpio.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_echo.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_env.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_example_hooks.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_example_ipc.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_expires.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_ext_filter.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_file_cache.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_filter.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_headers.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_heartbeat.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_heartmonitor.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_ident.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_imagemap.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_include.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_info.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_isapi.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_lbmethod_bybusyness.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_lbmethod_byrequests.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_lbmethod_bytraffic.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_lbmethod_heartbeat.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_logio.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_log_config.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_log_debug.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_log_forensic.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_lua.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_mime.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_mime_magic.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_negotiation.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy_ajp.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy_balancer.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy_connect.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy_express.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy_fcgi.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy_ftp.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy_html.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy_http.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy_scgi.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_ratelimit.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_reflector.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_remoteip.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_reqtimeout.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_request.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_rewrite.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_sed.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_serf.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_session.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_session_cookie.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_session_dbd.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_setenvif.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_slotmem_plain.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_slotmem_shm.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_socache_dbm.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_socache_memcache.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_socache_shmcb.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_speling.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_ssl.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_status.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_substitute.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_unique_id.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_userdir.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_usertrack.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_version.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_vhost_alias.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_watchdog.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_xml2enc.so",
+		"output\${PLAT}\${BuildCfg}\ab.exe",
+		"output\${PLAT}\${BuildCfg}\abs.exe",
+		"output\${PLAT}\${BuildCfg}\ApacheMonitor.exe",
+		"output\${PLAT}\${BuildCfg}\htcacheclean.exe",
+		"output\${PLAT}\${BuildCfg}\htdbm.exe",
+		"output\${PLAT}\${BuildCfg}\httpd.exe",
+		"output\${PLAT}\${BuildCfg}\libhttpd.dll",
+		"output\${PLAT}\${BuildCfg}\libhttpd.lib",
+		"output\${PLAT}\${BuildCfg}\wintty.exe",
+		"output\${PLAT}\${BuildCfg}\htdigest.exe",
+		"output\${PLAT}\${BuildCfg}\htpasswd.exe",
+		"output\${PLAT}\${BuildCfg}\httxt2dbm.exe",
+		"output\${PLAT}\${BuildCfg}\logresolve.exe",
+		"output\${PLAT}\${BuildCfg}\rotatelogs.exe",
+	};
+	
+    build-command:@"
+        REM this makes it so that DLLs can have their own SxS Activation Context in an embedded resource.
+		echo %CL% | findstr ISOLATION_AWARE || set CL=%CL% /D ISOLATION_AWARE_ENABLED 
+
+        REM Need to add a set of include locations.  Doing this here so I don't need to rewrite every project file right now.
+        set INCLUDE=%INCLUDE%;%AllUsersProfile%\include;%AllUsersProfile%\include\serf;%AllUsersProfile%\include\pcre;%AllUsersProfile%\include\libxml2;%AllUsersProfile%\include\lua;%AllUsersProfile%\include\apr;%AllUsersProfile%\include\openssl;%AllUsersProfile%\include\zlib
+        
+        REM Also need to add a library location.  Same reason as above, only this one needs to be platform specific, and there's only one of them.
+        set LIB=%LIB%;%AllUsersProfile%\lib\${PLAT};
+        
+        if ""${PLAT}"" equ ""x86"" (
+            msbuild /p:Platform=win32 /p:Configuration=${BuildCfg} Apache-apr2.sln
+        ) else (
+            msbuild /p:Platform=${PLAT} /p:Configuration=${BuildCfg} Apache-apr2.sln
+        )
+	";
+    
+    clean-command:@"
+       if exist ipch rmdir /s /q ipch > nul 2> nul
+       if exist Release rmdir /s /q Release > nul 2> nul
+       if exist Debug rmdir /s /q Debug > nul 2> nul
+	   if exist output rmdir /s /q output > nul 2> nul
+       for /f ""delims="" %%a in ('dir /B/S/AD Release') do rd /s /q ""%%a"" > nul 2> nul
+       for /f ""delims="" %%a in ('dir /B/S/AD Debug') do rd /s /q ""%%a"" > nul 2> nul
+       del /S /Q /A - *.sdf *.suo *.user *.exe *.pdb > NUL 2> NUL
+       del /Q BuildBin.log include\ap_config_layout.h include\ap_ldap.h include\mod_cgi.h include\mod_dav.h include\mod_include.h include\mod_proxy.h include\mod_so.h include\os.h server\test_char.h > nul 2> nul
+    ";
+};
+
+
+x86 {
+    compiler: vc10;
+    platform: x86;
+    
+    
+    requires: {
+        "serf-dev[${COMP}]-1.0.1-${PLAT}-1e373a58e25250cb",
+        "pcre-dev[${COMP}]-5.0.0-${PLAT}-1e373a58e25250cb",
+        "libxml2-dev[${COMP}]-2.7.8-${PLAT}-1e373a58e25250cb.msi",
+        "lua-dev[${COMP}]-5.2.0-${PLAT}-1e373a58e25250cb.msi",
+        /*
+        "apr-dev[${COMP}]-2.0.0-${PLAT}-1e373a58e25250cb",
+        "openssl-dev[${COMP}]-1.0.0-${PLAT}-1e373a58e25250cb",
+        "zlib-dev[${COMP}]-1.2.5-${PLAT}-1e373a58e25250cb",
+        */
+    };
+
+    /*
+    uses: x86=@"..\serf";//depends on apr, openssl, zlib    
+    //uses: x86=@"..\apr";//depends on expat
+    uses: x86=@"..\pcre5";
+    //uses: x86=@"..\openssl";//depends on zlib
+    //uses: x86=@"..\zlib";
+    uses: x86=@"..\lua";
+    uses: x86-vc=@"..\libxml2";
+    */
 
 
     targets: { 
