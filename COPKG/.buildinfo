@@ -82,11 +82,12 @@ release {
 
 sign {
     set: {
+        BUILT="${BUILT??false}";
         PLAT="${PLAT??x86, x64}";
     };
     default : false;
     build-command: @"
-    if ""${BUILT}"" neq ""true"" ptk --nologo release --PLAT=${PLAT}
+    if ""${BUILT}"" neq ""true"" ptk --nologo release --PLAT=""${PLAT}""
 
     for %%P in (${PLAT}) do (
         simplesigner.exe --nologo --sign output\%%P\Release\**.dll output\%%P\Release\**.exe
