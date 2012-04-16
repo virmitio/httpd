@@ -47,7 +47,7 @@ metadata {
 signing {
     attributes : {
         company="Outercurve Foundation",
-        description="httpd",
+        description="The Apache HTTP Server is an open-source HTTP server for modern operating systems. The goal of this project is to provide a secure, efficient and extensible server that provides HTTP services observing the current HTTP standards. Apache has been the most popular web server on the Internet since April of 1996.",
         product-name="httpd",
         product-version="${package-version}",
         file-version="${package-version}",
