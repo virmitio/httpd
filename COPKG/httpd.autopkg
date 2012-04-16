@@ -36,9 +36,11 @@ requires {
 }
 
 metadata {  
-    author-version : "trunk";
+    summary: "Apache HTTP Server";
+    description: @"The Apache HTTP Server is an open-source HTTP server for modern operating systems. The goal of this project is to provide a secure, efficient and extensible server that provides HTTP services observing the current HTTP standards. Apache has been the most popular web server on the Internet since April of 1996.";
+    author-version : "2.5 (beta)";
     bug-tracker: "https://github.com/coapp-packages/httpd/issues";
-    stability : "0";
+    stability : "-10";
     licenses : {
         Apache
     };
@@ -47,7 +49,7 @@ metadata {
 signing {
     attributes : {
         company="Outercurve Foundation",
-        description="The Apache HTTP Server is an open-source HTTP server for modern operating systems. The goal of this project is to provide a secure, efficient and extensible server that provides HTTP services observing the current HTTP standards. Apache has been the most popular web server on the Internet since April of 1996.",
+        description="httpd",
         product-name="httpd",
         product-version="${package-version}",
         file-version="${package-version}",
