@@ -1,0 +1,59 @@
+@import "version.inc" ;
+@import "compat.inc" ;
+@import "outercurve.inc" ;
+
+#define { 
+    flavor: "${comp??vc10}"; 
+    arch : "${plat??x86}";
+}
+
+package {
+    name: "httpd-dev[${flavor}]";
+    version: "${package-version}";
+    arch : "${arch}";
+
+    display-name: "httpd developer library";
+}
+
+metadata {
+    summary: "The httpd developer library";
+    description: @"httpd"; 
+
+    icon: @"httpd.png";
+    
+    author-version : "2.4.2";
+    bug-tracker: "https://github.com/coapp-packages/httpd/issues";
+    stability : "0";
+    licenses : {
+        Apache
+    };
+}
+
+requires {
+    package: "httpd-dev-common-${package-version}-any-${Package.PublicKeyToken}";
+    package: "httpd[${flavor}]-${package-version}-${Package.Architecture}-${Package.PublicKeyToken}";
+    package: "libiconv[${flavor}]-1.13.1-${Package.Architecture}-${Package.PublicKeyToken}";
+    package: "zlib[${flavor}]-1.2.5-${Package.Architecture}-${Package.PublicKeyToken}";
+	package: "serf[${flavor}]-1.0.1-${Package.Architecture}-${Package.PublicKeyToken}";
+	package: "openssl[${flavor}]-1.0.0-${Package.Architecture}-${Package.PublicKeyToken}";
+	package: "libxml2[${flavor}]-2.7.8-${Package.Architecture}-${Package.PublicKeyToken}";
+	package: "pcre[${flavor}]-5.0.0-${Package.Architecture}-${Package.PublicKeyToken}";
+	package: "lua[${flavor}]-5.2.0-${Package.Architecture}-${Package.PublicKeyToken}";
+	package: "apr[${flavor}]-2.0.0-${Package.Architecture}-${Package.PublicKeyToken}";
+}
+
+files[libs] {
+    root: @"..\output\${arch}\Release\";
+    
+    include: {
+        "libhttpd.lib",
+    };
+    
+    trim-path: all;
+};
+
+developer-library[httpd[${flavor}]] {
+    libraries : {
+        libs,
+    };
+}

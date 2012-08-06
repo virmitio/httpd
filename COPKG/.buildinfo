@@ -1,0 +1,288 @@
+/* target information */
+@import "version.inc";
+
+#product-info  {
+	product-name: "httpd";
+	version: "2.4.2";
+	original-source-location: "https://github.com/apache/httpd";
+	original-source-website: "http://httpd.apache.org/";
+	license: "Apache License";
+	packager: "Hamish C";
+}
+
+test {
+    default : false;
+    uses: release;
+    build-command: @"rem";
+};
+
+package {
+    set: {
+        COMP="${COMP??vc10}";
+        PLAT="${PLAT??x86, x64}";
+    };
+
+    default : false;
+    uses : sign;
+    
+    targets: { 
+        @"copkg\httpd[vc10]-${package-version}-x86.msi",
+        @"copkg\httpd-dev[vc10]-${package-version}-x86.msi",
+        @"copkg\httpd-dev-common-${package-version}-any.msi",
+        @"copkg\httpd[vc10]-${package-version}-x64.msi",
+        @"copkg\httpd-dev[vc10]-${package-version}-x64.msi"
+    };
+    
+    build-command : @"
+        cd COPKG
+        autopackage httpd-dev-common.autopkg || goto failed
+        for %%A in (${COMP}) do (
+            for %%B in (${PLAT}) do (
+                autopackage --comp=%%A --plat=%%B httpd.autopkg httpd-dev.autopkg || goto failed
+            )
+        )
+        ptk update-version
+    ";
+
+	clean-command: @"del COPKG\*.msi COPKG\*.wixpdb";
+	
+};
+
+update-version {
+    default : false;
+    
+    build-command : @"
+        REM auto-increment version.inc file...
+        
+        cd COPKG
+        setlocal EnableDelayedExpansion
+        for /F ""tokens=4,5,6,7  delims=.; "" %%v in (version.inc) do (
+            set /a build=%%y + 1
+            set VERSTRING=#define { package-version: %%v.%%w.%%x.!build!; }
+        )
+        echo !VERSTRING! > version.inc
+    ";
+}
+
+release {
+    set: {
+        BuildCfg="Release";
+        COMP="${COMP??vc10}";
+        PLAT="${PLAT??x86, x64}";
+    };
+    
+    build-command: @"
+        for %%A in (${COMP}) do (
+            for %%B in (${PLAT}) do (
+                ptk --nologo base --COMP=%%A --PLAT=%%B || goto failed
+            )
+        )
+    ";
+};
+
+sign {
+    set: {
+        BUILT="${BUILT??false}";
+        PLAT="${PLAT??x86, x64}";
+    };
+    default : false;
+    build-command: @"
+    if ""${BUILT}"" neq ""true"" ptk --nologo release --PLAT=""${PLAT}""
+
+    for %%P in (${PLAT}) do (
+        simplesigner.exe --nologo --sign output\%%P\Release\**.dll output\%%P\Release\**.exe
+    )
+    ";
+};
+
+
+base {
+    set: {
+        BuildCfg="${BuildCfg??Debug}";
+        COMP="${COMP??vc10}";
+        PLAT="${PLAT??x86}";
+    };
+    
+    compiler: "${COMP}";
+    platform: "${PLAT}";
+    
+    requires: {
+        "serf-dev[${COMP}]-1.0.1-${PLAT}-1e373a58e25250cb",
+        "pcre-dev[${COMP}]-5.0.0-${PLAT}-1e373a58e25250cb",
+        "libxml2-dev[${COMP}]-2.7.8-${PLAT}-1e373a58e25250cb",
+        "lua-dev[${COMP}]-5.2.0-${PLAT}-1e373a58e25250cb",
+        "apr-dev[${COMP}]-2.0.0-${PLAT}-1e373a58e25250cb",
+        "openssl-dev[${COMP}]-1.0.0-${PLAT}-1e373a58e25250cb",
+        "zlib-dev[${COMP}]-1.2.5-${PLAT}-1e373a58e25250cb",
+        "libiconv-dev[${COMP}]-1.13.1-${PLAT}-1e373a58e25250cb",
+    };
+
+    targets: { 
+		"output\${PLAT}\${BuildCfg}\modules\mod_access_compat.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_actions.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_alias.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_asis.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authn_anon.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authn_core.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authn_dbd.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authn_dbm.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authn_file.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authn_socache.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authz_core.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authz_dbd.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authz_dbm.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authz_groupfile.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authz_host.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authz_owner.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_authz_user.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_auth_basic.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_auth_digest.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_auth_form.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_autoindex.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_bucketeer.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_buffer.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_cache.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_cache_disk.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_case_filter.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_case_filter_in.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_cern_meta.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_cgi.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_charset_lite.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_data.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_dav.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_dav_fs.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_dav_lock.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_dbd.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_deflate.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_dir.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_dumpio.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_echo.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_env.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_example_hooks.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_example_ipc.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_expires.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_ext_filter.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_file_cache.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_filter.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_headers.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_heartbeat.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_heartmonitor.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_ident.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_imagemap.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_include.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_info.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_isapi.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_lbmethod_bybusyness.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_lbmethod_byrequests.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_lbmethod_bytraffic.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_lbmethod_heartbeat.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_logio.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_log_config.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_log_debug.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_log_forensic.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_lua.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_mime.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_mime_magic.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_negotiation.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy_ajp.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy_balancer.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy_connect.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy_express.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy_fcgi.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy_ftp.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy_html.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy_http.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_proxy_scgi.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_ratelimit.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_reflector.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_remoteip.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_reqtimeout.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_request.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_rewrite.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_sed.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_serf.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_session.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_session_cookie.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_session_dbd.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_setenvif.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_slotmem_plain.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_slotmem_shm.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_socache_dbm.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_socache_memcache.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_socache_shmcb.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_speling.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_ssl.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_status.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_substitute.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_unique_id.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_userdir.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_usertrack.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_version.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_vhost_alias.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_watchdog.so",
+ 		"output\${PLAT}\${BuildCfg}\modules\mod_xml2enc.so",
+		"output\${PLAT}\${BuildCfg}\ab.exe",
+		"output\${PLAT}\${BuildCfg}\abs.exe",
+		"output\${PLAT}\${BuildCfg}\ApacheMonitor.exe",
+		"output\${PLAT}\${BuildCfg}\htcacheclean.exe",
+		"output\${PLAT}\${BuildCfg}\htdbm.exe",
+		"output\${PLAT}\${BuildCfg}\httpd.exe",
+		"output\${PLAT}\${BuildCfg}\libhttpd.dll",
+		"output\${PLAT}\${BuildCfg}\libhttpd.lib",
+		"output\${PLAT}\${BuildCfg}\wintty.exe",
+		"output\${PLAT}\${BuildCfg}\htdigest.exe",
+		"output\${PLAT}\${BuildCfg}\htpasswd.exe",
+		"output\${PLAT}\${BuildCfg}\httxt2dbm.exe",
+		"output\${PLAT}\${BuildCfg}\logresolve.exe",
+		"output\${PLAT}\${BuildCfg}\rotatelogs.exe",
+	};
+	
+    build-command:@"
+        REM this makes it so that DLLs can have their own SxS Activation Context in an embedded resource.
+		echo %CL% | findstr ISOLATION_AWARE || set CL=%CL% /D ISOLATION_AWARE_ENABLED 
+
+        REM Need to add a set of include locations.  Doing this here so I don't need to rewrite pre-link build steps in every project file right now.
+        set CL=%CL% /I%AllUsersProfile%\include 
+        set CL=%CL% /I%AllUsersProfile%\include\serf 
+        set CL=%CL% /I%AllUsersProfile%\include\pcre 
+        set CL=%CL% /I%AllUsersProfile%\include\libxml2 
+        set CL=%CL% /I%AllUsersProfile%\include\lua 
+        set CL=%CL% /I%AllUsersProfile%\include\apr 
+        set CL=%CL% /I%AllUsersProfile%\include\openssl 
+        set CL=%CL% /I%AllUsersProfile%\include\zlib 
+        set CL=%CL% /I%AllUsersProfile%\include\libiconv 
+        
+        REM Also need to add a library location.  Same reason as above, only this one needs to be platform specific, and there's only one of them.
+        set LINK=%LINK% /LIBPATH:%AllUsersProfile%\lib\${PLAT} 
+        
+        REM Need to add a few symlinks to point some of the source files to the includes they need
+        if NOT EXIST ""%AllUsersProfile%\include\libxml"" (
+            set CO_SYMLINKS=%CO_SYMLINKS% libxml
+            coapp create-symlink ""%AllUsersProfile%\include\libxml2"" ""%AllUsersProfile%\include\libxml""
+        )
+        
+        if ""${PLAT}"" equ ""x86"" (
+            set CL=%CL% /D THIRTY_TWO_BIT 
+            msbuild /p:Platform=win32 /p:Configuration=${BuildCfg} Apache-apr2.sln
+        ) else (
+            set CL=%CL% /D SIXTY_FOUR_BIT 
+            msbuild /p:Platform=${PLAT} /p:Configuration=${BuildCfg} Apache-apr2.sln
+        )
+        
+        REM Clean up symlinks
+        for %%D in (%CO_SYMLINKS%) do rd ""%AllUsersProfile%\include\%%D""
+        
+	";
+    
+    clean-command:@"
+       if exist ipch rmdir /s /q ipch > nul 2> nul
+       if exist Release rmdir /s /q Release > nul 2> nul
+       if exist Debug rmdir /s /q Debug > nul 2> nul
+	   if exist output rmdir /s /q output > nul 2> nul
+       for /f ""delims="" %%a in ('dir /B/S/AD Release') do rd /s /q ""%%a"" > nul 2> nul
+       for /f ""delims="" %%a in ('dir /B/S/AD Debug') do rd /s /q ""%%a"" > nul 2> nul
+       del /S /Q /A - *.sdf *.suo *.user *.exe *.pdb > NUL 2> NUL
+       del /Q BuildBin.log include\ap_config_layout.h include\ap_ldap.h include\mod_cgi.h include\mod_dav.h include\mod_include.h include\mod_proxy.h include\mod_so.h include\os.h server\test_char.h > nul 2> nul
+    ";
+};

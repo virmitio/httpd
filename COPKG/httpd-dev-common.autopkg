@@ -1,0 +1,54 @@
+@import "version.inc" ;
+@import "compat.inc" ;
+@import "outercurve.inc" ;
+
+package {
+    name: "httpd-dev-common";
+    version: "${package-version}";
+    arch: any;
+    display-name: "httpd Dev Library-common";
+}
+
+metadata {
+    summary: "The httpd developer library (common)";
+    description: @"httpd"; 
+        
+    icon: @"httpd.png";
+    
+    author-version : "2.4.2";
+    bug-tracker: "https://github.com/coapp-packages/httpd/issues";
+    stability : "0";
+    licenses : {
+        Apache
+    };
+}
+
+files[headers] {
+    root: "..\\include";
+    include: {
+        "*.h"
+    };
+    
+    trim-path:all;
+}
+
+files[docs] {
+    root: "..\\docs\\";
+    include: {
+        "**"
+    };
+    
+    trim-path:minimal;
+}
+
+// the 'name' of the developer library isn't terribly important...
+developer-library[httpd] {
+    headers: { 
+        headers
+    };
+    
+    docs: {
+        docs
+    };
+	
+}
