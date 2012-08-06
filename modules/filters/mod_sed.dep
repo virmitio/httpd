@@ -1,0 +1,35 @@
+# Microsoft Developer Studio Generated Dependency File, included by mod_sed.mak
+
+.\mod_sed.c : \
+	"..\..\include\ap_config.h"\
+	"..\..\include\ap_hooks.h"\
+	"..\..\include\ap_mmn.h"\
+	"..\..\include\ap_regex.h"\
+	"..\..\include\ap_release.h"\
+	"..\..\include\apache_noprobes.h"\
+	"..\..\include\http_config.h"\
+	"..\..\include\http_log.h"\
+	"..\..\include\http_request.h"\
+	"..\..\include\httpd.h"\
+	"..\..\include\util_cfgtree.h"\
+	"..\..\include\util_filter.h"\
+	".\libsed.h"\
+	
+
+.\regexp.c : \
+	".\libsed.h"\
+	".\regexp.h"\
+	".\sed.h"\
+	
+
+.\sed0.c : \
+	".\libsed.h"\
+	".\regexp.h"\
+	".\sed.h"\
+	
+
+.\sed1.c : \
+	".\libsed.h"\
+	".\regexp.h"\
+	".\sed.h"\
+	

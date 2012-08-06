@@ -1,0 +1,525 @@
+# Microsoft Developer Studio Generated Dependency File, included by mod_ssl.mak
+
+.\mod_ssl.c : \
+	"..\..\include\ap_config.h"\
+	"..\..\include\ap_expr.h"\
+	"..\..\include\ap_hooks.h"\
+	"..\..\include\ap_mmn.h"\
+	"..\..\include\ap_provider.h"\
+	"..\..\include\ap_regex.h"\
+	"..\..\include\ap_release.h"\
+	"..\..\include\ap_socache.h"\
+	"..\..\include\apache_noprobes.h"\
+	"..\..\include\http_config.h"\
+	"..\..\include\http_connection.h"\
+	"..\..\include\http_core.h"\
+	"..\..\include\http_log.h"\
+	"..\..\include\http_main.h"\
+	"..\..\include\http_protocol.h"\
+	"..\..\include\http_request.h"\
+	"..\..\include\http_vhost.h"\
+	"..\..\include\httpd.h"\
+	"..\..\include\mod_auth.h"\
+	"..\..\include\util_cfgtree.h"\
+	"..\..\include\util_charset.h"\
+	"..\..\include\util_ebcdic.h"\
+	"..\..\include\util_filter.h"\
+	"..\..\include\util_md5.h"\
+	"..\..\include\util_mutex.h"\
+	"..\..\include\util_script.h"\
+	".\mod_ssl.h"\
+	".\ssl_private.h"\
+	".\ssl_util_ssl.h"\
+	
+
+.\ssl_engine_config.c : \
+	"..\..\include\ap_config.h"\
+	"..\..\include\ap_expr.h"\
+	"..\..\include\ap_hooks.h"\
+	"..\..\include\ap_mmn.h"\
+	"..\..\include\ap_provider.h"\
+	"..\..\include\ap_regex.h"\
+	"..\..\include\ap_release.h"\
+	"..\..\include\ap_socache.h"\
+	"..\..\include\apache_noprobes.h"\
+	"..\..\include\http_config.h"\
+	"..\..\include\http_connection.h"\
+	"..\..\include\http_core.h"\
+	"..\..\include\http_log.h"\
+	"..\..\include\http_main.h"\
+	"..\..\include\http_protocol.h"\
+	"..\..\include\http_request.h"\
+	"..\..\include\http_vhost.h"\
+	"..\..\include\httpd.h"\
+	"..\..\include\mod_auth.h"\
+	"..\..\include\util_cfgtree.h"\
+	"..\..\include\util_charset.h"\
+	"..\..\include\util_ebcdic.h"\
+	"..\..\include\util_filter.h"\
+	"..\..\include\util_mutex.h"\
+	"..\..\include\util_script.h"\
+	".\ssl_private.h"\
+	".\ssl_util_ssl.h"\
+	
+
+.\ssl_engine_dh.c : \
+	"..\..\include\ap_config.h"\
+	"..\..\include\ap_expr.h"\
+	"..\..\include\ap_hooks.h"\
+	"..\..\include\ap_mmn.h"\
+	"..\..\include\ap_provider.h"\
+	"..\..\include\ap_regex.h"\
+	"..\..\include\ap_release.h"\
+	"..\..\include\ap_socache.h"\
+	"..\..\include\apache_noprobes.h"\
+	"..\..\include\http_config.h"\
+	"..\..\include\http_connection.h"\
+	"..\..\include\http_core.h"\
+	"..\..\include\http_log.h"\
+	"..\..\include\http_main.h"\
+	"..\..\include\http_protocol.h"\
+	"..\..\include\http_request.h"\
+	"..\..\include\http_vhost.h"\
+	"..\..\include\httpd.h"\
+	"..\..\include\mod_auth.h"\
+	"..\..\include\util_cfgtree.h"\
+	"..\..\include\util_charset.h"\
+	"..\..\include\util_ebcdic.h"\
+	"..\..\include\util_filter.h"\
+	"..\..\include\util_mutex.h"\
+	"..\..\include\util_script.h"\
+	".\ssl_private.h"\
+	".\ssl_util_ssl.h"\
+	
+
+.\ssl_engine_init.c : \
+	"..\..\include\ap_config.h"\
+	"..\..\include\ap_expr.h"\
+	"..\..\include\ap_hooks.h"\
+	"..\..\include\ap_mmn.h"\
+	"..\..\include\ap_mpm.h"\
+	"..\..\include\ap_provider.h"\
+	"..\..\include\ap_regex.h"\
+	"..\..\include\ap_release.h"\
+	"..\..\include\ap_socache.h"\
+	"..\..\include\apache_noprobes.h"\
+	"..\..\include\http_config.h"\
+	"..\..\include\http_connection.h"\
+	"..\..\include\http_core.h"\
+	"..\..\include\http_log.h"\
+	"..\..\include\http_main.h"\
+	"..\..\include\http_protocol.h"\
+	"..\..\include\http_request.h"\
+	"..\..\include\http_vhost.h"\
+	"..\..\include\httpd.h"\
+	"..\..\include\mod_auth.h"\
+	"..\..\include\mpm_common.h"\
+	"..\..\include\scoreboard.h"\
+	"..\..\include\util_cfgtree.h"\
+	"..\..\include\util_charset.h"\
+	"..\..\include\util_ebcdic.h"\
+	"..\..\include\util_filter.h"\
+	"..\..\include\util_mutex.h"\
+	"..\..\include\util_script.h"\
+	".\ssl_private.h"\
+	".\ssl_util_ssl.h"\
+	
+
+.\ssl_engine_io.c : \
+	"..\..\include\ap_config.h"\
+	"..\..\include\ap_expr.h"\
+	"..\..\include\ap_hooks.h"\
+	"..\..\include\ap_mmn.h"\
+	"..\..\include\ap_provider.h"\
+	"..\..\include\ap_regex.h"\
+	"..\..\include\ap_release.h"\
+	"..\..\include\ap_socache.h"\
+	"..\..\include\apache_noprobes.h"\
+	"..\..\include\http_config.h"\
+	"..\..\include\http_connection.h"\
+	"..\..\include\http_core.h"\
+	"..\..\include\http_log.h"\
+	"..\..\include\http_main.h"\
+	"..\..\include\http_protocol.h"\
+	"..\..\include\http_request.h"\
+	"..\..\include\http_vhost.h"\
+	"..\..\include\httpd.h"\
+	"..\..\include\mod_auth.h"\
+	"..\..\include\util_cfgtree.h"\
+	"..\..\include\util_charset.h"\
+	"..\..\include\util_ebcdic.h"\
+	"..\..\include\util_filter.h"\
+	"..\..\include\util_mutex.h"\
+	"..\..\include\util_script.h"\
+	".\ssl_private.h"\
+	".\ssl_util_ssl.h"\
+	
+
+.\ssl_engine_kernel.c : \
+	"..\..\include\ap_config.h"\
+	"..\..\include\ap_expr.h"\
+	"..\..\include\ap_hooks.h"\
+	"..\..\include\ap_mmn.h"\
+	"..\..\include\ap_provider.h"\
+	"..\..\include\ap_regex.h"\
+	"..\..\include\ap_release.h"\
+	"..\..\include\ap_socache.h"\
+	"..\..\include\apache_noprobes.h"\
+	"..\..\include\http_config.h"\
+	"..\..\include\http_connection.h"\
+	"..\..\include\http_core.h"\
+	"..\..\include\http_log.h"\
+	"..\..\include\http_main.h"\
+	"..\..\include\http_protocol.h"\
+	"..\..\include\http_request.h"\
+	"..\..\include\http_vhost.h"\
+	"..\..\include\httpd.h"\
+	"..\..\include\mod_auth.h"\
+	"..\..\include\util_cfgtree.h"\
+	"..\..\include\util_charset.h"\
+	"..\..\include\util_ebcdic.h"\
+	"..\..\include\util_filter.h"\
+	"..\..\include\util_md5.h"\
+	"..\..\include\util_mutex.h"\
+	"..\..\include\util_script.h"\
+	".\ssl_private.h"\
+	".\ssl_util_ssl.h"\
+	
+
+.\ssl_engine_log.c : \
+	"..\..\include\ap_config.h"\
+	"..\..\include\ap_expr.h"\
+	"..\..\include\ap_hooks.h"\
+	"..\..\include\ap_mmn.h"\
+	"..\..\include\ap_provider.h"\
+	"..\..\include\ap_regex.h"\
+	"..\..\include\ap_release.h"\
+	"..\..\include\ap_socache.h"\
+	"..\..\include\apache_noprobes.h"\
+	"..\..\include\http_config.h"\
+	"..\..\include\http_connection.h"\
+	"..\..\include\http_core.h"\
+	"..\..\include\http_log.h"\
+	"..\..\include\http_main.h"\
+	"..\..\include\http_protocol.h"\
+	"..\..\include\http_request.h"\
+	"..\..\include\http_vhost.h"\
+	"..\..\include\httpd.h"\
+	"..\..\include\mod_auth.h"\
+	"..\..\include\util_cfgtree.h"\
+	"..\..\include\util_charset.h"\
+	"..\..\include\util_ebcdic.h"\
+	"..\..\include\util_filter.h"\
+	"..\..\include\util_mutex.h"\
+	"..\..\include\util_script.h"\
+	".\ssl_private.h"\
+	".\ssl_util_ssl.h"\
+	
+
+.\ssl_engine_mutex.c : \
+	"..\..\include\ap_config.h"\
+	"..\..\include\ap_expr.h"\
+	"..\..\include\ap_hooks.h"\
+	"..\..\include\ap_mmn.h"\
+	"..\..\include\ap_provider.h"\
+	"..\..\include\ap_regex.h"\
+	"..\..\include\ap_release.h"\
+	"..\..\include\ap_socache.h"\
+	"..\..\include\apache_noprobes.h"\
+	"..\..\include\http_config.h"\
+	"..\..\include\http_connection.h"\
+	"..\..\include\http_core.h"\
+	"..\..\include\http_log.h"\
+	"..\..\include\http_main.h"\
+	"..\..\include\http_protocol.h"\
+	"..\..\include\http_request.h"\
+	"..\..\include\http_vhost.h"\
+	"..\..\include\httpd.h"\
+	"..\..\include\mod_auth.h"\
+	"..\..\include\util_cfgtree.h"\
+	"..\..\include\util_charset.h"\
+	"..\..\include\util_ebcdic.h"\
+	"..\..\include\util_filter.h"\
+	"..\..\include\util_mutex.h"\
+	"..\..\include\util_script.h"\
+	".\ssl_private.h"\
+	".\ssl_util_ssl.h"\
+	
+
+.\ssl_engine_ocsp.c : \
+	"..\..\include\ap_config.h"\
+	"..\..\include\ap_expr.h"\
+	"..\..\include\ap_hooks.h"\
+	"..\..\include\ap_mmn.h"\
+	"..\..\include\ap_provider.h"\
+	"..\..\include\ap_regex.h"\
+	"..\..\include\ap_release.h"\
+	"..\..\include\ap_socache.h"\
+	"..\..\include\apache_noprobes.h"\
+	"..\..\include\http_config.h"\
+	"..\..\include\http_connection.h"\
+	"..\..\include\http_core.h"\
+	"..\..\include\http_log.h"\
+	"..\..\include\http_main.h"\
+	"..\..\include\http_protocol.h"\
+	"..\..\include\http_request.h"\
+	"..\..\include\http_vhost.h"\
+	"..\..\include\httpd.h"\
+	"..\..\include\mod_auth.h"\
+	"..\..\include\util_cfgtree.h"\
+	"..\..\include\util_charset.h"\
+	"..\..\include\util_ebcdic.h"\
+	"..\..\include\util_filter.h"\
+	"..\..\include\util_mutex.h"\
+	"..\..\include\util_script.h"\
+	".\ssl_private.h"\
+	".\ssl_util_ssl.h"\
+	
+
+.\ssl_engine_pphrase.c : \
+	"..\..\include\ap_config.h"\
+	"..\..\include\ap_expr.h"\
+	"..\..\include\ap_hooks.h"\
+	"..\..\include\ap_mmn.h"\
+	"..\..\include\ap_provider.h"\
+	"..\..\include\ap_regex.h"\
+	"..\..\include\ap_release.h"\
+	"..\..\include\ap_socache.h"\
+	"..\..\include\apache_noprobes.h"\
+	"..\..\include\http_config.h"\
+	"..\..\include\http_connection.h"\
+	"..\..\include\http_core.h"\
+	"..\..\include\http_log.h"\
+	"..\..\include\http_main.h"\
+	"..\..\include\http_protocol.h"\
+	"..\..\include\http_request.h"\
+	"..\..\include\http_vhost.h"\
+	"..\..\include\httpd.h"\
+	"..\..\include\mod_auth.h"\
+	"..\..\include\util_cfgtree.h"\
+	"..\..\include\util_charset.h"\
+	"..\..\include\util_ebcdic.h"\
+	"..\..\include\util_filter.h"\
+	"..\..\include\util_mutex.h"\
+	"..\..\include\util_script.h"\
+	".\ssl_private.h"\
+	".\ssl_util_ssl.h"\
+	
+
+.\ssl_engine_rand.c : \
+	"..\..\include\ap_config.h"\
+	"..\..\include\ap_expr.h"\
+	"..\..\include\ap_hooks.h"\
+	"..\..\include\ap_mmn.h"\
+	"..\..\include\ap_provider.h"\
+	"..\..\include\ap_regex.h"\
+	"..\..\include\ap_release.h"\
+	"..\..\include\ap_socache.h"\
+	"..\..\include\apache_noprobes.h"\
+	"..\..\include\http_config.h"\
+	"..\..\include\http_connection.h"\
+	"..\..\include\http_core.h"\
+	"..\..\include\http_log.h"\
+	"..\..\include\http_main.h"\
+	"..\..\include\http_protocol.h"\
+	"..\..\include\http_request.h"\
+	"..\..\include\http_vhost.h"\
+	"..\..\include\httpd.h"\
+	"..\..\include\mod_auth.h"\
+	"..\..\include\util_cfgtree.h"\
+	"..\..\include\util_charset.h"\
+	"..\..\include\util_ebcdic.h"\
+	"..\..\include\util_filter.h"\
+	"..\..\include\util_mutex.h"\
+	"..\..\include\util_script.h"\
+	".\ssl_private.h"\
+	".\ssl_util_ssl.h"\
+	
+
+.\ssl_engine_vars.c : \
+	"..\..\include\ap_config.h"\
+	"..\..\include\ap_expr.h"\
+	"..\..\include\ap_hooks.h"\
+	"..\..\include\ap_mmn.h"\
+	"..\..\include\ap_provider.h"\
+	"..\..\include\ap_regex.h"\
+	"..\..\include\ap_release.h"\
+	"..\..\include\ap_socache.h"\
+	"..\..\include\apache_noprobes.h"\
+	"..\..\include\http_config.h"\
+	"..\..\include\http_connection.h"\
+	"..\..\include\http_core.h"\
+	"..\..\include\http_log.h"\
+	"..\..\include\http_main.h"\
+	"..\..\include\http_protocol.h"\
+	"..\..\include\http_request.h"\
+	"..\..\include\http_vhost.h"\
+	"..\..\include\httpd.h"\
+	"..\..\include\mod_auth.h"\
+	"..\..\include\scoreboard.h"\
+	"..\..\include\util_cfgtree.h"\
+	"..\..\include\util_charset.h"\
+	"..\..\include\util_ebcdic.h"\
+	"..\..\include\util_filter.h"\
+	"..\..\include\util_mutex.h"\
+	"..\..\include\util_script.h"\
+	"..\loggers\mod_log_config.h"\
+	".\mod_ssl.h"\
+	".\ssl_private.h"\
+	".\ssl_util_ssl.h"\
+	
+
+.\ssl_scache.c : \
+	"..\..\include\ap_config.h"\
+	"..\..\include\ap_expr.h"\
+	"..\..\include\ap_hooks.h"\
+	"..\..\include\ap_mmn.h"\
+	"..\..\include\ap_provider.h"\
+	"..\..\include\ap_regex.h"\
+	"..\..\include\ap_release.h"\
+	"..\..\include\ap_socache.h"\
+	"..\..\include\apache_noprobes.h"\
+	"..\..\include\http_config.h"\
+	"..\..\include\http_connection.h"\
+	"..\..\include\http_core.h"\
+	"..\..\include\http_log.h"\
+	"..\..\include\http_main.h"\
+	"..\..\include\http_protocol.h"\
+	"..\..\include\http_request.h"\
+	"..\..\include\http_vhost.h"\
+	"..\..\include\httpd.h"\
+	"..\..\include\mod_auth.h"\
+	"..\..\include\util_cfgtree.h"\
+	"..\..\include\util_charset.h"\
+	"..\..\include\util_ebcdic.h"\
+	"..\..\include\util_filter.h"\
+	"..\..\include\util_mutex.h"\
+	"..\..\include\util_script.h"\
+	"..\generators\mod_status.h"\
+	".\ssl_private.h"\
+	".\ssl_util_ssl.h"\
+	
+
+.\ssl_util.c : \
+	"..\..\include\ap_config.h"\
+	"..\..\include\ap_expr.h"\
+	"..\..\include\ap_hooks.h"\
+	"..\..\include\ap_mmn.h"\
+	"..\..\include\ap_mpm.h"\
+	"..\..\include\ap_provider.h"\
+	"..\..\include\ap_regex.h"\
+	"..\..\include\ap_release.h"\
+	"..\..\include\ap_socache.h"\
+	"..\..\include\apache_noprobes.h"\
+	"..\..\include\http_config.h"\
+	"..\..\include\http_connection.h"\
+	"..\..\include\http_core.h"\
+	"..\..\include\http_log.h"\
+	"..\..\include\http_main.h"\
+	"..\..\include\http_protocol.h"\
+	"..\..\include\http_request.h"\
+	"..\..\include\http_vhost.h"\
+	"..\..\include\httpd.h"\
+	"..\..\include\mod_auth.h"\
+	"..\..\include\scoreboard.h"\
+	"..\..\include\util_cfgtree.h"\
+	"..\..\include\util_charset.h"\
+	"..\..\include\util_ebcdic.h"\
+	"..\..\include\util_filter.h"\
+	"..\..\include\util_mutex.h"\
+	"..\..\include\util_script.h"\
+	".\ssl_private.h"\
+	".\ssl_util_ssl.h"\
+	
+
+.\ssl_util_ocsp.c : \
+	"..\..\include\ap_config.h"\
+	"..\..\include\ap_expr.h"\
+	"..\..\include\ap_hooks.h"\
+	"..\..\include\ap_mmn.h"\
+	"..\..\include\ap_provider.h"\
+	"..\..\include\ap_regex.h"\
+	"..\..\include\ap_release.h"\
+	"..\..\include\ap_socache.h"\
+	"..\..\include\apache_noprobes.h"\
+	"..\..\include\http_config.h"\
+	"..\..\include\http_connection.h"\
+	"..\..\include\http_core.h"\
+	"..\..\include\http_log.h"\
+	"..\..\include\http_main.h"\
+	"..\..\include\http_protocol.h"\
+	"..\..\include\http_request.h"\
+	"..\..\include\http_vhost.h"\
+	"..\..\include\httpd.h"\
+	"..\..\include\mod_auth.h"\
+	"..\..\include\util_cfgtree.h"\
+	"..\..\include\util_charset.h"\
+	"..\..\include\util_ebcdic.h"\
+	"..\..\include\util_filter.h"\
+	"..\..\include\util_mutex.h"\
+	"..\..\include\util_script.h"\
+	".\ssl_private.h"\
+	".\ssl_util_ssl.h"\
+	
+
+.\ssl_util_ssl.c : \
+	"..\..\include\ap_config.h"\
+	"..\..\include\ap_expr.h"\
+	"..\..\include\ap_hooks.h"\
+	"..\..\include\ap_mmn.h"\
+	"..\..\include\ap_provider.h"\
+	"..\..\include\ap_regex.h"\
+	"..\..\include\ap_release.h"\
+	"..\..\include\ap_socache.h"\
+	"..\..\include\apache_noprobes.h"\
+	"..\..\include\http_config.h"\
+	"..\..\include\http_connection.h"\
+	"..\..\include\http_core.h"\
+	"..\..\include\http_log.h"\
+	"..\..\include\http_main.h"\
+	"..\..\include\http_protocol.h"\
+	"..\..\include\http_request.h"\
+	"..\..\include\http_vhost.h"\
+	"..\..\include\httpd.h"\
+	"..\..\include\mod_auth.h"\
+	"..\..\include\util_cfgtree.h"\
+	"..\..\include\util_charset.h"\
+	"..\..\include\util_ebcdic.h"\
+	"..\..\include\util_filter.h"\
+	"..\..\include\util_mutex.h"\
+	"..\..\include\util_script.h"\
+	".\ssl_private.h"\
+	".\ssl_util_ssl.h"\
+	
+
+.\ssl_util_stapling.c : \
+	"..\..\include\ap_config.h"\
+	"..\..\include\ap_expr.h"\
+	"..\..\include\ap_hooks.h"\
+	"..\..\include\ap_mmn.h"\
+	"..\..\include\ap_mpm.h"\
+	"..\..\include\ap_provider.h"\
+	"..\..\include\ap_regex.h"\
+	"..\..\include\ap_release.h"\
+	"..\..\include\ap_socache.h"\
+	"..\..\include\apache_noprobes.h"\
+	"..\..\include\http_config.h"\
+	"..\..\include\http_connection.h"\
+	"..\..\include\http_core.h"\
+	"..\..\include\http_log.h"\
+	"..\..\include\http_main.h"\
+	"..\..\include\http_protocol.h"\
+	"..\..\include\http_request.h"\
+	"..\..\include\http_vhost.h"\
+	"..\..\include\httpd.h"\
+	"..\..\include\mod_auth.h"\
+	"..\..\include\scoreboard.h"\
+	"..\..\include\util_cfgtree.h"\
+	"..\..\include\util_charset.h"\
+	"..\..\include\util_ebcdic.h"\
+	"..\..\include\util_filter.h"\
+	"..\..\include\util_mutex.h"\
+	"..\..\include\util_script.h"\
+	".\ssl_private.h"\
+	".\ssl_util_ssl.h"\
+	

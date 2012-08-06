@@ -1,0 +1,5 @@
+# Microsoft Developer Studio Generated Dependency File, included by abs.mak
+
+.\ab.c : \
+	"..\include\ap_release.h"\
+	

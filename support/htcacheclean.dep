@@ -1,0 +1,6 @@
+# Microsoft Developer Studio Generated Dependency File, included by htcacheclean.mak
+
+.\htcacheclean.c : \
+	"..\modules\cache\cache_common.h"\
+	"..\modules\cache\cache_disk_common.h"\
+	

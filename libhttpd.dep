@@ -1,0 +1,893 @@
+# Microsoft Developer Studio Generated Dependency File, included by libhttpd.mak
+
+!IF  "$(CFG)" == "libhttpd - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
+
+!ENDIF 
+
+!IF  "$(CFG)" == "libhttpd - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
+
+!ENDIF 
+
+!IF  "$(CFG)" == "libhttpd - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
+
+!ENDIF 
+
+!IF  "$(CFG)" == "libhttpd - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
+
+!ENDIF 
+
+!IF  "$(CFG)" == "libhttpd - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
+
+!ENDIF 
+
+!IF  "$(CFG)" == "libhttpd - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
+
+!ENDIF 
+
+!IF  "$(CFG)" == "libhttpd - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
+
+!ENDIF 
+
+.\modules\http\byterange_filter.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_main.h"\
+	".\include\http_protocol.h"\
+	".\include\http_request.h"\
+	".\include\http_vhost.h"\
+	".\include\httpd.h"\
+	".\include\mod_core.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_charset.h"\
+	".\include\util_ebcdic.h"\
+	".\include\util_filter.h"\
+	".\include\util_time.h"\
+	
+
+.\modules\http\chunk_filter.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_mpm.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_connection.h"\
+	".\include\http_core.h"\
+	".\include\http_protocol.h"\
+	".\include\http_request.h"\
+	".\include\httpd.h"\
+	".\include\mod_core.h"\
+	".\include\scoreboard.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_charset.h"\
+	".\include\util_ebcdic.h"\
+	".\include\util_filter.h"\
+	
+
+.\server\config.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_mpm.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_main.h"\
+	".\include\http_protocol.h"\
+	".\include\http_request.h"\
+	".\include\http_vhost.h"\
+	".\include\httpd.h"\
+	".\include\mpm_common.h"\
+	".\include\scoreboard.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_filter.h"\
+	".\include\util_varbuf.h"\
+	
+
+.\server\connection.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_mpm.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_connection.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_protocol.h"\
+	".\include\http_request.h"\
+	".\include\http_vhost.h"\
+	".\include\httpd.h"\
+	".\include\scoreboard.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_filter.h"\
+	
+
+.\server\core.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_listen.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_mpm.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_connection.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_main.h"\
+	".\include\http_protocol.h"\
+	".\include\http_request.h"\
+	".\include\http_vhost.h"\
+	".\include\httpd.h"\
+	".\include\mod_core.h"\
+	".\include\mpm_common.h"\
+	".\include\scoreboard.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_charset.h"\
+	".\include\util_ebcdic.h"\
+	".\include\util_filter.h"\
+	".\include\util_md5.h"\
+	".\include\util_mutex.h"\
+	".\include\util_time.h"\
+	
+
+.\server\core_filters.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_listen.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_mpm.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_connection.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_main.h"\
+	".\include\http_protocol.h"\
+	".\include\http_request.h"\
+	".\include\http_vhost.h"\
+	".\include\httpd.h"\
+	".\include\mod_core.h"\
+	".\include\mpm_common.h"\
+	".\include\scoreboard.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_charset.h"\
+	".\include\util_ebcdic.h"\
+	".\include\util_filter.h"\
+	".\include\util_md5.h"\
+	
+
+.\modules\http\http_core.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_mpm.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_connection.h"\
+	".\include\http_core.h"\
+	".\include\http_protocol.h"\
+	".\include\http_request.h"\
+	".\include\httpd.h"\
+	".\include\mod_core.h"\
+	".\include\scoreboard.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_charset.h"\
+	".\include\util_ebcdic.h"\
+	".\include\util_filter.h"\
+	
+
+.\modules\http\http_etag.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_connection.h"\
+	".\include\http_core.h"\
+	".\include\http_protocol.h"\
+	".\include\http_request.h"\
+	".\include\httpd.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_filter.h"\
+	
+
+.\modules\http\http_filters.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_connection.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_main.h"\
+	".\include\http_protocol.h"\
+	".\include\http_request.h"\
+	".\include\http_vhost.h"\
+	".\include\httpd.h"\
+	".\include\mod_core.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_charset.h"\
+	".\include\util_ebcdic.h"\
+	".\include\util_filter.h"\
+	".\include\util_time.h"\
+	
+
+.\modules\http\http_protocol.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_mpm.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_main.h"\
+	".\include\http_protocol.h"\
+	".\include\http_request.h"\
+	".\include\http_vhost.h"\
+	".\include\httpd.h"\
+	".\include\mod_core.h"\
+	".\include\scoreboard.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_charset.h"\
+	".\include\util_ebcdic.h"\
+	".\include\util_filter.h"\
+	".\include\util_time.h"\
+	
+
+.\modules\http\http_request.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_main.h"\
+	".\include\http_protocol.h"\
+	".\include\http_request.h"\
+	".\include\httpd.h"\
+	".\include\mod_core.h"\
+	".\include\scoreboard.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_charset.h"\
+	".\include\util_filter.h"\
+	
+
+.\server\log.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_mpm.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_main.h"\
+	".\include\httpd.h"\
+	".\include\scoreboard.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_filter.h"\
+	".\include\util_time.h"\
+	
+
+.\server\protocol.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_main.h"\
+	".\include\http_protocol.h"\
+	".\include\http_request.h"\
+	".\include\http_vhost.h"\
+	".\include\httpd.h"\
+	".\include\mod_core.h"\
+	".\include\scoreboard.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_charset.h"\
+	".\include\util_ebcdic.h"\
+	".\include\util_filter.h"\
+	
+
+.\server\request.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_provider.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_main.h"\
+	".\include\http_protocol.h"\
+	".\include\http_request.h"\
+	".\include\httpd.h"\
+	".\include\mod_auth.h"\
+	".\include\mod_core.h"\
+	".\include\mod_request.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_charset.h"\
+	".\include\util_filter.h"\
+	".\include\util_script.h"\
+	
+
+.\server\vhost.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_protocol.h"\
+	".\include\http_vhost.h"\
+	".\include\httpd.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_filter.h"\
+	
+
+.\modules\core\mod_so.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\httpd.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_filter.h"\
+	".\modules\core\mod_so.h"\
+	
+
+.\modules\arch\win32\mod_win32.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_regkey.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_protocol.h"\
+	".\include\http_request.h"\
+	".\include\httpd.h"\
+	".\include\mod_core.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_filter.h"\
+	".\include\util_script.h"\
+	
+
+.\os\win32\modules.c : \
+	".\include\ap_config.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\httpd.h"\
+	".\include\util_cfgtree.h"\
+	".\os\win32\os.h"\
+	
+
+.\server\eoc_bucket.c : \
+	".\include\ap_config.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_connection.h"\
+	".\include\httpd.h"\
+	
+
+.\server\eor_bucket.c : \
+	".\include\ap_config.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_protocol.h"\
+	".\include\http_request.h"\
+	".\include\httpd.h"\
+	".\include\scoreboard.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_filter.h"\
+	
+
+.\server\error_bucket.c : \
+	".\include\ap_config.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_protocol.h"\
+	".\include\httpd.h"\
+	".\include\util_filter.h"\
+	
+
+.\server\util.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_main.h"\
+	".\include\http_protocol.h"\
+	".\include\httpd.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_charset.h"\
+	".\include\util_ebcdic.h"\
+	".\include\util_filter.h"\
+	".\include\util_varbuf.h"\
+	
+
+.\server\util_cfgtree.c : \
+	".\include\ap_config.h"\
+	".\include\ap_hooks.h"\
+	".\include\apache_noprobes.h"\
+	".\include\util_cfgtree.h"\
+	
+
+.\server\util_cookies.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\httpd.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_cookies.h"\
+	".\include\util_filter.h"\
+	
+
+.\server\util_expr_eval.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_provider.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_protocol.h"\
+	".\include\http_request.h"\
+	".\include\httpd.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_filter.h"\
+	".\server\util_expr_private.h"\
+	
+
+.\server\util_expr_parse.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\httpd.h"\
+	".\include\util_cfgtree.h"\
+	".\server\util_expr_private.h"\
+	
+
+.\server\util_expr_scan.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\httpd.h"\
+	".\include\util_cfgtree.h"\
+	".\server\util_expr_parse.h"\
+	".\server\util_expr_private.h"\
+	
+
+.\server\util_filter.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\httpd.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_filter.h"\
+	
+
+.\server\util_md5.c : \
+	".\include\ap_config.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\httpd.h"\
+	".\include\util_charset.h"\
+	".\include\util_ebcdic.h"\
+	".\include\util_md5.h"\
+	
+
+.\server\util_mutex.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_main.h"\
+	".\include\httpd.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_filter.h"\
+	".\include\util_mutex.h"\
+	
+
+.\server\util_pcre.c : \
+	".\include\ap_config.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\httpd.h"\
+	
+
+.\server\util_regex.c : \
+	".\include\ap_config.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\httpd.h"\
+	
+
+.\server\util_script.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_main.h"\
+	".\include\http_protocol.h"\
+	".\include\http_request.h"\
+	".\include\httpd.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_charset.h"\
+	".\include\util_ebcdic.h"\
+	".\include\util_filter.h"\
+	".\include\util_script.h"\
+	
+
+.\server\util_time.c : \
+	".\include\ap_config.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\httpd.h"\
+	".\include\util_time.h"\
+	
+
+.\os\win32\util_win32.c : \
+	".\include\ap_config.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_mpm.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_log.h"\
+	".\include\httpd.h"\
+	".\include\scoreboard.h"\
+	".\include\util_cfgtree.h"\
+	".\os\win32\os.h"\
+	
+
+.\server\util_xml.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_protocol.h"\
+	".\include\httpd.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_charset.h"\
+	".\include\util_filter.h"\
+	".\include\util_xml.h"\
+	
+
+.\os\win32\ap_regkey.c : \
+	".\include\ap_config.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_regkey.h"\
+	".\include\apache_noprobes.h"\
+	".\os\win32\os.h"\
+	
+
+.\server\mpm\winnt\child.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_listen.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_mpm.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_connection.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_main.h"\
+	".\include\http_vhost.h"\
+	".\include\httpd.h"\
+	".\include\mpm_common.h"\
+	".\include\scoreboard.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_filter.h"\
+	".\server\mpm\winnt\mpm_default.h"\
+	".\server\mpm\winnt\mpm_winnt.h"\
+	
+
+.\server\listen.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_listen.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_mpm.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\httpd.h"\
+	".\include\mpm_common.h"\
+	".\include\scoreboard.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_filter.h"\
+	
+
+.\server\mpm_common.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_listen.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_mpm.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_main.h"\
+	".\include\httpd.h"\
+	".\include\mod_core.h"\
+	".\include\mpm_common.h"\
+	".\include\scoreboard.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_filter.h"\
+	".\include\util_mutex.h"\
+	
+
+.\server\mpm\winnt\mpm_winnt.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_listen.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_mpm.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_connection.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_main.h"\
+	".\include\httpd.h"\
+	".\include\mpm_common.h"\
+	".\include\scoreboard.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_filter.h"\
+	".\server\mpm\winnt\mpm_default.h"\
+	".\server\mpm\winnt\mpm_winnt.h"\
+	
+
+.\server\mpm\winnt\nt_eventlog.c : \
+	".\include\ap_config.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_listen.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_regkey.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_log.h"\
+	".\include\httpd.h"\
+	".\include\util_cfgtree.h"\
+	".\server\mpm\winnt\mpm_winnt.h"\
+	
+
+.\server\provider.c : \
+	".\include\ap_config.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_provider.h"\
+	".\include\apache_noprobes.h"\
+	
+
+.\server\scoreboard.c : \
+	".\include\ap_config.h"\
+	".\include\ap_expr.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_mpm.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_core.h"\
+	".\include\http_log.h"\
+	".\include\http_main.h"\
+	".\include\httpd.h"\
+	".\include\scoreboard.h"\
+	".\include\util_cfgtree.h"\
+	".\include\util_filter.h"\
+	
+
+.\server\mpm\winnt\service.c : \
+	".\include\ap_config.h"\
+	".\include\ap_hooks.h"\
+	".\include\ap_listen.h"\
+	".\include\ap_mmn.h"\
+	".\include\ap_regex.h"\
+	".\include\ap_regkey.h"\
+	".\include\ap_release.h"\
+	".\include\apache_noprobes.h"\
+	".\include\http_config.h"\
+	".\include\http_log.h"\
+	".\include\httpd.h"\
+	".\include\util_cfgtree.h"\
+	".\server\mpm\winnt\mpm_winnt.h"\
+	
+
+!IF  "$(CFG)" == "libhttpd - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
+
+!ENDIF 
+
+!IF  "$(CFG)" == "libhttpd - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
+
+!ENDIF 
+
+!IF  "$(CFG)" == "libhttpd - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
+
+!ENDIF 
+

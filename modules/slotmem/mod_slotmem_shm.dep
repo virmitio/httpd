@@ -1,0 +1,17 @@
+# Microsoft Developer Studio Generated Dependency File, included by mod_slotmem_shm.mak
+
+.\mod_slotmem_shm.c : \
+	"..\..\include\ap_config.h"\
+	"..\..\include\ap_hooks.h"\
+	"..\..\include\ap_mmn.h"\
+	"..\..\include\ap_provider.h"\
+	"..\..\include\ap_regex.h"\
+	"..\..\include\ap_release.h"\
+	"..\..\include\ap_slotmem.h"\
+	"..\..\include\apache_noprobes.h"\
+	"..\..\include\http_config.h"\
+	"..\..\include\http_log.h"\
+	"..\..\include\http_main.h"\
+	"..\..\include\httpd.h"\
+	"..\..\include\util_cfgtree.h"\
+	
