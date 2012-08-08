@@ -1,0 +1,12 @@
+*.suo
+*.wixpdb
+*.msi
+*.user
+*.sdf
+*.opensdf
+output
+intermediate
+obj
+_Resharper*
+coapp-tools-personal.sln
+*.ReSharper

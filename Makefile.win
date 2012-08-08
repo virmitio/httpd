@@ -42,6 +42,8 @@
 # so the server root should be given in forward slashes (quoted),
 # preferably with the drive designation!
 
+
+!IFNDEF COAPP
 !IF EXIST("httpd.vcproj") && ([devenv /help > NUL 2>&1] == 0) \
     && !defined(USEMAK) && !defined(USEDSW)
 USESLN=1
@@ -94,6 +96,15 @@ UTILDIR=apr-util
 !ERROR Need srclib\pcre
 !ENDIF
 
+!ELSE
+# COAPP defined
+USESLN=0
+USEMAK=1
+USEDSW=0
+
+#TLP=Apache
+#UTILDIR=apr-util
+!ENDIF
 
 # Note; _tryfoo: blocks are used only by the msvc developer studio environment 
 #	to 'fix up' the build, since conditional dependencies aren't supported.
@@ -105,7 +116,9 @@ SSLBIN=out32dll.dbg
 !ELSE
 SSLBIN=out32dll
 !ENDIF
+!ENDIF
 
+!IF EXIST("srclib\openssl") || DEFINED("COAPP")
 _tryssl:
 !IF $(USEMAK) == 1
 	cd modules\ssl
@@ -136,7 +149,7 @@ _tryssl:
 !ENDIF
 #     NOT EXIST("srclib\openssl")
 
-!IF EXIST("srclib\zlib")
+!IF EXIST("srclib\zlib") || DEFINED("COAPP")
 
 _tryzlib:
 !IF $(USEMAK) == 1
@@ -161,7 +174,7 @@ _tryzlib:
 
 !ENDIF
 
-!IF EXIST("srclib\libxml2")
+!IF EXIST("srclib\libxml2") || DEFINED("COAPP")
 
 _tryxml:
 !IF $(USEMAK) == 1
@@ -191,7 +204,7 @@ _tryxml:
 !ENDIF
 
 
-!IF EXIST("srclib\lua")
+!IF EXIST("srclib\lua") || DEFINED("COAPP")
 
 _trylua:
 !IF $(USEMAK) == 1
@@ -215,7 +228,7 @@ _trylua:
 
 !ENDIF
 
-
+!IFNDEF COAPP
 _trydb:
 !IF $(USEMAK) == 1
 	cd srclib\$(UTILDIR)\dbd
@@ -238,7 +251,10 @@ _trydb:
 	  msdev $(TLP).dsw /USEENV /MAKE \
 		"apr_dbm_%d - Win32 $(LONG)" /NORECURSE $(CTARGET)
 !ENDIF
-
+!ELSE
+# COAPP defined
+## These were already built in apr-util / apr
+!ENDIF
 
 !IF "$(INSTDIR)" == ""
 INSTDIR=\Apache24
@@ -266,7 +282,7 @@ SSLPORT=443
 !MESSAGE SERVERNAME  = $(SERVERNAME)
 !MESSAGE SERVERADMIN = $(SERVERADMIN)
 !MESSAGE PORT        = $(PORT)
-!IF EXIST("srclib\openssl")
+!IF EXIST("srclib\openssl") || DEFINED("COAPP")
 !MESSAGE SSLPORT     = $(SSLPORT)
 !ENDIF
 !MESSAGE
@@ -321,6 +337,7 @@ _cleand:
 
 _build:
 	echo Building Win32 $(LONG) targets ($(SHORT) suffixes)
+!IFNDEF COAPP
 !IF !EXIST("srclib\apr-util")
 	cd srclib\expat\lib
 	 $(MAKE) $(MAKEOPT) -f expat.mak             CFG="expat - Win32 $(LONG)" RECURSE=0 $(CTARGET)
@@ -368,6 +385,8 @@ _build:
 	    $(MAKE) $(MAKEOPT) -f apr_dbm_%d.mak   CFG="apr_dbm_%d - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	cd ..
 	cd ..\..
+# end !COAPP
+!ENDIF 
 	cd server
 	 $(MAKE) $(MAKEOPT) -f gen_test_char.mak   CFG="gen_test_char - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	cd ..
@@ -435,12 +454,10 @@ _build:
 !ENDIF
 	 $(MAKE) $(MAKEOPT) -f mod_dumpio.mak      CFG="mod_dumpio - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	cd ..\..
+!IFDEF ALL
 	cd modules\echo
-!IFDEF ALL
 	 $(MAKE) $(MAKEOPT) -f mod_echo.mak        CFG="mod_echo - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-!ENDIF
 	cd ..\..
-!IFDEF ALL
 	cd modules\examples
 	 $(MAKE) $(MAKEOPT) -f mod_case_filter.mak    CFG="mod_case_filter - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	 $(MAKE) $(MAKEOPT) -f mod_case_filter_in.mak CFG="mod_case_filter_in - Win32 $(LONG)" RECURSE=0 $(CTARGET)
@@ -452,13 +469,15 @@ _build:
 	 $(MAKE) $(MAKEOPT) -f mod_buffer.mak      CFG="mod_buffer - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	 $(MAKE) $(MAKEOPT) -f mod_charset_lite.mak CFG="mod_charset_lite - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	 $(MAKE) $(MAKEOPT) -f mod_data.mak        CFG="mod_data - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-!IF EXIST("srclib\zlib")
+###### COAPP? ######
+!IF EXIST("srclib\zlib") || DEFINED("COAPP")
 	 $(MAKE) $(MAKEOPT) -f mod_deflate.mak     CFG="mod_deflate - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 !ENDIF
 	 $(MAKE) $(MAKEOPT) -f mod_ext_filter.mak  CFG="mod_ext_filter - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	 $(MAKE) $(MAKEOPT) -f mod_filter.mak      CFG="mod_filter - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	 $(MAKE) $(MAKEOPT) -f mod_include.mak     CFG="mod_include - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-!IF EXIST("srclib\libxml2")
+###### COAPP? ######
+!IF EXIST("srclib\libxml2") || DEFINED("COAPP")
 	 $(MAKE) $(MAKEOPT) -f mod_proxy_html.mak     CFG="mod_proxy_html - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	 $(MAKE) $(MAKEOPT) -f mod_xml2enc.mak     CFG="mod_xml2enc - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 !ENDIF
@@ -485,7 +504,8 @@ _build:
 	 $(MAKE) $(MAKEOPT) -f mod_log_forensic.mak CFG="mod_log_forensic - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	 $(MAKE) $(MAKEOPT) -f mod_logio.mak       CFG="mod_logio - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	cd ..\..
-!IF EXIST("srclib\lua")
+###### COAPP? ######
+!IF EXIST("srclib\lua") || DEFINED("COAPP")
 	cd modules\lua
 	 $(MAKE) $(MAKEOPT) -f mod_lua.mak         CFG="mod_lua - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	cd ..\..
@@ -545,7 +565,8 @@ _build:
 	 $(MAKE) $(MAKEOPT) -f mod_slotmem_plain.mak  CFG="mod_slotmem_plain - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	 $(MAKE) $(MAKEOPT) -f mod_slotmem_shm.mak    CFG="mod_slotmem_shm - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 	cd ..\..
-!IF EXIST("srclib\openssl")
+###### COAPP? ######
+!IF EXIST("srclib\openssl") || DEFINED("COAPP")
 #	cd modules\session
 #	 $(MAKE) $(MAKEOPT) -f mod_session_crypto.mak CFG="mod_session_crypto - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 #	cd ..\..
@@ -649,11 +670,13 @@ _build:
 
 !ENDIF
 
+###### Non-buildtype-dependent ######
 
 _copybin:
 	copy $(LONG)\httpd.$(src_exe) 				"$(inst_exe)" <.y
 	copy $(LONG)\libhttpd.$(src_dll) 			"$(inst_dll)" <.y
 	copy srclib\apr\$(LONG)\libapr-1.$(src_dll) 		"$(inst_dll)" <.y
+###### COAPP? ######
 !IF EXIST("srclib\apr-util")
 	copy srclib\apr-iconv\$(LONG)\libapriconv-1.$(src_dll) 	"$(inst_dll)" <.y
 	copy srclib\apr-util\$(LONG)\libaprutil-1.$(src_dll) 	"$(inst_dll)" <.y
@@ -715,6 +738,7 @@ _copybin:
 	copy modules\filters\$(LONG)\mod_buffer.$(src_so) 	"$(inst_so)" <.y
 	copy modules\filters\$(LONG)\mod_charset_lite.$(src_so)	"$(inst_so)" <.y
 	copy modules\filters\$(LONG)\mod_data.$(src_so)	"$(inst_so)" <.y
+###### COAPP? ######
 !IF EXIST("srclib\zlib")
 	copy modules\filters\$(LONG)\mod_deflate.$(src_so) 	"$(inst_so)" <.y
 !IF EXIST("srclib\zlib\zlib1.$(src_dll)")
@@ -724,6 +748,7 @@ _copybin:
 	copy modules\filters\$(LONG)\mod_ext_filter.$(src_so) 	"$(inst_so)" <.y
 	copy modules\filters\$(LONG)\mod_filter.$(src_so) 	"$(inst_so)" <.y
 	copy modules\filters\$(LONG)\mod_include.$(src_so) 	"$(inst_so)" <.y
+###### COAPP? ######
 !IF EXIST("srclib\libxml2")
 	copy modules\filters\$(LONG)\mod_proxy_html.$(src_so) 	"$(inst_so)" <.y
 	copy modules\filters\$(LONG)\mod_xml2enc.$(src_so) 	"$(inst_so)" <.y
@@ -748,6 +773,7 @@ _copybin:
 	copy modules\loggers\$(LONG)\mod_log_debug.$(src_so) 	"$(inst_so)" <.y
 	copy modules\loggers\$(LONG)\mod_log_forensic.$(src_so) "$(inst_so)" <.y
 	copy modules\loggers\$(LONG)\mod_logio.$(src_so) 	"$(inst_so)" <.y
+###### COAPP? ######
 !IF EXIST("srclib\lua")
 	copy modules\lua\$(LONG)\mod_lua.$(src_so) 		"$(inst_so)" <.y
 !IF EXIST("srclib\lua\src\lua51.$(src_dll)")
@@ -795,6 +821,7 @@ _copybin:
 	copy modules\session\$(LONG)\mod_session_dbd.$(src_so)    "$(inst_so)" <.y
 	copy modules\slotmem\$(LONG)\mod_slotmem_plain.$(src_so)    "$(inst_so)" <.y
 	copy modules\slotmem\$(LONG)\mod_slotmem_shm.$(src_so)    "$(inst_so)" <.y
+###### COAPP? ######
 !IF EXIST("srclib\openssl")
 #	copy modules\session\$(LONG)\mod_session_crypto.$(src_so) "$(inst_so)" <.y
 	copy modules\ssl\$(LONG)\mod_ssl.$(src_so) 		"$(inst_so)" <.y
