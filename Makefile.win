@@ -102,6 +102,27 @@ USESLN=0
 USEMAK=1
 USEDSW=0
 
+!IF [cmd /c cl /nologo /? | find.exe "x64" >NUL ] == 0
+ARCH=x64
+!ELSE
+ARCH=x86
+!ENDIF
+
+APR_INC=C:/apps/include/apr
+APR_LIB=libapr-1.lib
+APU_INC=C:/apps/include/apr-util
+APU_LIB=libaprutil-1.lib
+PCRE_INC=C:/apps/include/pcre
+PCRE_LIB=pcre.lib
+LIB_DIR=C:/apps/lib/$(ARCH)
+LUA_INC=C:/apps/include/lua
+LUA_LIB=lua51.lib
+OPENSSL_INC=C:/apps/include
+OPENSSL_LIBS=ssleay32.lib libeay32.lib
+
+OUTDIR=output\$(COMP)\$(ARCH)
+HTTPD_OUT=$(OUTDIR)
+
 #TLP=Apache
 #UTILDIR=apr-util
 !ENDIF
@@ -311,16 +332,16 @@ _browse:
 	cd ..
 
 _buildr: 
-	@$(MAKE) $(MAKEOPT) -f Makefile.win SHORT=R LONG=Release _build
+	@$(MAKE) $(MAKEOPT) -f Makefile.win SHORT=R LONG=Release _build ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=$(OUTDIR) HTTPD_OUT=$(HTTPD_OUT) 
 
 _buildd: 
-	@$(MAKE) $(MAKEOPT) -f Makefile.win SHORT=D LONG=Debug   _build
+	@$(MAKE) $(MAKEOPT) -f Makefile.win SHORT=D LONG=Debug   _build ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=$(OUTDIR) HTTPD_OUT=$(HTTPD_OUT) 
 
 installr: 
-	@$(MAKE) $(MAKEOPT) -f Makefile.win SHORT=R LONG=Release _build _install
+	@$(MAKE) $(MAKEOPT) -f Makefile.win SHORT=R LONG=Release _build _install ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=$(OUTDIR) HTTPD_OUT=$(HTTPD_OUT) 
 
 installd: 
-	@$(MAKE) $(MAKEOPT) -f Makefile.win SHORT=D LONG=Debug   _build _install
+	@$(MAKE) $(MAKEOPT) -f Makefile.win SHORT=D LONG=Debug   _build _install ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=$(OUTDIR) HTTPD_OUT=$(HTTPD_OUT) 
 
 clean:	_cleanr _cleand
 	-if exist Browse\. rd /s Browse < << > nul
@@ -330,10 +351,10 @@ y
 !IF $(USEMAK) == 1
 
 _cleanr:
-	$(MAKE) $(MAKEOPT) -f Makefile.win SHORT=R LONG=Release CTARGET=CLEAN _build
+	$(MAKE) $(MAKEOPT) -f Makefile.win SHORT=R LONG=Release CTARGET=CLEAN _build ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=$(OUTDIR) HTTPD_OUT=$(HTTPD_OUT) 
 
 _cleand:  
-	$(MAKE) $(MAKEOPT) -f Makefile.win SHORT=D LONG=Debug   CTARGET=CLEAN _build
+	$(MAKE) $(MAKEOPT) -f Makefile.win SHORT=D LONG=Debug   CTARGET=CLEAN _build ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=$(OUTDIR) HTTPD_OUT=$(HTTPD_OUT) 
 
 _build:
 	echo Building Win32 $(LONG) targets ($(SHORT) suffixes)
@@ -388,182 +409,182 @@ _build:
 # end !COAPP
 !ENDIF 
 	cd server
-	 $(MAKE) $(MAKEOPT) -f gen_test_char.mak   CFG="gen_test_char - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f gen_test_char.mak   CFG="gen_test_char - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\$(OUTDIR) HTTPD_OUT=..\$(HTTPD_OUT) 
 	cd ..
-	 $(MAKE) $(MAKEOPT) -f libhttpd.mak        CFG="libhttpd - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f httpd.mak           CFG="httpd - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f libhttpd.mak        CFG="libhttpd - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=$(OUTDIR) 
+	 $(MAKE) $(MAKEOPT) -f httpd.mak           CFG="httpd - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=$(OUTDIR) 
 # build ldap prior to authnz_ldap
 	cd modules\ldap
-	 $(MAKE) $(MAKEOPT) -f mod_ldap.mak        CFG="mod_ldap - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_ldap.mak        CFG="mod_ldap - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 	cd modules\database
-	 $(MAKE) $(MAKEOPT) -f mod_dbd.mak         CFG="mod_dbd - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_dbd.mak         CFG="mod_dbd - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 	cd modules\aaa
-	 $(MAKE) $(MAKEOPT) -f mod_access_compat.mak CFG="mod_access_compat - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_allowmethods.mak CFG="mod_allowmethods - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_auth_basic.mak  CFG="mod_auth_basic - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_auth_digest.mak CFG="mod_auth_digest - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_auth_form.mak   CFG="mod_auth_form - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_authn_anon.mak  CFG="mod_authn_anon - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_authn_core.mak  CFG="mod_authn_core - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_authn_dbd.mak   CFG="mod_authn_dbd - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_authn_dbm.mak   CFG="mod_authn_dbm - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_authn_file.mak  CFG="mod_authn_file - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_authn_socache.mak  CFG="mod_authn_socache - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_authnz_ldap.mak CFG="mod_authnz_ldap - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_authz_core.mak  CFG="mod_authz_core - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_authz_dbd.mak   CFG="mod_authz_dbd - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_authz_dbm.mak   CFG="mod_authz_dbm - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_authz_groupfile.mak CFG="mod_authz_groupfile - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_authz_host.mak  CFG="mod_authz_host - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_authz_owner.mak CFG="mod_authz_owner - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_authz_user.mak  CFG="mod_authz_user - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_access_compat.mak CFG="mod_access_compat - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_allowmethods.mak CFG="mod_allowmethods - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_auth_basic.mak  CFG="mod_auth_basic - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_auth_digest.mak CFG="mod_auth_digest - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_auth_form.mak   CFG="mod_auth_form - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_authn_anon.mak  CFG="mod_authn_anon - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_authn_core.mak  CFG="mod_authn_core - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_authn_dbd.mak   CFG="mod_authn_dbd - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_authn_dbm.mak   CFG="mod_authn_dbm - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_authn_file.mak  CFG="mod_authn_file - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_authn_socache.mak  CFG="mod_authn_socache - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_authnz_ldap.mak CFG="mod_authnz_ldap - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_authz_core.mak  CFG="mod_authz_core - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_authz_dbd.mak   CFG="mod_authz_dbd - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_authz_dbm.mak   CFG="mod_authz_dbm - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_authz_groupfile.mak CFG="mod_authz_groupfile - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_authz_host.mak  CFG="mod_authz_host - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_authz_owner.mak CFG="mod_authz_owner - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_authz_user.mak  CFG="mod_authz_user - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 	cd modules\arch\win32
-	 $(MAKE) $(MAKEOPT) -f mod_isapi.mak       CFG="mod_isapi - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_isapi.mak       CFG="mod_isapi - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\..\$(OUTDIR) HTTPD_OUT=..\..\..\$(HTTPD_OUT) 
 	cd ..\..\..
 	cd modules\cache
-	 $(MAKE) $(MAKEOPT) -f mod_cache.mak       CFG="mod_cache - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_cache_disk.mak  CFG="mod_cache_disk - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_file_cache.mak  CFG="mod_file_cache - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_socache_dbm.mak CFG="mod_socache_dbm - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_cache.mak       CFG="mod_cache - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_cache_disk.mak  CFG="mod_cache_disk - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_file_cache.mak  CFG="mod_file_cache - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_socache_dbm.mak CFG="mod_socache_dbm - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 #	 $(MAKE) $(MAKEOPT) -f mod_socache_dc.mak  CFG="mod_socache_dc - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_socache_memcache.mak CFG="mod_socache_memcache - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_socache_shmcb.mak CFG="mod_socache_shmcb - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_socache_memcache.mak CFG="mod_socache_memcache - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_socache_shmcb.mak CFG="mod_socache_shmcb - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 	cd modules\core
-	 $(MAKE) $(MAKEOPT) -f mod_watchdog.mak    CFG="mod_watchdog - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_watchdog.mak    CFG="mod_watchdog - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 	cd modules\cluster
-	 $(MAKE) $(MAKEOPT) -f mod_heartbeat.mak   CFG="mod_heartbeat - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_heartmonitor.mak CFG="mod_heartmonitor - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_heartbeat.mak   CFG="mod_heartbeat - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_heartmonitor.mak CFG="mod_heartmonitor - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 	cd modules\dav\main
-	 $(MAKE) $(MAKEOPT) -f mod_dav.mak         CFG="mod_dav - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_dav.mak         CFG="mod_dav - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\..\$(OUTDIR) HTTPD_OUT=..\..\..\$(HTTPD_OUT) 
 	cd ..\..\..
 	cd modules\dav\fs
-	 $(MAKE) $(MAKEOPT) -f mod_dav_fs.mak      CFG="mod_dav_fs - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_dav_fs.mak      CFG="mod_dav_fs - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\..\$(OUTDIR) HTTPD_OUT=..\..\..\$(HTTPD_OUT) 
 	cd ..\..\..
 	cd modules\dav\lock
-	 $(MAKE) $(MAKEOPT) -f mod_dav_lock.mak    CFG="mod_dav_lock - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_dav_lock.mak    CFG="mod_dav_lock - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\..\$(OUTDIR) HTTPD_OUT=..\..\..\$(HTTPD_OUT) 
 	cd ..\..\..
 	cd modules\debugging
 !IFDEF ALL
-	 $(MAKE) $(MAKEOPT) -f mod_bucketeer.mak   CFG="mod_bucketeer - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_bucketeer.mak   CFG="mod_bucketeer - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 !ENDIF
-	 $(MAKE) $(MAKEOPT) -f mod_dumpio.mak      CFG="mod_dumpio - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_dumpio.mak      CFG="mod_dumpio - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 !IFDEF ALL
 	cd modules\echo
-	 $(MAKE) $(MAKEOPT) -f mod_echo.mak        CFG="mod_echo - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_echo.mak        CFG="mod_echo - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 	cd modules\examples
-	 $(MAKE) $(MAKEOPT) -f mod_case_filter.mak    CFG="mod_case_filter - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_case_filter_in.mak CFG="mod_case_filter_in - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_example_hooks.mak  CFG="mod_example_hooks - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_example_ipc.mak    CFG="mod_example_ipc - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_case_filter.mak    CFG="mod_case_filter - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_case_filter_in.mak CFG="mod_case_filter_in - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_example_hooks.mak  CFG="mod_example_hooks - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_example_ipc.mak    CFG="mod_example_ipc - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 !ENDIF
 	cd modules\filters
-	 $(MAKE) $(MAKEOPT) -f mod_buffer.mak      CFG="mod_buffer - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_charset_lite.mak CFG="mod_charset_lite - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_data.mak        CFG="mod_data - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_buffer.mak      CFG="mod_buffer - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_charset_lite.mak CFG="mod_charset_lite - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_data.mak        CFG="mod_data - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 ###### COAPP? ######
 !IF EXIST("srclib\zlib") || DEFINED("COAPP")
-	 $(MAKE) $(MAKEOPT) -f mod_deflate.mak     CFG="mod_deflate - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_deflate.mak     CFG="mod_deflate - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 !ENDIF
-	 $(MAKE) $(MAKEOPT) -f mod_ext_filter.mak  CFG="mod_ext_filter - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_filter.mak      CFG="mod_filter - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_include.mak     CFG="mod_include - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_ext_filter.mak  CFG="mod_ext_filter - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_filter.mak      CFG="mod_filter - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_include.mak     CFG="mod_include - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 ###### COAPP? ######
 !IF EXIST("srclib\libxml2") || DEFINED("COAPP")
-	 $(MAKE) $(MAKEOPT) -f mod_proxy_html.mak     CFG="mod_proxy_html - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_xml2enc.mak     CFG="mod_xml2enc - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_proxy_html.mak     CFG="mod_proxy_html - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_xml2enc.mak     CFG="mod_xml2enc - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 !ENDIF
-	 $(MAKE) $(MAKEOPT) -f mod_ratelimit.mak   CFG="mod_ratelimit - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_reflector.mak   CFG="mod_reflector - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_reqtimeout.mak  CFG="mod_reqtimeout - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_request.mak     CFG="mod_request - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_sed.mak         CFG="mod_sed - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_substitute.mak  CFG="mod_substitute - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_ratelimit.mak   CFG="mod_ratelimit - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_reflector.mak   CFG="mod_reflector - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_reqtimeout.mak  CFG="mod_reqtimeout - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_request.mak     CFG="mod_request - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_sed.mak         CFG="mod_sed - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_substitute.mak  CFG="mod_substitute - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 	cd modules\generators
-	 $(MAKE) $(MAKEOPT) -f mod_asis.mak        CFG="mod_asis - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_autoindex.mak   CFG="mod_autoindex - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_cgi.mak         CFG="mod_cgi - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_info.mak        CFG="mod_info - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_status.mak      CFG="mod_status - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_asis.mak        CFG="mod_asis - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_autoindex.mak   CFG="mod_autoindex - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_cgi.mak         CFG="mod_cgi - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_info.mak        CFG="mod_info - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_status.mak      CFG="mod_status - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 	cd modules\http
-	 $(MAKE) $(MAKEOPT) -f mod_mime.mak        CFG="mod_mime - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_mime.mak        CFG="mod_mime - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 	cd modules\loggers
-	 $(MAKE) $(MAKEOPT) -f mod_log_config.mak  CFG="mod_log_config - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_log_debug.mak  CFG="mod_log_debug - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_log_forensic.mak CFG="mod_log_forensic - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_logio.mak       CFG="mod_logio - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_log_config.mak  CFG="mod_log_config - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_log_debug.mak  CFG="mod_log_debug - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_log_forensic.mak CFG="mod_log_forensic - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_logio.mak       CFG="mod_logio - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 ###### COAPP? ######
 !IF EXIST("srclib\lua") || DEFINED("COAPP")
 	cd modules\lua
-	 $(MAKE) $(MAKEOPT) -f mod_lua.mak         CFG="mod_lua - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_lua.mak         CFG="mod_lua - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) LUA_LIB=$(LUA_LIB) LUA_INC=$(LUA_INC) 
 	cd ..\..
 !ENDIF
 	cd modules\mappers
-	 $(MAKE) $(MAKEOPT) -f mod_actions.mak     CFG="mod_actions - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_alias.mak       CFG="mod_alias - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_dir.mak         CFG="mod_dir - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_imagemap.mak    CFG="mod_imagemap - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_negotiation.mak CFG="mod_negotiation - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_rewrite.mak     CFG="mod_rewrite - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_speling.mak     CFG="mod_speling - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_userdir.mak     CFG="mod_userdir - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_vhost_alias.mak CFG="mod_vhost_alias - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_actions.mak     CFG="mod_actions - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_alias.mak       CFG="mod_alias - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_dir.mak         CFG="mod_dir - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_imagemap.mak    CFG="mod_imagemap - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_negotiation.mak CFG="mod_negotiation - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_rewrite.mak     CFG="mod_rewrite - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_speling.mak     CFG="mod_speling - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_userdir.mak     CFG="mod_userdir - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_vhost_alias.mak CFG="mod_vhost_alias - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 	cd modules\metadata
-	 $(MAKE) $(MAKEOPT) -f mod_cern_meta.mak   CFG="mod_cern_meta - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_env.mak         CFG="mod_env - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_expires.mak     CFG="mod_expires - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_headers.mak     CFG="mod_headers - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_ident.mak       CFG="mod_ident - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_mime_magic.mak  CFG="mod_mime_magic - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_remoteip.mak    CFG="mod_remoteip - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_setenvif.mak    CFG="mod_setenvif - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_unique_id.mak   CFG="mod_unique_id - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_usertrack.mak   CFG="mod_usertrack - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_version.mak     CFG="mod_version - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_cern_meta.mak   CFG="mod_cern_meta - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_env.mak         CFG="mod_env - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_expires.mak     CFG="mod_expires - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_headers.mak     CFG="mod_headers - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_ident.mak       CFG="mod_ident - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_mime_magic.mak  CFG="mod_mime_magic - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_remoteip.mak    CFG="mod_remoteip - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_setenvif.mak    CFG="mod_setenvif - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_unique_id.mak   CFG="mod_unique_id - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_usertrack.mak   CFG="mod_usertrack - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_version.mak     CFG="mod_version - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 	cd modules\proxy
-	 $(MAKE) $(MAKEOPT) -f mod_proxy.mak       CFG="mod_proxy - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_proxy_ajp.mak   CFG="mod_proxy_ajp - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_proxy_balancer.mak  CFG="mod_proxy_balancer - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_proxy_connect.mak CFG="mod_proxy_connect - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_proxy_express.mak CFG="mod_proxy_express - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_proxy_fcgi.mak  CFG="mod_proxy_fcgi - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_proxy_ftp.mak   CFG="mod_proxy_ftp - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_proxy_http.mak  CFG="mod_proxy_http - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_proxy_scgi.mak  CFG="mod_proxy_scgi - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_proxy.mak       CFG="mod_proxy - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_proxy_ajp.mak   CFG="mod_proxy_ajp - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_proxy_balancer.mak  CFG="mod_proxy_balancer - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_proxy_connect.mak CFG="mod_proxy_connect - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_proxy_express.mak CFG="mod_proxy_express - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_proxy_fcgi.mak  CFG="mod_proxy_fcgi - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_proxy_ftp.mak   CFG="mod_proxy_ftp - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_proxy_http.mak  CFG="mod_proxy_http - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_proxy_scgi.mak  CFG="mod_proxy_scgi - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 	cd modules\proxy\balancers
-	 $(MAKE) $(MAKEOPT) -f mod_lbmethod_bybusyness.mak CFG="mod_lbmethod_bybusyness - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_lbmethod_byrequests.mak CFG="mod_lbmethod_byrequests - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_lbmethod_bytraffic.mak  CFG="mod_lbmethod_bytraffic - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_lbmethod_heartbeat.mak  CFG="mod_lbmethod_heartbeat - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_lbmethod_bybusyness.mak CFG="mod_lbmethod_bybusyness - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\..\$(OUTDIR) HTTPD_OUT=..\..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_lbmethod_byrequests.mak CFG="mod_lbmethod_byrequests - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\..\$(OUTDIR) HTTPD_OUT=..\..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_lbmethod_bytraffic.mak  CFG="mod_lbmethod_bytraffic - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\..\$(OUTDIR) HTTPD_OUT=..\..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_lbmethod_heartbeat.mak  CFG="mod_lbmethod_heartbeat - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\..\$(OUTDIR) HTTPD_OUT=..\..\..\$(HTTPD_OUT) 
 	cd ..\..\..
 !IFDEF ALL
 	cd modules\proxy\examples
-	 $(MAKE) $(MAKEOPT) -f mod_lbmethod_rr.mak CFG="mod_lbmethod_rr - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_lbmethod_rr.mak CFG="mod_lbmethod_rr - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\..\$(OUTDIR) HTTPD_OUT=..\..\..\$(HTTPD_OUT) 
 	cd ..\..\..
 !ENDIF
 	cd modules\session
-	 $(MAKE) $(MAKEOPT) -f mod_session.mak        CFG="mod_session - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_session_cookie.mak CFG="mod_session_cookie - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_session_dbd.mak    CFG="mod_session_dbd - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_session.mak        CFG="mod_session - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_session_cookie.mak CFG="mod_session_cookie - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_session_dbd.mak    CFG="mod_session_dbd - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 	cd modules\slotmem
-	 $(MAKE) $(MAKEOPT) -f mod_slotmem_plain.mak  CFG="mod_slotmem_plain - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f mod_slotmem_shm.mak    CFG="mod_slotmem_shm - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_slotmem_plain.mak  CFG="mod_slotmem_plain - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f mod_slotmem_shm.mak    CFG="mod_slotmem_shm - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 ###### COAPP? ######
 !IF EXIST("srclib\openssl") || DEFINED("COAPP")
@@ -571,26 +592,26 @@ _build:
 #	 $(MAKE) $(MAKEOPT) -f mod_session_crypto.mak CFG="mod_session_crypto - Win32 $(LONG)" RECURSE=0 $(CTARGET)
 #	cd ..\..
 	cd modules\ssl
-	 $(MAKE) $(MAKEOPT) -f mod_ssl.mak         CFG="mod_ssl - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f mod_ssl.mak         CFG="mod_ssl - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 	cd support
-	 $(MAKE) $(MAKEOPT) -f abs.mak             CFG="abs - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f abs.mak             CFG="abs - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\$(OUTDIR) HTTPD_OUT=..\$(HTTPD_OUT) OPENSSL_INC="$(OPENSSL_INC)" OPENSSL_LIBS="$(OPENSSL_LIBS)"
 	cd ..
 !ENDIF
 	cd support
-	 $(MAKE) $(MAKEOPT) -f ab.mak              CFG="ab - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f ab.mak              CFG="ab - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\$(OUTDIR) HTTPD_OUT=..\$(HTTPD_OUT) 
 #	 $(MAKE) $(MAKEOPT) -f fcgistarter.mak     CFG="fcgistarter - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f htcacheclean.mak    CFG="htcacheclean - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f htdbm.mak           CFG="htdbm - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f htdigest.mak        CFG="htdigest - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f htpasswd.mak        CFG="htpasswd - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f httxt2dbm.mak       CFG="httxt2dbm - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f logresolve.mak      CFG="logresolve - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f rotatelogs.mak      CFG="rotatelogs - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f htcacheclean.mak    CFG="htcacheclean - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\$(OUTDIR) HTTPD_OUT=..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f htdbm.mak           CFG="htdbm - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\$(OUTDIR) HTTPD_OUT=..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f htdigest.mak        CFG="htdigest - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\$(OUTDIR) HTTPD_OUT=..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f htpasswd.mak        CFG="htpasswd - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\$(OUTDIR) HTTPD_OUT=..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f httxt2dbm.mak       CFG="httxt2dbm - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\$(OUTDIR) HTTPD_OUT=..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f logresolve.mak      CFG="logresolve - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\$(OUTDIR) HTTPD_OUT=..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f rotatelogs.mak      CFG="rotatelogs - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\$(OUTDIR) HTTPD_OUT=..\$(HTTPD_OUT) 
 	cd ..
 	cd support\win32
-	 $(MAKE) $(MAKEOPT) -f ApacheMonitor.mak   CFG="ApacheMonitor - Win32 $(LONG)" RECURSE=0 $(CTARGET)
-	 $(MAKE) $(MAKEOPT) -f wintty.mak          CFG="wintty - Win32 $(LONG)" RECURSE=0 $(CTARGET)
+	 $(MAKE) $(MAKEOPT) -f ApacheMonitor.mak   CFG="ApacheMonitor - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
+	 $(MAKE) $(MAKEOPT) -f wintty.mak          CFG="wintty - Win32 $(LONG)" RECURSE=0 $(CTARGET) ARCH=$(ARCH) APR_INC=$(APR_INC) APR_LIB=$(APR_LIB) APU_INC=$(APU_INC) APU_LIB=$(APU_LIB) PCRE_INC=$(PCRE_INC) PCRE_LIB=$(PCRE_LIB) LIB_DIR=$(LIB_DIR)  OUTDIR=..\..\$(OUTDIR) HTTPD_OUT=..\..\$(HTTPD_OUT) 
 	cd ..\..
 
 !ELSEIF $(USESLN) == 1

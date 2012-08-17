@@ -75,8 +75,13 @@ release {
         for %%A in (${COMP}) do (
             for %%B in (${PLAT}) do (
                 ptk --nologo base --COMP=%%A --PLAT=%%B || goto failed
+				ptk --nologo clean base --COMP=%%A --PLAT=%%B || goto failed
             )
         )
+    ";
+    clean-command:@"
+	    if exist output rmdir /s /q output > nul 2> nul
+		ptk --nologo clean base --COMP=%%A --PLAT=%%B || goto failed
     ";
 };
 
@@ -107,16 +112,17 @@ base {
     platform: "${PLAT}";
     
     requires: {
-        "serf-dev[${COMP}]-1.0.1-${PLAT}-1e373a58e25250cb",
-        "pcre-dev[${COMP}]-5.0.0-${PLAT}-1e373a58e25250cb",
+        "serf-dev[${COMP}]-1.1.0-${PLAT}-1e373a58e25250cb",
+        "pcre-dev[${COMP}]-8.21.0-${PLAT}-1e373a58e25250cb",
         "libxml2-dev[${COMP}]-2.7.8-${PLAT}-1e373a58e25250cb",
-        "lua-dev[${COMP}]-5.2.0-${PLAT}-1e373a58e25250cb",
-        "apr-dev[${COMP}]-2.0.0-${PLAT}-1e373a58e25250cb",
+        "lua-dev[${COMP}]-5.1.0-${PLAT}-1e373a58e25250cb",
+        "apr-dev[${COMP}]-1.4.0-${PLAT}-1e373a58e25250cb",
+        "apr-util-dev[${COMP}]-1.4.0-${PLAT}-1e373a58e25250cb",
         "openssl-dev[${COMP}]-1.0.0-${PLAT}-1e373a58e25250cb",
         "zlib-dev[${COMP}]-1.2.5-${PLAT}-1e373a58e25250cb",
         "libiconv-dev[${COMP}]-1.13.1-${PLAT}-1e373a58e25250cb",
     };
-
+/*
     targets: { 
 		"output\${PLAT}\${BuildCfg}\modules\mod_access_compat.so",
  		"output\${PLAT}\${BuildCfg}\modules\mod_actions.so",
@@ -237,10 +243,11 @@ base {
 		"output\${PLAT}\${BuildCfg}\logresolve.exe",
 		"output\${PLAT}\${BuildCfg}\rotatelogs.exe",
 	};
-	
+*/
+
     build-command:@"
         REM this makes it so that DLLs can have their own SxS Activation Context in an embedded resource.
-		echo %CL% | findstr ISOLATION_AWARE || set CL=%CL% /D ISOLATION_AWARE_ENABLED 
+		echo %CL% | findstr ISOLATION_AWARE || set CL=%CL% /D ISOLATION_AWARE_ENABLED /U NOUSER 
 
         REM Need to add a set of include locations.  Doing this here so I don't need to rewrite pre-link build steps in every project file right now.
         set CL=%CL% /I%AllUsersProfile%\include 
@@ -248,6 +255,7 @@ base {
         set CL=%CL% /I%AllUsersProfile%\include\pcre 
         set CL=%CL% /I%AllUsersProfile%\include\libxml2 
         set CL=%CL% /I%AllUsersProfile%\include\lua 
+        set CL=%CL% /I%AllUsersProfile%\include\apr 
         set CL=%CL% /I%AllUsersProfile%\include\apr 
         set CL=%CL% /I%AllUsersProfile%\include\openssl 
         set CL=%CL% /I%AllUsersProfile%\include\zlib 
@@ -257,18 +265,13 @@ base {
         set LINK=%LINK% /LIBPATH:%AllUsersProfile%\lib\${PLAT} 
         
         REM Need to add a few symlinks to point some of the source files to the includes they need
-        if NOT EXIST ""%AllUsersProfile%\include\libxml"" (
-            set CO_SYMLINKS=%CO_SYMLINKS% libxml
-            coapp create-symlink ""%AllUsersProfile%\include\libxml2"" ""%AllUsersProfile%\include\libxml""
-        )
+        REM if NOT EXIST ""%AllUsersProfile%\include\libxml"" (
+        REM     set CO_SYMLINKS=%CO_SYMLINKS% libxml
+        REM     coapp create-symlink ""%AllUsersProfile%\include\libxml2"" ""%AllUsersProfile%\include\libxml""
+        REM )
         
-        if ""${PLAT}"" equ ""x86"" (
-            set CL=%CL% /D THIRTY_TWO_BIT 
-            msbuild /p:Platform=win32 /p:Configuration=${BuildCfg} Apache-apr2.sln
-        ) else (
-            set CL=%CL% /D SIXTY_FOUR_BIT 
-            msbuild /p:Platform=${PLAT} /p:Configuration=${BuildCfg} Apache-apr2.sln
-        )
+        REM  if ""${PLAT}"" equ ""x86"" ( msbuild /p:Platform=win32 /p:Configuration=${BuildCfg} Apache-apr2.sln ) else ( msbuild /p:Platform=${PLAT} /p:Configuration=${BuildCfg} Apache-apr2.sln )
+        nmake -f Makefile.win COAPP=COAPP _buildr
         
         REM Clean up symlinks
         for %%D in (%CO_SYMLINKS%) do rd ""%AllUsersProfile%\include\%%D""
@@ -279,10 +282,10 @@ base {
        if exist ipch rmdir /s /q ipch > nul 2> nul
        if exist Release rmdir /s /q Release > nul 2> nul
        if exist Debug rmdir /s /q Debug > nul 2> nul
-	   if exist output rmdir /s /q output > nul 2> nul
+	   REM if exist output rmdir /s /q output > nul 2> nul
        for /f ""delims="" %%a in ('dir /B/S/AD Release') do rd /s /q ""%%a"" > nul 2> nul
        for /f ""delims="" %%a in ('dir /B/S/AD Debug') do rd /s /q ""%%a"" > nul 2> nul
-       del /S /Q /A - *.sdf *.suo *.user *.exe *.pdb > NUL 2> NUL
+       REM del /S /Q /A - *.sdf *.suo *.user *.exe *.pdb > NUL 2> NUL
        del /Q BuildBin.log include\ap_config_layout.h include\ap_ldap.h include\mod_cgi.h include\mod_dav.h include\mod_include.h include\mod_proxy.h include\mod_so.h include\os.h server\test_char.h > nul 2> nul
     ";
 };

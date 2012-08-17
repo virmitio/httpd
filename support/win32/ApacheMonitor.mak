@@ -25,129 +25,38 @@ NULL=
 NULL=nul
 !ENDIF 
 
-!IF  "$(CFG)" == "ApacheMonitor - Win32 Release"
+ARCH=IX86
+APR_INC=../../srclib/apr/include
+APR_LIB=libapr-1.lib
+APU_INC=../../srclib/apr-util/include
+APU_LIB=libaprutil-1.lib
+PCRE_INC=../../srclib/pcre/include
+PCRE_LIB=pcre.lib
+LIB_DIR=../../srclib/pcre
+HTTPD_OUT=..\..\Release
 
+!IF  "$(CFG)" == "ApacheMonitor - Win32 Release"
 OUTDIR=.\Release
 INTDIR=.\Release
-# Begin Custom Macros
-OutDir=.\Release
-# End Custom Macros
 
-!IF "$(RECURSE)" == "0" 
-
-ALL : "$(OUTDIR)\ApacheMonitor.exe"
+CPP_VAR=/MD /O2 /Oy- /D "NDEBUG" 
+MTL_VAR=/D "NDEBUG" 
+RSC_VAR=/d "NDEBUG" 
+LINK32_VAR=/opt:ref 
 
 !ELSE 
-
-ALL : "$(OUTDIR)\ApacheMonitor.exe"
-
-!ENDIF 
-
-!IF "$(RECURSE)" == "1" 
-CLEAN :
-!ELSE 
-CLEAN :
-!ENDIF 
-	-@erase "$(INTDIR)\ApacheMonitor.obj"
-	-@erase "$(INTDIR)\ApacheMonitor.res"
-	-@erase "$(INTDIR)\ApacheMonitor_src.idb"
-	-@erase "$(INTDIR)\ApacheMonitor_src.pdb"
-	-@erase "$(OUTDIR)\ApacheMonitor.exe"
-	-@erase "$(OUTDIR)\ApacheMonitor.pdb"
-
-"$(OUTDIR)" :
-    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
-
-CPP=cl.exe
-CPP_PROJ=/nologo /MD /W3 /Zi /O2 /Oy- /I "../../include" /I "../../srclib/apr/include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "STRICT" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\ApacheMonitor_src" /FD /EHsc /c 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-MTL=midl.exe
-MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
-RSC=rc.exe
-RSC_PROJ=/l 0x409 /fo"$(INTDIR)\ApacheMonitor.res" /i "../../include" /i "../../srclib/apr/include" /d "NDEBUG" /d "APP_FILE" 
-BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\ApacheMonitor.bsc" 
-BSC32_SBRS= \
-	
-LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib wtsapi32.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)\ApacheMonitor.pdb" /debug /machine:IX86 /out:"$(OUTDIR)\ApacheMonitor.exe" /opt:ref 
-LINK32_OBJS= \
-	"$(INTDIR)\ApacheMonitor.obj" \
-	"$(INTDIR)\ApacheMonitor.res"
-
-"$(OUTDIR)\ApacheMonitor.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
-  $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
-
-TargetPath=.\Release\ApacheMonitor.exe
-SOURCE="$(InputPath)"
-PostBuild_Desc=Embed .manifest
-DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
-
-ALL : $(DS_POSTBUILD_DEP)
-
-# Begin Custom Macros
-OutDir=.\Release
-# End Custom Macros
-
-$(DS_POSTBUILD_DEP) : "$(OUTDIR)\ApacheMonitor.exe"
-   if exist .\Release\ApacheMonitor.exe.manifest mt.exe -manifest .\Release\ApacheMonitor.exe.manifest -outputresource:.\Release\ApacheMonitor.exe;1
-	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
-
-!ELSEIF  "$(CFG)" == "ApacheMonitor - Win32 Debug"
-
 OUTDIR=.\Debug
 INTDIR=.\Debug
-# Begin Custom Macros
-OutDir=.\Debug
-# End Custom Macros
 
-!IF "$(RECURSE)" == "0" 
-
-ALL : "$(OUTDIR)\ApacheMonitor.exe"
-
-!ELSE 
-
-ALL : "$(OUTDIR)\ApacheMonitor.exe"
+CPP_VAR=/MDd /Od /D "_DEBUG" /EHsc 
+MTL_VAR=/D "_DEBUG" 
+RSC_VAR=/d "_DEBUG" 
+LINK32_VAR= 
 
 !ENDIF 
 
-!IF "$(RECURSE)" == "1" 
+ALL : "$(OUTDIR)\ApacheMonitor.exe"
 CLEAN :
-!ELSE 
-CLEAN :
-!ENDIF 
 	-@erase "$(INTDIR)\ApacheMonitor.obj"
 	-@erase "$(INTDIR)\ApacheMonitor.res"
 	-@erase "$(INTDIR)\ApacheMonitor_src.idb"
@@ -158,59 +67,62 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
+"$(INTDIR)" :
+    if not exist "$(INTDIR)/$(NULL)" mkdir "$(INTDIR)"
+
 CPP=cl.exe
-CPP_PROJ=/nologo /MDd /W3 /Gm /Zi /Od /I "../../include" /I "../../srclib/apr/include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "STRICT" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\ApacheMonitor_src" /FD /EHsc /c 
+CPP_PROJ=/nologo /W3 /Zi /I "../../include" /I "$(APR_INC)" $(CPP_VAR)  /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "STRICT" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\ApacheMonitor_src" /FD /EHsc /c 
 
 .c{$(INTDIR)}.obj::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .c{$(INTDIR)}.sbr::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 MTL=midl.exe
-MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
+MTL_PROJ=/nologo $(MTL_VAR) /mktyplib203 /win32 
 RSC=rc.exe
-RSC_PROJ=/l 0x409 /fo"$(INTDIR)\ApacheMonitor.res" /i "../../include" /i "../../srclib/apr/include" /d "_DEBUG" /d "APP_FILE" 
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)\ApacheMonitor.res" /i "../../include" /i "$(APR_INC)"  $(RSC_VAR)  /d "APP_FILE"  /i "\tmp\httpd\build\win32" 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\ApacheMonitor.bsc" 
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib wtsapi32.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)\ApacheMonitor.pdb" /debug /machine:IX86 /out:"$(OUTDIR)\ApacheMonitor.exe" 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib wtsapi32.lib $(APR_LIB) $(APU_LIB) $(LINK32_VAR) /libpath:"$(LIB_DIR)" /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)\ApacheMonitor.pdb" /debug /machine:$(ARCH) /out:"$(OUTDIR)\ApacheMonitor.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\ApacheMonitor.obj" \
 	"$(INTDIR)\ApacheMonitor.res"
 
 "$(OUTDIR)\ApacheMonitor.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
+    $(LINK32) \
   $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
 
-TargetPath=.\Debug\ApacheMonitor.exe
+
+TargetPath=$(OUTDIR)\ApacheMonitor.exe
 SOURCE="$(InputPath)"
 PostBuild_Desc=Embed .manifest
 DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
@@ -218,14 +130,12 @@ DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
 ALL : $(DS_POSTBUILD_DEP)
 
 # Begin Custom Macros
-OutDir=.\Debug
+OutDir=.\Release
 # End Custom Macros
 
 $(DS_POSTBUILD_DEP) : "$(OUTDIR)\ApacheMonitor.exe"
-   if exist .\Debug\ApacheMonitor.exe.manifest mt.exe -manifest .\Debug\ApacheMonitor.exe.manifest -outputresource:.\Debug\ApacheMonitor.exe;1
+   if exist $(OUTDIR)\ApacheMonitor.exe.manifest mt.exe -manifest $(OUTDIR)\ApacheMonitor.exe.manifest -outputresource:$(OUTDIR)\ApacheMonitor.exe;1
 	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
-
-!ENDIF 
 
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
@@ -237,20 +147,6 @@ $(DS_POSTBUILD_DEP) : "$(OUTDIR)\ApacheMonitor.exe"
 !ENDIF 
 
 
-!IF "$(CFG)" == "ApacheMonitor - Win32 Release" || "$(CFG)" == "ApacheMonitor - Win32 Debug"
-
-!IF  "$(CFG)" == "ApacheMonitor - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "ApacheMonitor - Win32 Debug"
-
-!ENDIF 
-
-!IF  "$(CFG)" == "ApacheMonitor - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "ApacheMonitor - Win32 Debug"
-
-!ENDIF 
-
 SOURCE=.\ApacheMonitor.c
 
 "$(INTDIR)\ApacheMonitor.obj" : $(SOURCE) "$(INTDIR)"
@@ -260,8 +156,4 @@ SOURCE=.\ApacheMonitor.rc
 
 "$(INTDIR)\ApacheMonitor.res" : $(SOURCE) "$(INTDIR)"
 	$(RSC) $(RSC_PROJ) $(SOURCE)
-
-
-
-!ENDIF 
 

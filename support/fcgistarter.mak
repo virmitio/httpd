@@ -25,127 +25,38 @@ NULL=
 NULL=nul
 !ENDIF 
 
-!IF  "$(CFG)" == "fcgistarter - Win32 Release"
+ARCH=IX86
+APR_INC=../../srclib/apr/include
+APR_LIB=libapr-1.lib
+APU_INC=../../srclib/apr-util/include
+APU_LIB=libaprutil-1.lib
+PCRE_INC=../../srclib/pcre/include
+PCRE_LIB=pcre.lib
+LIB_DIR=../../srclib/pcre
+HTTPD_OUT=..\..\Release
 
+!IF  "$(CFG)" == "fcgistarter - Win32 Release"
 OUTDIR=.\Release
 INTDIR=.\Release
-# Begin Custom Macros
-OutDir=.\Release
-# End Custom Macros
 
-!IF "$(RECURSE)" == "0" 
-
-ALL : "$(OUTDIR)\fcgistarter.exe"
+CPP_VAR=/MD /O2 /Oy- /D "NDEBUG" 
+MTL_VAR=/D "NDEBUG" 
+RSC_VAR=/d "NDEBUG" 
+LINK32_VAR=/opt:ref 
 
 !ELSE 
-
-ALL : "$(OUTDIR)\fcgistarter.exe"
-
-!ENDIF 
-
-!IF "$(RECURSE)" == "1" 
-CLEAN :
-!ELSE 
-CLEAN :
-!ENDIF 
-	-@erase "$(INTDIR)\fcgistarter.obj"
-	-@erase "$(INTDIR)\fcgistarter.res"
-	-@erase "$(INTDIR)\fcgistarter_src.idb"
-	-@erase "$(INTDIR)\fcgistarter_src.pdb"
-	-@erase "$(OUTDIR)\fcgistarter.exe"
-	-@erase "$(OUTDIR)\fcgistarter.pdb"
-
-"$(OUTDIR)" :
-    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
-
-CPP=cl.exe
-CPP_PROJ=/nologo /MD /W3 /Zi /O2 /Oy- /I "../srclib/apr/include" /I "../srclib/apr-util/include" /I "../include" /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "APR_DECLARE_STATIC" /D "APU_DECLARE_STATIC" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\fcgistarter_src" /FD /c 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-RSC=rc.exe
-RSC_PROJ=/l 0x409 /fo"$(INTDIR)\fcgistarter.res" /i "../include" /i "../srclib/apr/include" /d "NDEBUG" /d "APP_FILE" /d BIN_NAME="fcgistarter.exe" /d LONG_NAME="Apache fcgi command line utility" 
-BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\fcgistarter.bsc" 
-BSC32_SBRS= \
-	
-LINK32=link.exe
-LINK32_FLAGS=kernel32.lib advapi32.lib wsock32.lib ws2_32.lib shell32.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\fcgistarter.pdb" /debug /machine:IX86 /out:"$(OUTDIR)\fcgistarter.exe" /opt:ref 
-LINK32_OBJS= \
-	"$(INTDIR)\fcgistarter.obj" \
-	"$(INTDIR)\fcgistarter.res"
-
-"$(OUTDIR)\fcgistarter.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
-  $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
-
-TargetPath=.\Release\fcgistarter.exe
-SOURCE="$(InputPath)"
-PostBuild_Desc=Embed .manifest
-DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
-
-ALL : $(DS_POSTBUILD_DEP)
-
-# Begin Custom Macros
-OutDir=.\Release
-# End Custom Macros
-
-$(DS_POSTBUILD_DEP) : "$(OUTDIR)\fcgistarter.exe"
-   if exist .\Release\fcgistarter.exe.manifest mt.exe -manifest .\Release\fcgistarter.exe.manifest -outputresource:.\Release\fcgistarter.exe;2
-	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
-
-!ELSEIF  "$(CFG)" == "fcgistarter - Win32 Debug"
-
 OUTDIR=.\Debug
 INTDIR=.\Debug
-# Begin Custom Macros
-OutDir=.\Debug
-# End Custom Macros
 
-!IF "$(RECURSE)" == "0" 
-
-ALL : "$(OUTDIR)\fcgistarter.exe"
-
-!ELSE 
-
-ALL : "$(OUTDIR)\fcgistarter.exe"
+CPP_VAR=/MDd /Od /D "_DEBUG" /EHsc 
+MTL_VAR=/D "_DEBUG" 
+RSC_VAR=/d "_DEBUG" 
+LINK32_VAR= 
 
 !ENDIF 
 
-!IF "$(RECURSE)" == "1" 
+ALL : "$(OUTDIR)\fcgistarter.exe"
 CLEAN :
-!ELSE 
-CLEAN :
-!ENDIF 
 	-@erase "$(INTDIR)\fcgistarter.obj"
 	-@erase "$(INTDIR)\fcgistarter.res"
 	-@erase "$(INTDIR)\fcgistarter_src.idb"
@@ -156,57 +67,60 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
+"$(INTDIR)" :
+    if not exist "$(INTDIR)/$(NULL)" mkdir "$(INTDIR)"
+
 CPP=cl.exe
-CPP_PROJ=/nologo /MDd /W3 /Zi /Od /I "../srclib/apr/include" /I "../srclib/apr-util/include" /I "../include" /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "APR_DECLARE_STATIC" /D "APU_DECLARE_STATIC" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\fcgistarter_src" /FD /EHsc /c 
+CPP_PROJ=/nologo /W3 /Zi /I "$(APR_INC)" /I "$(APU_INC)" $(CPP_VAR) /I "../include" /D "WIN32" /D "_CONSOLE" /D "APR_DECLARE_STATIC" /D "APU_DECLARE_STATIC" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\fcgistarter_src" /FD /c 
 
 .c{$(INTDIR)}.obj::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .c{$(INTDIR)}.sbr::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 RSC=rc.exe
-RSC_PROJ=/l 0x409 /fo"$(INTDIR)\fcgistarter.res" /i "../include" /i "../srclib/apr/include" /d "_DEBUG" /d "APP_FILE" /d BIN_NAME="fcgistarter.exe" /d LONG_NAME="Apache fcgi command line utility" 
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)\fcgistarter.res" /i "../include" /i "$(APR_INC)"  $(RSC_VAR)  /d "APP_FILE" /d BIN_NAME="fcgistarter.exe" /d LONG_NAME="Apache fcgi command line utility"  /i "\tmp\httpd\build\win32" 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\fcgistarter.bsc" 
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib advapi32.lib wsock32.lib ws2_32.lib shell32.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\fcgistarter.pdb" /debug /machine:IX86 /out:"$(OUTDIR)\fcgistarter.exe" 
+LINK32_FLAGS=kernel32.lib advapi32.lib wsock32.lib ws2_32.lib shell32.lib $(APR_LIB) $(APU_LIB) $(LINK32_VAR) /libpath:"$(LIB_DIR)" /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\fcgistarter.pdb" /debug /machine:$(ARCH) /out:"$(OUTDIR)\fcgistarter.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\fcgistarter.obj" \
 	"$(INTDIR)\fcgistarter.res"
 
 "$(OUTDIR)\fcgistarter.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
+    $(LINK32) \
   $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
 
-TargetPath=.\Debug\fcgistarter.exe
+
+TargetPath=$(OUTDIR)\fcgistarter.exe
 SOURCE="$(InputPath)"
 PostBuild_Desc=Embed .manifest
 DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
@@ -214,14 +128,12 @@ DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
 ALL : $(DS_POSTBUILD_DEP)
 
 # Begin Custom Macros
-OutDir=.\Debug
+OutDir=.\Release
 # End Custom Macros
 
 $(DS_POSTBUILD_DEP) : "$(OUTDIR)\fcgistarter.exe"
-   if exist .\Debug\fcgistarter.exe.manifest mt.exe -manifest .\Debug\fcgistarter.exe.manifest -outputresource:.\Debug\fcgistarter.exe;2
+   if exist $(OUTDIR)\fcgistarter.exe.manifest mt.exe -manifest $(OUTDIR)\fcgistarter.exe.manifest -outputresource:$(OUTDIR)\fcgistarter.exe;2
 	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
-
-!ENDIF 
 
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
@@ -233,19 +145,6 @@ $(DS_POSTBUILD_DEP) : "$(OUTDIR)\fcgistarter.exe"
 !ENDIF 
 
 
-!IF "$(CFG)" == "fcgistarter - Win32 Release" || "$(CFG)" == "fcgistarter - Win32 Debug"
-
-!IF  "$(CFG)" == "fcgistarter - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "fcgistarter - Win32 Debug"
-
-!ENDIF 
-
-!IF  "$(CFG)" == "fcgistarter - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "fcgistarter - Win32 Debug"
-
-!ENDIF 
 
 SOURCE=.\fcgistarter.c
 
@@ -254,22 +153,6 @@ SOURCE=.\fcgistarter.c
 
 SOURCE=..\build\win32\httpd.rc
 
-!IF  "$(CFG)" == "fcgistarter - Win32 Release"
-
-
 "$(INTDIR)\fcgistarter.res" : $(SOURCE) "$(INTDIR)"
-	$(RSC) /l 0x409 /fo"$(INTDIR)\fcgistarter.res" /i "../include" /i "../srclib/apr/include" /i "\tmp\httpd\build\win32" /d "NDEBUG" /d "APP_FILE" /d BIN_NAME="fcgistarter.exe" /d LONG_NAME="Apache fcgi command line utility" $(SOURCE)
-
-
-!ELSEIF  "$(CFG)" == "fcgistarter - Win32 Debug"
-
-
-"$(INTDIR)\fcgistarter.res" : $(SOURCE) "$(INTDIR)"
-	$(RSC) /l 0x409 /fo"$(INTDIR)\fcgistarter.res" /i "../include" /i "../srclib/apr/include" /i "\tmp\httpd\build\win32" /d "_DEBUG" /d "APP_FILE" /d BIN_NAME="fcgistarter.exe" /d LONG_NAME="Apache fcgi command line utility" $(SOURCE)
-
-
-!ENDIF 
-
-
-!ENDIF 
+	$(RSC) $(RSC_PROJ) $(SOURCE)
 

@@ -25,127 +25,38 @@ NULL=
 NULL=nul
 !ENDIF 
 
-!IF  "$(CFG)" == "htcacheclean - Win32 Release"
+ARCH=IX86
+APR_INC=../../srclib/apr/include
+APR_LIB=libapr-1.lib
+APU_INC=../../srclib/apr-util/include
+APU_LIB=libaprutil-1.lib
+PCRE_INC=../../srclib/pcre/include
+PCRE_LIB=pcre.lib
+LIB_DIR=../../srclib/pcre
+HTTPD_OUT=..\..\Release
 
+!IF  "$(CFG)" == "htcacheclean - Win32 Release"
 OUTDIR=.\Release
 INTDIR=.\Release
-# Begin Custom Macros
-OutDir=.\Release
-# End Custom Macros
 
-!IF "$(RECURSE)" == "0" 
-
-ALL : "$(OUTDIR)\htcacheclean.exe"
+CPP_VAR=/MD /O2 /Oy- /D "NDEBUG" 
+MTL_VAR=/D "NDEBUG" 
+RSC_VAR=/d "NDEBUG" 
+LINK32_VAR=/opt:ref 
 
 !ELSE 
-
-ALL : "$(OUTDIR)\htcacheclean.exe"
-
-!ENDIF 
-
-!IF "$(RECURSE)" == "1" 
-CLEAN :
-!ELSE 
-CLEAN :
-!ENDIF 
-	-@erase "$(INTDIR)\htcacheclean.obj"
-	-@erase "$(INTDIR)\htcacheclean.res"
-	-@erase "$(INTDIR)\htcacheclean_src.idb"
-	-@erase "$(INTDIR)\htcacheclean_src.pdb"
-	-@erase "$(OUTDIR)\htcacheclean.exe"
-	-@erase "$(OUTDIR)\htcacheclean.pdb"
-
-"$(OUTDIR)" :
-    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
-
-CPP=cl.exe
-CPP_PROJ=/nologo /MD /W3 /Zi /O2 /Oy- /I "../srclib/apr/include" /I "../srclib/apr-util/include" /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "APR_DECLARE_STATIC" /D "APU_DECLARE_STATIC" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\htcacheclean_src" /FD /c 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-RSC=rc.exe
-RSC_PROJ=/l 0x409 /fo"$(INTDIR)\htcacheclean.res" /i "../include" /i "../srclib/apr/include" /d "NDEBUG" /d "APP_FILE" /d BIN_NAME="htcacheclean.exe" /d LONG_NAME="Apache htcacheclean command line utility" 
-BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\htcacheclean.bsc" 
-BSC32_SBRS= \
-	
-LINK32=link.exe
-LINK32_FLAGS=kernel32.lib advapi32.lib wsock32.lib ws2_32.lib shell32.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\htcacheclean.pdb" /debug /machine:IX86 /out:"$(OUTDIR)\htcacheclean.exe" /opt:ref 
-LINK32_OBJS= \
-	"$(INTDIR)\htcacheclean.obj" \
-	"$(INTDIR)\htcacheclean.res"
-
-"$(OUTDIR)\htcacheclean.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
-  $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
-
-TargetPath=.\Release\htcacheclean.exe
-SOURCE="$(InputPath)"
-PostBuild_Desc=Embed .manifest
-DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
-
-ALL : $(DS_POSTBUILD_DEP)
-
-# Begin Custom Macros
-OutDir=.\Release
-# End Custom Macros
-
-$(DS_POSTBUILD_DEP) : "$(OUTDIR)\htcacheclean.exe"
-   if exist .\Release\htcacheclean.exe.manifest mt.exe -manifest .\Release\htcacheclean.exe.manifest -outputresource:.\Release\htcacheclean.exe;1
-	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
-
-!ELSEIF  "$(CFG)" == "htcacheclean - Win32 Debug"
-
 OUTDIR=.\Debug
 INTDIR=.\Debug
-# Begin Custom Macros
-OutDir=.\Debug
-# End Custom Macros
 
-!IF "$(RECURSE)" == "0" 
-
-ALL : "$(OUTDIR)\htcacheclean.exe"
-
-!ELSE 
-
-ALL : "$(OUTDIR)\htcacheclean.exe"
+CPP_VAR=/MDd /Od /D "_DEBUG" /EHsc 
+MTL_VAR=/D "_DEBUG" 
+RSC_VAR=/d "_DEBUG" 
+LINK32_VAR= 
 
 !ENDIF 
 
-!IF "$(RECURSE)" == "1" 
+ALL : "$(OUTDIR)\htcacheclean.exe"
 CLEAN :
-!ELSE 
-CLEAN :
-!ENDIF 
 	-@erase "$(INTDIR)\htcacheclean.obj"
 	-@erase "$(INTDIR)\htcacheclean.res"
 	-@erase "$(INTDIR)\htcacheclean_src.idb"
@@ -156,57 +67,60 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
+"$(INTDIR)" :
+    if not exist "$(INTDIR)/$(NULL)" mkdir "$(INTDIR)"
+
 CPP=cl.exe
-CPP_PROJ=/nologo /MDd /W3 /Zi /Od /I "../srclib/apr/include" /I "../srclib/apr-util/include" /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "APR_DECLARE_STATIC" /D "APU_DECLARE_STATIC" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\htcacheclean_src" /FD /EHsc /c 
+CPP_PROJ=/nologo /W3 /Zi /I "$(APR_INC)" /I "$(APU_INC)" $(CPP_VAR) /D "WIN32" /D "_CONSOLE" /D "APR_DECLARE_STATIC" /D "APU_DECLARE_STATIC" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\htcacheclean_src" /FD /c 
 
 .c{$(INTDIR)}.obj::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .c{$(INTDIR)}.sbr::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 RSC=rc.exe
-RSC_PROJ=/l 0x409 /fo"$(INTDIR)\htcacheclean.res" /i "../include" /i "../srclib/apr/include" /d "_DEBUG" /d "APP_FILE" /d BIN_NAME="htcacheclean.exe" /d LONG_NAME="Apache htcacheclean command line utility" 
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)\htcacheclean.res" /i "../include" /i "$(APR_INC)"  $(RSC_VAR)  /d "APP_FILE" /d BIN_NAME="htcacheclean.exe" /d LONG_NAME="Apache htcacheclean command line utility"  /i "\tmp\httpd\build\win32" 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\htcacheclean.bsc" 
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib advapi32.lib wsock32.lib ws2_32.lib shell32.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\htcacheclean.pdb" /debug /machine:IX86 /out:"$(OUTDIR)\htcacheclean.exe" 
+LINK32_FLAGS=kernel32.lib advapi32.lib wsock32.lib ws2_32.lib shell32.lib $(APR_LIB) $(APU_LIB) $(LINK32_VAR) /libpath:"$(LIB_DIR)" /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\htcacheclean.pdb" /debug /machine:$(ARCH) /out:"$(OUTDIR)\htcacheclean.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\htcacheclean.obj" \
 	"$(INTDIR)\htcacheclean.res"
 
 "$(OUTDIR)\htcacheclean.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
+    $(LINK32) \
   $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
 
-TargetPath=.\Debug\htcacheclean.exe
+
+TargetPath=$(OUTDIR)\htcacheclean.exe
 SOURCE="$(InputPath)"
 PostBuild_Desc=Embed .manifest
 DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
@@ -214,14 +128,12 @@ DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
 ALL : $(DS_POSTBUILD_DEP)
 
 # Begin Custom Macros
-OutDir=.\Debug
+OutDir=.\Release
 # End Custom Macros
 
 $(DS_POSTBUILD_DEP) : "$(OUTDIR)\htcacheclean.exe"
-   if exist .\Debug\htcacheclean.exe.manifest mt.exe -manifest .\Debug\htcacheclean.exe.manifest -outputresource:.\Debug\htcacheclean.exe;1
+   if exist $(OUTDIR)\htcacheclean.exe.manifest mt.exe -manifest $(OUTDIR)\htcacheclean.exe.manifest -outputresource:$(OUTDIR)\htcacheclean.exe;1
 	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
-
-!ENDIF 
 
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
@@ -233,20 +145,6 @@ $(DS_POSTBUILD_DEP) : "$(OUTDIR)\htcacheclean.exe"
 !ENDIF 
 
 
-!IF "$(CFG)" == "htcacheclean - Win32 Release" || "$(CFG)" == "htcacheclean - Win32 Debug"
-
-!IF  "$(CFG)" == "htcacheclean - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "htcacheclean - Win32 Debug"
-
-!ENDIF 
-
-!IF  "$(CFG)" == "htcacheclean - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "htcacheclean - Win32 Debug"
-
-!ENDIF 
-
 SOURCE=.\htcacheclean.c
 
 "$(INTDIR)\htcacheclean.obj" : $(SOURCE) "$(INTDIR)"
@@ -254,22 +152,7 @@ SOURCE=.\htcacheclean.c
 
 SOURCE=..\build\win32\httpd.rc
 
-!IF  "$(CFG)" == "htcacheclean - Win32 Release"
-
 
 "$(INTDIR)\htcacheclean.res" : $(SOURCE) "$(INTDIR)"
-	$(RSC) /l 0x409 /fo"$(INTDIR)\htcacheclean.res" /i "../include" /i "../srclib/apr/include" /i "\tmp\httpd\build\win32" /d "NDEBUG" /d "APP_FILE" /d BIN_NAME="htcacheclean.exe" /d LONG_NAME="Apache htcacheclean command line utility" $(SOURCE)
-
-
-!ELSEIF  "$(CFG)" == "htcacheclean - Win32 Debug"
-
-
-"$(INTDIR)\htcacheclean.res" : $(SOURCE) "$(INTDIR)"
-	$(RSC) /l 0x409 /fo"$(INTDIR)\htcacheclean.res" /i "../include" /i "../srclib/apr/include" /i "\tmp\httpd\build\win32" /d "_DEBUG" /d "APP_FILE" /d BIN_NAME="htcacheclean.exe" /d LONG_NAME="Apache htcacheclean command line utility" $(SOURCE)
-
-
-!ENDIF 
-
-
-!ENDIF 
+	$(RSC) $(RSC_PROJ) $(SOURCE)
 

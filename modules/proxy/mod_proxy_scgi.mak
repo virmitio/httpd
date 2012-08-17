@@ -25,133 +25,38 @@ NULL=
 NULL=nul
 !ENDIF 
 
-!IF  "$(CFG)" == "mod_proxy_scgi - Win32 Release"
+ARCH=IX86
+APR_INC=../../srclib/apr/include
+APR_LIB=libapr-1.lib
+APU_INC=../../srclib/apr-util/include
+APU_LIB=libaprutil-1.lib
+PCRE_INC=../../srclib/pcre/include
+PCRE_LIB=pcre.lib
+LIB_DIR=../../srclib/pcre
+HTTPD_OUT=..\..\Release
 
+!IF  "$(CFG)" == "mod_proxy_scgi - Win32 Release"
 OUTDIR=.\Release
 INTDIR=.\Release
-# Begin Custom Macros
-OutDir=.\Release
-# End Custom Macros
 
-!IF "$(RECURSE)" == "0" 
-
-ALL : "$(OUTDIR)\mod_proxy_scgi.so"
+CPP_VAR=/MD /O2 /Oy- /D "NDEBUG" 
+MTL_VAR=/D "NDEBUG" 
+RSC_VAR=/d "NDEBUG" 
+LINK32_VAR=/opt:ref 
 
 !ELSE 
-
-ALL : "mod_proxy - Win32 Release" "libhttpd - Win32 Release" "$(OUTDIR)\mod_proxy_scgi.so"
-
-!ENDIF 
-
-!IF "$(RECURSE)" == "1" 
-CLEAN :"libhttpd - Win32 ReleaseCLEAN" "mod_proxy - Win32 ReleaseCLEAN" 
-!ELSE 
-CLEAN :
-!ENDIF 
-	-@erase "$(INTDIR)\mod_proxy_scgi.obj"
-	-@erase "$(INTDIR)\mod_proxy_scgi.res"
-	-@erase "$(INTDIR)\mod_proxy_scgi_src.idb"
-	-@erase "$(INTDIR)\mod_proxy_scgi_src.pdb"
-	-@erase "$(OUTDIR)\mod_proxy_scgi.exp"
-	-@erase "$(OUTDIR)\mod_proxy_scgi.lib"
-	-@erase "$(OUTDIR)\mod_proxy_scgi.pdb"
-	-@erase "$(OUTDIR)\mod_proxy_scgi.so"
-
-"$(OUTDIR)" :
-    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
-
-CPP=cl.exe
-CPP_PROJ=/nologo /MD /W3 /Zi /O2 /Oy- /I "../../include" /I "../../srclib/apr/include" /I "../../srclib/apr-util/include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\mod_proxy_scgi_src" /FD /c 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-MTL=midl.exe
-MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
-RSC=rc.exe
-RSC_PROJ=/l 0x409 /fo"$(INTDIR)\mod_proxy_scgi.res" /i "../../include" /i "../../srclib/apr/include" /d "NDEBUG" /d BIN_NAME="mod_proxy_scgi.so" /d LONG_NAME="proxy_scgi_module for Apache" 
-BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\mod_proxy_scgi.bsc" 
-BSC32_SBRS= \
-	
-LINK32=link.exe
-LINK32_FLAGS=kernel32.lib ws2_32.lib mswsock.lib /nologo /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\mod_proxy_scgi.pdb" /debug /machine:IX86 /out:"$(OUTDIR)\mod_proxy_scgi.so" /implib:"$(OUTDIR)\mod_proxy_scgi.lib" /base:@..\..\os\win32\BaseAddr.ref,mod_proxy_scgi.so /opt:ref 
-LINK32_OBJS= \
-	"$(INTDIR)\mod_proxy_scgi.obj" \
-	"$(INTDIR)\mod_proxy_scgi.res" \
-	"..\..\Release\libhttpd.lib" \
-	"$(OUTDIR)\mod_proxy.lib"
-
-"$(OUTDIR)\mod_proxy_scgi.so" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
-  $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
-
-TargetPath=.\Release\mod_proxy_scgi.so
-SOURCE="$(InputPath)"
-PostBuild_Desc=Embed .manifest
-DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
-
-ALL : $(DS_POSTBUILD_DEP)
-
-# Begin Custom Macros
-OutDir=.\Release
-# End Custom Macros
-
-$(DS_POSTBUILD_DEP) : "mod_proxy - Win32 Release" "libhttpd - Win32 Release" "$(OUTDIR)\mod_proxy_scgi.so"
-   if exist .\Release\mod_proxy_scgi.so.manifest mt.exe -manifest .\Release\mod_proxy_scgi.so.manifest -outputresource:.\Release\mod_proxy_scgi.so;2
-	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
-
-!ELSEIF  "$(CFG)" == "mod_proxy_scgi - Win32 Debug"
-
 OUTDIR=.\Debug
 INTDIR=.\Debug
-# Begin Custom Macros
-OutDir=.\Debug
-# End Custom Macros
 
-!IF "$(RECURSE)" == "0" 
+CPP_VAR=/MDd /Od /D "_DEBUG" /EHsc 
+MTL_VAR=/D "_DEBUG" 
+RSC_VAR=/d "_DEBUG" 
+LINK32_VAR= 
+
+!ENDIF 
 
 ALL : "$(OUTDIR)\mod_proxy_scgi.so"
-
-!ELSE 
-
-ALL : "mod_proxy - Win32 Debug" "libhttpd - Win32 Debug" "$(OUTDIR)\mod_proxy_scgi.so"
-
-!ENDIF 
-
-!IF "$(RECURSE)" == "1" 
-CLEAN :"libhttpd - Win32 DebugCLEAN" "mod_proxy - Win32 DebugCLEAN" 
-!ELSE 
 CLEAN :
-!ENDIF 
 	-@erase "$(INTDIR)\mod_proxy_scgi.obj"
 	-@erase "$(INTDIR)\mod_proxy_scgi.res"
 	-@erase "$(INTDIR)\mod_proxy_scgi_src.idb"
@@ -164,61 +69,64 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
+"$(INTDIR)" :
+    if not exist "$(INTDIR)/$(NULL)" mkdir "$(INTDIR)"
+
 CPP=cl.exe
-CPP_PROJ=/nologo /MDd /W3 /Zi /Od /I "../../include" /I "../../srclib/apr/include" /I "../../srclib/apr-util/include" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\mod_proxy_scgi_src" /FD /EHsc /c 
+CPP_PROJ=/nologo /W3 /Zi /I "../../include" /I "$(APR_INC)" /I "$(APU_INC)" $(CPP_VAR) /D "WIN32" /D "_WINDOWS" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\mod_proxy_scgi_src" /FD /c 
 
 .c{$(INTDIR)}.obj::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .c{$(INTDIR)}.sbr::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 MTL=midl.exe
-MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
+MTL_PROJ=/nologo $(MTL_VAR) /mktyplib203 /win32 
 RSC=rc.exe
-RSC_PROJ=/l 0x409 /fo"$(INTDIR)\mod_proxy_scgi.res" /i "../../include" /i "../../srclib/apr/include" /d "_DEBUG" /d BIN_NAME="mod_proxy_scgi.so" /d LONG_NAME="proxy_scgi_module for Apache" 
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)\mod_proxy_scgi.res" /i "../../include" /i "$(APR_INC)"  $(RSC_VAR)  /d BIN_NAME="mod_proxy_scgi.so" /d LONG_NAME="proxy_scgi_module for Apache"  /i "\tmp\httpd\build\win32" 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\mod_proxy_scgi.bsc" 
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib ws2_32.lib mswsock.lib /nologo /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\mod_proxy_scgi.pdb" /debug /machine:IX86 /out:"$(OUTDIR)\mod_proxy_scgi.so" /implib:"$(OUTDIR)\mod_proxy_scgi.lib" /base:@..\..\os\win32\BaseAddr.ref,mod_proxy_scgi.so 
+LINK32_FLAGS=kernel32.lib ws2_32.lib mswsock.lib $(APR_LIB) $(APU_LIB) $(LINK32_VAR) /libpath:"$(LIB_DIR)" /nologo /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\mod_proxy_scgi.pdb" /debug /machine:$(ARCH) /out:"$(OUTDIR)\mod_proxy_scgi.so" /implib:"$(OUTDIR)\mod_proxy_scgi.lib" /base:@..\..\os\win32\BaseAddr.ref,mod_proxy_scgi.so 
 LINK32_OBJS= \
 	"$(INTDIR)\mod_proxy_scgi.obj" \
 	"$(INTDIR)\mod_proxy_scgi.res" \
-	"..\..\Release\libhttpd.lib" \
+	"$(HTTPD_OUT)\libhttpd.lib" \
 	"$(OUTDIR)\mod_proxy.lib"
 
 "$(OUTDIR)\mod_proxy_scgi.so" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
+    $(LINK32) \
   $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
 
-TargetPath=.\Debug\mod_proxy_scgi.so
+
+TargetPath=$(OUTDIR)\mod_proxy_scgi.so
 SOURCE="$(InputPath)"
 PostBuild_Desc=Embed .manifest
 DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
@@ -226,14 +134,12 @@ DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
 ALL : $(DS_POSTBUILD_DEP)
 
 # Begin Custom Macros
-OutDir=.\Debug
+OutDir=.\Release
 # End Custom Macros
 
-$(DS_POSTBUILD_DEP) : "mod_proxy - Win32 Debug" "libhttpd - Win32 Debug" "$(OUTDIR)\mod_proxy_scgi.so"
-   if exist .\Debug\mod_proxy_scgi.so.manifest mt.exe -manifest .\Debug\mod_proxy_scgi.so.manifest -outputresource:.\Debug\mod_proxy_scgi.so;2
+$(DS_POSTBUILD_DEP) : "$(OUTDIR)\mod_proxy_scgi.so"
+   if exist $(OUTDIR)\mod_proxy_scgi.so.manifest mt.exe -manifest $(OUTDIR)\mod_proxy_scgi.so.manifest -outputresource:$(OUTDIR)\mod_proxy_scgi.so;2
 	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
-
-!ENDIF 
 
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
@@ -245,94 +151,13 @@ $(DS_POSTBUILD_DEP) : "mod_proxy - Win32 Debug" "libhttpd - Win32 Debug" "$(OUTD
 !ENDIF 
 
 
-!IF "$(CFG)" == "mod_proxy_scgi - Win32 Release" || "$(CFG)" == "mod_proxy_scgi - Win32 Debug"
 SOURCE=.\mod_proxy_scgi.c
 
 "$(INTDIR)\mod_proxy_scgi.obj" : $(SOURCE) "$(INTDIR)"
 
 
-!IF  "$(CFG)" == "mod_proxy_scgi - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "mod_proxy_scgi - Win32 Debug"
-
-!ENDIF 
-
-!IF  "$(CFG)" == "mod_proxy_scgi - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "mod_proxy_scgi - Win32 Debug"
-
-!ENDIF 
-
-!IF  "$(CFG)" == "mod_proxy_scgi - Win32 Release"
-
-"libhttpd - Win32 Release" : 
-   cd "\tmp\httpd"
-   $(MAKE) /$(MAKEFLAGS) /F .\libhttpd.mak CFG="libhttpd - Win32 Release" 
-   cd ".\modules\proxy"
-
-"libhttpd - Win32 ReleaseCLEAN" : 
-   cd "\tmp\httpd"
-   $(MAKE) /$(MAKEFLAGS) /F .\libhttpd.mak CFG="libhttpd - Win32 Release" RECURSE=1 CLEAN 
-   cd ".\modules\proxy"
-
-!ELSEIF  "$(CFG)" == "mod_proxy_scgi - Win32 Debug"
-
-"libhttpd - Win32 Debug" : 
-   cd "\tmp\httpd"
-   $(MAKE) /$(MAKEFLAGS) /F .\libhttpd.mak CFG="libhttpd - Win32 Debug" 
-   cd ".\modules\proxy"
-
-"libhttpd - Win32 DebugCLEAN" : 
-   cd "\tmp\httpd"
-   $(MAKE) /$(MAKEFLAGS) /F .\libhttpd.mak CFG="libhttpd - Win32 Debug" RECURSE=1 CLEAN 
-   cd ".\modules\proxy"
-
-!ENDIF 
-
-!IF  "$(CFG)" == "mod_proxy_scgi - Win32 Release"
-
-"mod_proxy - Win32 Release" : 
-   cd "."
-   $(MAKE) /$(MAKEFLAGS) /F .\mod_proxy.mak CFG="mod_proxy - Win32 Release" 
-   cd "."
-
-"mod_proxy - Win32 ReleaseCLEAN" : 
-   cd "."
-   $(MAKE) /$(MAKEFLAGS) /F .\mod_proxy.mak CFG="mod_proxy - Win32 Release" RECURSE=1 CLEAN 
-   cd "."
-
-!ELSEIF  "$(CFG)" == "mod_proxy_scgi - Win32 Debug"
-
-"mod_proxy - Win32 Debug" : 
-   cd "."
-   $(MAKE) /$(MAKEFLAGS) /F .\mod_proxy.mak CFG="mod_proxy - Win32 Debug" 
-   cd "."
-
-"mod_proxy - Win32 DebugCLEAN" : 
-   cd "."
-   $(MAKE) /$(MAKEFLAGS) /F .\mod_proxy.mak CFG="mod_proxy - Win32 Debug" RECURSE=1 CLEAN 
-   cd "."
-
-!ENDIF 
-
 SOURCE=..\..\build\win32\httpd.rc
 
-!IF  "$(CFG)" == "mod_proxy_scgi - Win32 Release"
-
 
 "$(INTDIR)\mod_proxy_scgi.res" : $(SOURCE) "$(INTDIR)"
-	$(RSC) /l 0x409 /fo"$(INTDIR)\mod_proxy_scgi.res" /i "../../include" /i "../../srclib/apr/include" /i "\tmp\httpd\build\win32" /d "NDEBUG" /d BIN_NAME="mod_proxy_scgi.so" /d LONG_NAME="proxy_scgi_module for Apache" $(SOURCE)
-
-
-!ELSEIF  "$(CFG)" == "mod_proxy_scgi - Win32 Debug"
-
-
-"$(INTDIR)\mod_proxy_scgi.res" : $(SOURCE) "$(INTDIR)"
-	$(RSC) /l 0x409 /fo"$(INTDIR)\mod_proxy_scgi.res" /i "../../include" /i "../../srclib/apr/include" /i "\tmp\httpd\build\win32" /d "_DEBUG" /d BIN_NAME="mod_proxy_scgi.so" /d LONG_NAME="proxy_scgi_module for Apache" $(SOURCE)
-
-
-!ENDIF 
-
-
-!ENDIF 
-
+	$(RSC) $(RSC_PROJ) $(SOURCE)

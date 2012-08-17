@@ -25,226 +25,48 @@ NULL=
 NULL=nul
 !ENDIF 
 
-!IF  "$(CFG)" == "libhttpd - Win32 Release"
+
+ARCH=IX86
+APR_INC=./srclib/apr/include
+APR_LIB=libapr-1.lib
+APU_INC=./srclib/apr-util/include
+APU_LIB=libaprutil-1.lib
+PCRE_INC=./srclib/pcre
+PCRE_LIB=pcre.lib
+LIB_DIR=./srclib/pcre
 
 OUTDIR=.\Release
 INTDIR=.\Release
-# Begin Custom Macros
-OutDir=.\Release
-# End Custom Macros
-
-!IF "$(RECURSE)" == "0" 
-
-ALL : ".\include\mod_so.h" ".\include\mod_proxy.h" ".\include\mod_include.h" ".\include\mod_dav.h" ".\include\mod_cgi.h" ".\include\ap_config_layout.h" "$(OUTDIR)\libhttpd.dll"
-
-!ELSE 
-
-ALL : "gen_test_char - Win32 Release" ".\include\mod_so.h" ".\include\mod_proxy.h" ".\include\mod_include.h" ".\include\mod_dav.h" ".\include\mod_cgi.h" ".\include\ap_config_layout.h" "$(OUTDIR)\libhttpd.dll"
-
-!ENDIF 
-
-!IF "$(RECURSE)" == "1" 
-CLEAN :"gen_test_char - Win32 ReleaseCLEAN" 
-!ELSE 
-CLEAN :
-!ENDIF 
-	-@erase "$(INTDIR)\ap_regkey.obj"
-	-@erase "$(INTDIR)\byterange_filter.obj"
-	-@erase "$(INTDIR)\child.obj"
-	-@erase "$(INTDIR)\chunk_filter.obj"
-	-@erase "$(INTDIR)\config.obj"
-	-@erase "$(INTDIR)\connection.obj"
-	-@erase "$(INTDIR)\core.obj"
-	-@erase "$(INTDIR)\core_filters.obj"
-	-@erase "$(INTDIR)\eoc_bucket.obj"
-	-@erase "$(INTDIR)\eor_bucket.obj"
-	-@erase "$(INTDIR)\error_bucket.obj"
-	-@erase "$(INTDIR)\http_core.obj"
-	-@erase "$(INTDIR)\http_etag.obj"
-	-@erase "$(INTDIR)\http_filters.obj"
-	-@erase "$(INTDIR)\http_protocol.obj"
-	-@erase "$(INTDIR)\http_request.obj"
-	-@erase "$(INTDIR)\libhttpd.res"
-	-@erase "$(INTDIR)\libhttpd_cl.idb"
-	-@erase "$(INTDIR)\libhttpd_cl.pdb"
-	-@erase "$(INTDIR)\listen.obj"
-	-@erase "$(INTDIR)\log.obj"
-	-@erase "$(INTDIR)\mod_so.obj"
-	-@erase "$(INTDIR)\mod_win32.obj"
-	-@erase "$(INTDIR)\modules.obj"
-	-@erase "$(INTDIR)\mpm_common.obj"
-	-@erase "$(INTDIR)\mpm_winnt.obj"
-	-@erase "$(INTDIR)\nt_eventlog.obj"
-	-@erase "$(INTDIR)\protocol.obj"
-	-@erase "$(INTDIR)\provider.obj"
-	-@erase "$(INTDIR)\request.obj"
-	-@erase "$(INTDIR)\scoreboard.obj"
-	-@erase "$(INTDIR)\service.obj"
-	-@erase "$(INTDIR)\util.obj"
-	-@erase "$(INTDIR)\util_cfgtree.obj"
-	-@erase "$(INTDIR)\util_cookies.obj"
-	-@erase "$(INTDIR)\util_expr_eval.obj"
-	-@erase "$(INTDIR)\util_expr_parse.obj"
-	-@erase "$(INTDIR)\util_expr_scan.obj"
-	-@erase "$(INTDIR)\util_filter.obj"
-	-@erase "$(INTDIR)\util_md5.obj"
-	-@erase "$(INTDIR)\util_mutex.obj"
-	-@erase "$(INTDIR)\util_pcre.obj"
-	-@erase "$(INTDIR)\util_regex.obj"
-	-@erase "$(INTDIR)\util_script.obj"
-	-@erase "$(INTDIR)\util_time.obj"
-	-@erase "$(INTDIR)\util_win32.obj"
-	-@erase "$(INTDIR)\util_xml.obj"
-	-@erase "$(INTDIR)\vhost.obj"
-	-@erase "$(OUTDIR)\libhttpd.dll"
-	-@erase "$(OUTDIR)\libhttpd.exp"
-	-@erase "$(OUTDIR)\libhttpd.lib"
-	-@erase "$(OUTDIR)\libhttpd.pdb"
-	-@erase ".\include\ap_config_layout.h"
-	-@erase ".\include\mod_cgi.h"
-	-@erase ".\include\mod_dav.h"
-	-@erase ".\include\mod_include.h"
-	-@erase ".\include\mod_proxy.h"
-	-@erase ".\include\mod_so.h"
-
-"$(OUTDIR)" :
-    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
 CPP=cl.exe
-CPP_PROJ=/nologo /MD /W3 /Zi /O2 /Oy- /I "./include" /I "./srclib/apr/include" /I "./srclib/apr-util/include" /I "./srclib/pcre" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "AP_DECLARE_EXPORT" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\libhttpd_cl" /FD /c 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
 MTL=midl.exe
-MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
 RSC=rc.exe
-RSC_PROJ=/l 0x409 /fo"$(INTDIR)\libhttpd.res" /i "./include" /i "./srclib/apr/include" /d "NDEBUG" /d BIN_NAME="libhttpd.dll" /d LONG_NAME="Apache HTTP Server Core" 
 BSC32=bscmake.exe
+LINK32=link.exe
+
+!IF  "$(CFG)" == "libhttpd - Win32 Release"
+!MESSAGE Running Release
+CPP_VAR= 
+MTL_VAR= 
+RSC_VAR= 
+PCRE_LIB=pcre.lib
+!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
+!MESSAGE Running Debug
+CPP_VAR=/D "_DEBUG" /EHsc 
+MTL_VAR=/D "_DEBUG" 
+RSC_VAR=/d "_DEBUG" 
+PCRE_LIB=pcred.lib
+!ENDIF 
+
+CPP_PROJ=/nologo /MD /W3 /Zi /O2 /Oy- /I "./include" /I "$(APR_INC)" /I "$(APU_INC)" /I "$(PCRE_INC)" $(CPP_VAR) /D "WIN32" /D "_WINDOWS" /D "AP_DECLARE_EXPORT" /D "NDEBUG" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\libhttpd_cl" /FD /c 
+MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 $(MTL_VAR) 
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)\libhttpd.res" /i "./include" /i "$(APR_INC)" $(RSC_VAR) /d BIN_NAME="libhttpd.dll" /d LONG_NAME="Apache HTTP Server Core" /d "NDEBUG" 
+LINK32_FLAGS=$(PCRE_LIB) $(APR_LIB) $(APU_LIB) kernel32.lib user32.lib advapi32.lib ws2_32.lib mswsock.lib "$(INTDIR)\buildmark.obj" /nologo /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\libhttpd.pdb" /debug /machine:$(ARCH) /out:"$(OUTDIR)\libhttpd.dll" /implib:"$(OUTDIR)\libhttpd.lib" /libpath:"$(LIB_DIR)" /base:@"os\win32\BaseAddr.ref",libhttpd.dll  /base:@"os\win32\BaseAddr.ref",libhttpd.dll /opt:ref 
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\libhttpd.bsc" 
 BSC32_SBRS= \
-	
-LINK32=link.exe
-LINK32_FLAGS=pcre.lib kernel32.lib user32.lib advapi32.lib ws2_32.lib mswsock.lib "Release\buildmark.obj" /nologo /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\libhttpd.pdb" /debug /machine:IX86 /out:"$(OUTDIR)\libhttpd.dll" /implib:"$(OUTDIR)\libhttpd.lib" /libpath:"./srclib/pcre" /base:@"os\win32\BaseAddr.ref",libhttpd.dll /opt:ref 
-LINK32_OBJS= \
-	"$(INTDIR)\byterange_filter.obj" \
-	"$(INTDIR)\chunk_filter.obj" \
-	"$(INTDIR)\config.obj" \
-	"$(INTDIR)\connection.obj" \
-	"$(INTDIR)\core.obj" \
-	"$(INTDIR)\core_filters.obj" \
-	"$(INTDIR)\http_core.obj" \
-	"$(INTDIR)\http_etag.obj" \
-	"$(INTDIR)\http_filters.obj" \
-	"$(INTDIR)\http_protocol.obj" \
-	"$(INTDIR)\http_request.obj" \
-	"$(INTDIR)\log.obj" \
-	"$(INTDIR)\protocol.obj" \
-	"$(INTDIR)\request.obj" \
-	"$(INTDIR)\vhost.obj" \
-	"$(INTDIR)\mod_so.obj" \
-	"$(INTDIR)\mod_win32.obj" \
-	"$(INTDIR)\modules.obj" \
-	"$(INTDIR)\eoc_bucket.obj" \
-	"$(INTDIR)\eor_bucket.obj" \
-	"$(INTDIR)\error_bucket.obj" \
-	"$(INTDIR)\util.obj" \
-	"$(INTDIR)\util_cfgtree.obj" \
-	"$(INTDIR)\util_cookies.obj" \
-	"$(INTDIR)\util_expr_eval.obj" \
-	"$(INTDIR)\util_expr_scan.obj" \
-	"$(INTDIR)\util_expr_parse.obj" \
-	"$(INTDIR)\util_filter.obj" \
-	"$(INTDIR)\util_md5.obj" \
-	"$(INTDIR)\util_mutex.obj" \
-	"$(INTDIR)\util_pcre.obj" \
-	"$(INTDIR)\util_regex.obj" \
-	"$(INTDIR)\util_script.obj" \
-	"$(INTDIR)\util_time.obj" \
-	"$(INTDIR)\util_win32.obj" \
-	"$(INTDIR)\util_xml.obj" \
-	"$(INTDIR)\ap_regkey.obj" \
-	"$(INTDIR)\child.obj" \
-	"$(INTDIR)\listen.obj" \
-	"$(INTDIR)\mpm_common.obj" \
-	"$(INTDIR)\mpm_winnt.obj" \
-	"$(INTDIR)\nt_eventlog.obj" \
-	"$(INTDIR)\provider.obj" \
-	"$(INTDIR)\scoreboard.obj" \
-	"$(INTDIR)\service.obj" \
-	"$(INTDIR)\libhttpd.res"
-
-"$(OUTDIR)\libhttpd.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-   cl.exe /nologo /MD /W3 /O2 /Oy- /Zi /I "./include" /I "./srclib/apr/include" /I "./srclib/apr-util/include" /I "./srclib/pcre" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "AP_DECLARE_EXPORT" /Fd"Release\libhttpd" /FD /c server\buildmark.c /Fo"Release\buildmark.obj"
-	 $(LINK32) @<<
-  $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
-
-TargetPath=.\Release\libhttpd.dll
-SOURCE="$(InputPath)"
-PostBuild_Desc=Embed .manifest
-DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
-
-ALL : $(DS_POSTBUILD_DEP)
-
-# Begin Custom Macros
-OutDir=.\Release
-# End Custom Macros
-
-$(DS_POSTBUILD_DEP) : "gen_test_char - Win32 Release" ".\include\mod_so.h" ".\include\mod_proxy.h" ".\include\mod_include.h" ".\include\mod_dav.h" ".\include\mod_cgi.h" ".\include\ap_config_layout.h" "$(OUTDIR)\libhttpd.dll"
-   if exist .\Release\libhttpd.dll.manifest mt.exe -manifest .\Release\libhttpd.dll.manifest -outputresource:.\Release\libhttpd.dll;2
-	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
-
-!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
-
-OUTDIR=.\Release
-INTDIR=.\Release
-# Begin Custom Macros
-OutDir=.\Release
-# End Custom Macros
-
-!IF "$(RECURSE)" == "0" 
 
 ALL : ".\server\test_char.h" ".\include\mod_so.h" ".\include\mod_proxy.h" ".\include\mod_include.h" ".\include\mod_dav.h" ".\include\mod_cgi.h" ".\include\ap_config_layout.h" "$(OUTDIR)\libhttpd.dll"
-
-!ELSE 
-
-ALL : "gen_test_char - Win32 Debug" ".\server\test_char.h" ".\include\mod_so.h" ".\include\mod_proxy.h" ".\include\mod_include.h" ".\include\mod_dav.h" ".\include\mod_cgi.h" ".\include\ap_config_layout.h" "$(OUTDIR)\libhttpd.dll"
-
-!ENDIF 
-
-!IF "$(RECURSE)" == "1" 
-CLEAN :"gen_test_char - Win32 DebugCLEAN" 
-!ELSE 
 CLEAN :
-!ENDIF 
 	-@erase "$(INTDIR)\ap_regkey.obj"
 	-@erase "$(INTDIR)\byterange_filter.obj"
 	-@erase "$(INTDIR)\child.obj"
@@ -303,54 +125,46 @@ CLEAN :
 	-@erase ".\include\mod_include.h"
 	-@erase ".\include\mod_proxy.h"
 	-@erase ".\include\mod_so.h"
+!IF  "$(CFG)" == "libhttpd - Win32 Debug"
 	-@erase ".\server\test_char.h"
+!ENDIF
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP=cl.exe
-CPP_PROJ=/nologo /MD /W3 /Zi /O2 /Oy- /I "./include" /I "./srclib/apr/include" /I "./srclib/apr-util/include" /I "./srclib/pcre" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "AP_DECLARE_EXPORT" /D "NDEBUG" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\libhttpd_cl" /FD /EHsc  /c 
+"$(INTDIR)" :
+    if not exist "$(INTDIR)/$(NULL)" mkdir "$(INTDIR)"
 
 .c{$(INTDIR)}.obj::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .c{$(INTDIR)}.sbr::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
+
 
 .cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
+   $(CPP) \
    $(CPP_PROJ) $< 
-<<
 
-MTL=midl.exe
-MTL_PROJ=/nologo /D "_DEBUG" /D "NDEBUG" /mktyplib203 /win32  /win32 
-RSC=rc.exe
-RSC_PROJ=/l 0x409 /fo"$(INTDIR)\libhttpd.res" /i "./include" /i "./srclib/apr/include" /d "_DEBUG" /d BIN_NAME="libhttpd.dll" /d LONG_NAME="Apache HTTP Server Core" /d "NDEBUG" 
-BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\libhttpd.bsc" 
-BSC32_SBRS= \
-	
-LINK32=link.exe
-LINK32_FLAGS=pcred.lib kernel32.lib user32.lib advapi32.lib ws2_32.lib mswsock.lib "Debug\buildmark.obj"  pcre.lib kernel32.lib user32.lib advapi32.lib ws2_32.lib mswsock.lib "Release\buildmark.obj" /nologo /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\libhttpd.pdb" /debug /machine:IX86 /out:"$(OUTDIR)\libhttpd.dll" /implib:"$(OUTDIR)\libhttpd.lib" /libpath:"./srclib/pcre" /base:@"os\win32\BaseAddr.ref",libhttpd.dll  /base:@"os\win32\BaseAddr.ref",libhttpd.dll /opt:ref 
+
 LINK32_OBJS= \
 	"$(INTDIR)\byterange_filter.obj" \
 	"$(INTDIR)\chunk_filter.obj" \
@@ -400,27 +214,26 @@ LINK32_OBJS= \
 	"$(INTDIR)\libhttpd.res"
 
 "$(OUTDIR)\libhttpd.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-   cl.exe /nologo /MD /W3 /O2 /Oy- /Zi /I "./include" /I "./srclib/apr/include" /I "./srclib/apr-util/include" /I "./srclib/pcre" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "AP_DECLARE_EXPORT" /Fd"Release\libhttpd" /FD /c server\buildmark.c /Fo"Release\buildmark.obj"
-	 $(LINK32) @<<
+#   cl.exe /nologo /MD /W3 /O2 /Oy- /Zi /I "./include" /I "./srclib/apr/include" /I "./srclib/apr-util/include" /I "./srclib/pcre" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "AP_DECLARE_EXPORT" /Fd"Release\libhttpd" /FD /c server\buildmark.c /Fo"Release\buildmark.obj"
+   $(CPP) $(CPP_PROJ) server\buildmark.c  
+	 $(LINK32) \
   $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
 
-TargetPath=.\Release\libhttpd.dll
+
+TargetPath=$(OUTDIR)\libhttpd.dll
 SOURCE="$(InputPath)"
 PostBuild_Desc=Embed .manifest
 DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
 
 ALL : $(DS_POSTBUILD_DEP)
 
-# Begin Custom Macros
-OutDir=.\Release
-# End Custom Macros
-
-$(DS_POSTBUILD_DEP) : "gen_test_char - Win32 Debug" ".\server\test_char.h" ".\include\mod_so.h" ".\include\mod_proxy.h" ".\include\mod_include.h" ".\include\mod_dav.h" ".\include\mod_cgi.h" ".\include\ap_config_layout.h" "$(OUTDIR)\libhttpd.dll"
-   if exist .\Release\libhttpd.dll.manifest mt.exe -manifest .\Release\libhttpd.dll.manifest -outputresource:.\Release\libhttpd.dll;2
-	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
-
+!IF  "$(CFG)" == "libhttpd - Win32 Release"
+$(DS_POSTBUILD_DEP) : ".\include\mod_so.h" ".\include\mod_proxy.h" ".\include\mod_include.h" ".\include\mod_dav.h" ".\include\mod_cgi.h" ".\include\ap_config_layout.h" "$(OUTDIR)\libhttpd.dll"
+!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
+$(DS_POSTBUILD_DEP) : ".\server\test_char.h" ".\include\mod_so.h" ".\include\mod_proxy.h" ".\include\mod_include.h" ".\include\mod_dav.h" ".\include\mod_cgi.h" ".\include\ap_config_layout.h" "$(OUTDIR)\libhttpd.dll"
 !ENDIF 
+   if exist $(OUTDIR)\libhttpd.dll.manifest mt.exe -manifest $(OUTDIR)\libhttpd.dll.manifest -outputresource:$(OUTDIR)\libhttpd.dll;2
+	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
 
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
@@ -432,11 +245,8 @@ $(DS_POSTBUILD_DEP) : "gen_test_char - Win32 Debug" ".\server\test_char.h" ".\in
 !ENDIF 
 
 
-!IF "$(CFG)" == "libhttpd - Win32 Release" || "$(CFG)" == "libhttpd - Win32 Debug"
 SOURCE=.\modules\generators\mod_cgi.h
 
-!IF  "$(CFG)" == "libhttpd - Win32 Release"
-
 InputPath=.\modules\generators\mod_cgi.h
 
 ".\include\mod_cgi.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -445,175 +255,54 @@ InputPath=.\modules\generators\mod_cgi.h
 	type .\modules\generators\mod_cgi.h > .\include\mod_cgi.h
 << 
 	
-
-!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
-
-InputPath=.\modules\generators\mod_cgi.h
-
-".\include\mod_cgi.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	<<tempfile.bat 
-	@echo off 
-	type .\modules\generators\mod_cgi.h > .\include\mod_cgi.h
-<< 
-	
-
-!ENDIF 
 
 SOURCE=.\modules\dav\main\mod_dav.h
 
-!IF  "$(CFG)" == "libhttpd - Win32 Release"
-
 InputPath=.\modules\dav\main\mod_dav.h
 
 ".\include\mod_dav.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	<<tempfile.bat 
-	@echo off 
 	type .\modules\dav\main\mod_dav.h > .\include\mod_dav.h
-<< 
 	
-
-!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
-
-InputPath=.\modules\dav\main\mod_dav.h
-
-".\include\mod_dav.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	<<tempfile.bat 
-	@echo off 
-	type .\modules\dav\main\mod_dav.h > .\include\mod_dav.h
-<< 
-	
-
-!ENDIF 
 
 SOURCE=.\modules\filters\mod_include.h
 
-!IF  "$(CFG)" == "libhttpd - Win32 Release"
-
 InputPath=.\modules\filters\mod_include.h
 
 ".\include\mod_include.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	<<tempfile.bat 
-	@echo off 
 	type .\modules\filters\mod_include.h > .\include\mod_include.h
-<< 
 	
-
-!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
-
-InputPath=.\modules\filters\mod_include.h
-
-".\include\mod_include.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	<<tempfile.bat 
-	@echo off 
-	type .\modules\filters\mod_include.h > .\include\mod_include.h
-<< 
-	
-
-!ENDIF 
 
 SOURCE=.\modules\proxy\mod_proxy.h
 
-!IF  "$(CFG)" == "libhttpd - Win32 Release"
-
 InputPath=.\modules\proxy\mod_proxy.h
 
 ".\include\mod_proxy.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	<<tempfile.bat 
-	@echo off 
 	type .\modules\proxy\mod_proxy.h > .\include\mod_proxy.h
-<< 
 	
-
-!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
-
-InputPath=.\modules\proxy\mod_proxy.h
-
-".\include\mod_proxy.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	<<tempfile.bat 
-	@echo off 
-	type .\modules\proxy\mod_proxy.h > .\include\mod_proxy.h
-<< 
-	
-
-!ENDIF 
 
 SOURCE=.\modules\core\mod_so.h
 
-!IF  "$(CFG)" == "libhttpd - Win32 Release"
-
 InputPath=.\modules\core\mod_so.h
 
 ".\include\mod_so.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	<<tempfile.bat 
-	@echo off 
 	type .\modules\core\mod_so.h > .\include\mod_so.h
-<< 
 	
-
-!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
-
-InputPath=.\modules\core\mod_so.h
-
-".\include\mod_so.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	<<tempfile.bat 
-	@echo off 
-	type .\modules\core\mod_so.h > .\include\mod_so.h
-<< 
-	
-
-!ENDIF 
 
 SOURCE=.\os\win32\os.h
 
-!IF  "$(CFG)" == "libhttpd - Win32 Release"
-
 InputPath=.\os\win32\os.h
 
 ".\include\os.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	<<tempfile.bat 
-	@echo off 
 	type .\os\win32\os.h > .\include\os.h
-<< 
 	
-
-!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
-
-InputPath=.\os\win32\os.h
-
-".\include\os.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	<<tempfile.bat 
-	@echo off 
-	type .\os\win32\os.h > .\include\os.h
-<< 
-	
-
-!ENDIF 
 
 SOURCE=.\os\win32\win32_config_layout.h
 
-!IF  "$(CFG)" == "libhttpd - Win32 Release"
-
 InputPath=.\os\win32\win32_config_layout.h
 
 ".\include\ap_config_layout.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	<<tempfile.bat 
-	@echo off 
 	type .\os\win32\win32_config_layout.h > .\include\ap_config_layout.h
-<< 
 	
-
-!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
-
-InputPath=.\os\win32\win32_config_layout.h
-
-".\include\ap_config_layout.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	<<tempfile.bat 
-	@echo off 
-	type .\os\win32\win32_config_layout.h > .\include\ap_config_layout.h
-<< 
-	
-
-!ENDIF 
 
 SOURCE=.\server\buildmark.c
 SOURCE=.\modules\http\byterange_filter.c
@@ -888,110 +577,20 @@ SOURCE=.\server\mpm\winnt\service.c
 
 SOURCE=.\server\util_expr_parse.y
 
-!IF  "$(CFG)" == "libhttpd - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
-
-!ENDIF 
-
 SOURCE=.\server\util_expr_scan.l
 
-!IF  "$(CFG)" == "libhttpd - Win32 Release"
+SOURCE=$(OUTDIR)\gen_test_char.exe
 
-!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
-
-!ENDIF 
-
-!IF  "$(CFG)" == "libhttpd - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
-
-!ENDIF 
-
-!IF  "$(CFG)" == "libhttpd - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
-
-!ENDIF 
-
-!IF  "$(CFG)" == "libhttpd - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
-
-!ENDIF 
-
-!IF  "$(CFG)" == "libhttpd - Win32 Release"
-
-"gen_test_char - Win32 Release" : 
-   cd ".\server"
-   $(MAKE) /$(MAKEFLAGS) /F .\gen_test_char.mak CFG="gen_test_char - Win32 Release" 
-   cd ".."
-
-"gen_test_char - Win32 ReleaseCLEAN" : 
-   cd ".\server"
-   $(MAKE) /$(MAKEFLAGS) /F .\gen_test_char.mak CFG="gen_test_char - Win32 Release" RECURSE=1 CLEAN 
-   cd ".."
-
-!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
-
-"gen_test_char - Win32 Debug" : 
-   cd ".\server"
-   $(MAKE) /$(MAKEFLAGS) /F .\gen_test_char.mak CFG="gen_test_char - Win32 Debug" 
-   cd ".."
-
-"gen_test_char - Win32 DebugCLEAN" : 
-   cd ".\server"
-   $(MAKE) /$(MAKEFLAGS) /F .\gen_test_char.mak CFG="gen_test_char - Win32 Debug" RECURSE=1 CLEAN 
-   cd ".."
-
-!ENDIF 
-
-SOURCE=.\server\gen_test_char.exe
-
-!IF  "$(CFG)" == "libhttpd - Win32 Release"
-
-InputPath=.\server\gen_test_char.exe
-USERDEP__GEN_T=".\include\os.h"	
-
-".\server\test_char.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)" $(USERDEP__GEN_T)
-	<<tempfile.bat 
-	@echo off 
-	.\server\gen_test_char.exe >.\server\test_char.h
-<< 
-	
-
-!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
-
-InputPath=.\server\gen_test_char.exe
+InputPath=$(OUTDIR)\gen_test_char.exe
 USERDEP__GEN_T=".\include\os.h"	".\include\os.h"	
 
 ".\server\test_char.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)" $(USERDEP__GEN_T)
-	<<tempfile.bat 
-	@echo off 
-	.\server\gen_test_char.exe >.\server\test_char.h
-<< 
+	$(OUTDIR)\gen_test_char.exe >.\server\test_char.h
 	
-
-!ENDIF 
 
 SOURCE=.\build\win32\httpd.rc
 
-!IF  "$(CFG)" == "libhttpd - Win32 Release"
-
-
 "$(INTDIR)\libhttpd.res" : $(SOURCE) "$(INTDIR)"
-	$(RSC) /l 0x409 /fo"$(INTDIR)\libhttpd.res" /i "./include" /i "./srclib/apr/include" /i "build\win32" /d "NDEBUG" /d BIN_NAME="libhttpd.dll" /d LONG_NAME="Apache HTTP Server Core" $(SOURCE)
+	$(RSC) $(RSC_PROJ) /i "build\win32" $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "libhttpd - Win32 Debug"
-
-
-"$(INTDIR)\libhttpd.res" : $(SOURCE) "$(INTDIR)"
-	$(RSC) /l 0x409 /fo"$(INTDIR)\libhttpd.res" /i "./include" /i "./srclib/apr/include" /i "build\win32" /d "_DEBUG" /d BIN_NAME="libhttpd.dll" /d LONG_NAME="Apache HTTP Server Core" /d "NDEBUG" $(SOURCE)
-
-
-!ENDIF 
-
-
-!ENDIF 
 

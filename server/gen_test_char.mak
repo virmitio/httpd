@@ -25,117 +25,42 @@ NULL=
 NULL=nul
 !ENDIF 
 
+ARCH=IX86
+APR_INC=../srclib/apr/include
+APU_INC=../srclib/apr-util/include
+PCRE_INC=../srclib/pcre
+PCRE_LIB=../srclib/pcre/pcre.lib
+
+OUTDIR=.
+
 !IF  "$(CFG)" == "gen_test_char - Win32 Release"
-
-OUTDIR=.
 INTDIR=.\Release
-# Begin Custom Macros
-OutDir=.
-# End Custom Macros
-
-!IF "$(RECURSE)" == "0" 
-
-ALL : "$(OUTDIR)\gen_test_char.exe"
-
-!ELSE 
-
-ALL : "$(OUTDIR)\gen_test_char.exe"
-
-!ENDIF 
-
-!IF "$(RECURSE)" == "1" 
-CLEAN :
-!ELSE 
-CLEAN :
-!ENDIF 
-	-@erase "$(INTDIR)\gen_test_char.idb"
-	-@erase "$(INTDIR)\gen_test_char.obj"
-	-@erase "$(OUTDIR)\gen_test_char.exe"
-
-"$(INTDIR)" :
-    if not exist "$(INTDIR)/$(NULL)" mkdir "$(INTDIR)"
-
-CPP=cl.exe
-CPP_PROJ=/nologo /MD /W3 /O2 /I "..\include" /I "..\srclib\apr\include" /I "..\srclib\apr-util\include" /I "..\os\win32" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\gen_test_char" /FD /c 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-RSC=rc.exe
-BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\gen_test_char.bsc" 
-BSC32_SBRS= \
-	
-LINK32=link.exe
-LINK32_FLAGS=kernel32.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\Release\gen_test_char.pdb" /machine:IX86 /out:"$(OUTDIR)\gen_test_char.exe" /opt:ref 
-LINK32_OBJS= \
-	"$(INTDIR)\gen_test_char.obj"
-
-"$(OUTDIR)\gen_test_char.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
-  $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
-
+CPP_VAR=/MD /O2 /D "NDEBUG" 
+LINK32_VAR=/opt:ref 
 !ELSEIF  "$(CFG)" == "gen_test_char - Win32 Debug"
-
-OUTDIR=.
 INTDIR=.\Debug
-# Begin Custom Macros
-OutDir=.
-# End Custom Macros
-
-!IF "$(RECURSE)" == "0" 
+CPP_VAR=/MDd /Zi /Od /D "_DEBUG" /EHsc 
+LINK32_VAR=/debug 
+!ENDIF 
 
 ALL : "$(OUTDIR)\gen_test_char.exe"
 
-!ELSE 
-
-ALL : "$(OUTDIR)\gen_test_char.exe"
-
-!ENDIF 
-
-!IF "$(RECURSE)" == "1" 
 CLEAN :
-!ELSE 
-CLEAN :
-!ENDIF 
 	-@erase "$(INTDIR)\gen_test_char.idb"
 	-@erase "$(INTDIR)\gen_test_char.obj"
-	-@erase "$(OUTDIR)\Debug\gen_test_char.pdb"
 	-@erase "$(OUTDIR)\gen_test_char.exe"
+!IF  "$(CFG)" == "gen_test_char - Win32 Debug"
+	-@erase "$(OUTDIR)\Debug\gen_test_char.pdb"
+!ENDIF 
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
 "$(INTDIR)" :
     if not exist "$(INTDIR)/$(NULL)" mkdir "$(INTDIR)"
 
 CPP=cl.exe
-CPP_PROJ=/nologo /MDd /W3 /Zi /Od /I "..\include" /I "..\srclib\apr\include" /I "..\srclib\apr-util\include" /I "..\os\win32" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\gen_test_char" /FD /EHsc /c 
+CPP_PROJ=/nologo $(CPP_VAR) /W3 /I "..\include" /I "$(APR_INC)" /I "$(APU_INC)" /I "..\os\win32" /D "AP_DECLARE_EXPORT" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\gen_test_char" /FD /c 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<
@@ -173,7 +98,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\gen_test_char.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\Debug\gen_test_char.pdb" /debug /machine:IX86 /out:"$(OUTDIR)\gen_test_char.exe" 
+LINK32_FLAGS=kernel32.lib /nologo /subsystem:console $(LINK32_VAR) /incremental:no /pdb:"$(OUTDIR)\gen_test_char.pdb" /machine:$(ARCH) /out:"$(OUTDIR)\gen_test_char.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\gen_test_char.obj"
 
@@ -181,8 +106,6 @@ LINK32_OBJS= \
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
-
-!ENDIF 
 
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
@@ -194,19 +117,7 @@ LINK32_OBJS= \
 !ENDIF 
 
 
-!IF "$(CFG)" == "gen_test_char - Win32 Release" || "$(CFG)" == "gen_test_char - Win32 Debug"
-
-!IF  "$(CFG)" == "gen_test_char - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "gen_test_char - Win32 Debug"
-
-!ENDIF 
-
 SOURCE=.\gen_test_char.c
 
 "$(INTDIR)\gen_test_char.obj" : $(SOURCE) "$(INTDIR)"
-
-
-
-!ENDIF 
 
