@@ -34,16 +34,17 @@ requires {
     package: "httpd[${flavor}]-${package-version}-${Package.Architecture}-${Package.PublicKeyToken}";
     package: "libiconv[${flavor}]-1.13.1-${Package.Architecture}-${Package.PublicKeyToken}";
     package: "zlib[${flavor}]-1.2.5-${Package.Architecture}-${Package.PublicKeyToken}";
-	package: "serf[${flavor}]-1.0.1-${Package.Architecture}-${Package.PublicKeyToken}";
+	package: "serf[${flavor}]-1.1.0-${Package.Architecture}-${Package.PublicKeyToken}";
 	package: "openssl[${flavor}]-1.0.0-${Package.Architecture}-${Package.PublicKeyToken}";
 	package: "libxml2[${flavor}]-2.7.8-${Package.Architecture}-${Package.PublicKeyToken}";
-	package: "pcre[${flavor}]-5.0.0-${Package.Architecture}-${Package.PublicKeyToken}";
-	package: "lua[${flavor}]-5.2.0-${Package.Architecture}-${Package.PublicKeyToken}";
-	package: "apr[${flavor}]-2.0.0-${Package.Architecture}-${Package.PublicKeyToken}";
+	package: "pcre[${flavor}]-8.21.0-${Package.Architecture}-${Package.PublicKeyToken}";
+	package: "lua[${flavor}]-5.1.0-${Package.Architecture}-${Package.PublicKeyToken}";
+	package: "apr[${flavor}]-1.4.0-${Package.Architecture}-${Package.PublicKeyToken}";
+	package: "apr-util[${flavor}]-1.4.0-${Package.Architecture}-${Package.PublicKeyToken}";
 }
 
 files[libs] {
-    root: @"..\output\${arch}\Release\";
+    root: @"..\output\${flavor}\${arch}\";
     
     include: {
         "libhttpd.lib",

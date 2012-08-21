@@ -1,13 +1,17 @@
 /* target information */
 @import "version.inc";
 
+#define {
+    NewVersion : "${package-version++}";
+}
+
 #product-info  {
 	product-name: "httpd";
 	version: "2.4.2";
 	original-source-location: "https://github.com/apache/httpd";
 	original-source-website: "http://httpd.apache.org/";
 	license: "Apache License";
-	packager: "Hamish C";
+	packager: "Tim Rogers";
 }
 
 test {
@@ -25,13 +29,7 @@ package {
     default : false;
     uses : sign;
     
-    targets: { 
-        @"copkg\httpd[vc10]-${package-version}-x86.msi",
-        @"copkg\httpd-dev[vc10]-${package-version}-x86.msi",
-        @"copkg\httpd-dev-common-${package-version}-any.msi",
-        @"copkg\httpd[vc10]-${package-version}-x64.msi",
-        @"copkg\httpd-dev[vc10]-${package-version}-x64.msi"
-    };
+    targets: {(COMP,PLAT) => @"copkg\serf-dev[${0}]-${NewVersion}-${1}.msi",};
     
     build-command : @"
         cd COPKG
@@ -49,18 +47,15 @@ package {
 };
 
 update-version {
-    default : false;
-    
     build-command : @"
         REM auto-increment version.inc file...
-        
-        cd COPKG
+        if ""${noversion}"" == ""true"" goto :endver
+        pushd COPKG
         setlocal EnableDelayedExpansion
-        for /F ""tokens=4,5,6,7  delims=.; "" %%v in (version.inc) do (
-            set /a build=%%y + 1
-            set VERSTRING=#define { package-version: %%v.%%w.%%x.!build!; }
-        )
+        set VERSTRING=#define { package-version: ${NewVersion}; }
         echo !VERSTRING! > version.inc
+        popd
+        :endver
     ";
 }
 
